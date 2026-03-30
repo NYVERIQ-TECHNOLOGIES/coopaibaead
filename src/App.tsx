@@ -11,6 +11,8 @@ import Students from "@/pages/Students";
 import LibraryPage from "@/pages/LibraryPage";
 import Certificates from "@/pages/Certificates";
 import Attendance from "@/pages/Attendance";
+import Evaluations from "@/pages/Evaluations";
+import SupplementaryMaterials from "@/pages/SupplementaryMaterials";
 import StudentDashboard from "@/pages/StudentDashboard";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/library" element={<LibraryPage />} />
             <Route path="/certificates" element={<Certificates />} />
             <Route path="/attendance" element={<Attendance />} />
+            <Route path="/evaluations" element={<Evaluations />} />
+            <Route path="/materials" element={<SupplementaryMaterials />} />
             <Route path="/student" element={<StudentDashboard />} />
           </Route>
           <Route path="*" element={<NotFound />} />
