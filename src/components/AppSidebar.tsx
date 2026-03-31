@@ -17,6 +17,7 @@ const adminNav = [
   { label: "Materiais", icon: BookOpen, path: "/materials" },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
+  { label: "Mídias", icon: Upload, path: "/media" },
   { label: "Fórum", icon: MessageSquare, path: "/forum" },
   { label: "Notificações", icon: Bell, path: "/notifications" },
   { label: "Configurações", icon: Settings, path: "/settings" },
