@@ -1,11 +1,56 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { GraduationCap, Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<"aluno" | "cooperado">("aluno");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [cooperativa, setCooperativa] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!agreed) {
+      toast({ title: "Aceite os termos", description: "Você precisa concordar com os Termos de Uso.", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role: userType,
+          cooperativa: userType === "cooperado" ? cooperativa : null,
+        },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." });
+    navigate("/login");
+    setLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -38,16 +83,16 @@ export default function Register() {
             </button>
           </div>
 
-          <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-4" onSubmit={handleRegister}>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-card-foreground mb-1.5 block">Nome</label>
-                <input type="text" placeholder="Seu nome"
+                <input type="text" placeholder="Seu nome" value={firstName} onChange={e => setFirstName(e.target.value)} required
                   className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
               <div>
                 <label className="text-sm font-medium text-card-foreground mb-1.5 block">Sobrenome</label>
-                <input type="text" placeholder="Seu sobrenome"
+                <input type="text" placeholder="Seu sobrenome" value={lastName} onChange={e => setLastName(e.target.value)} required
                   className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
             </div>
@@ -55,7 +100,7 @@ export default function Register() {
             {userType === "cooperado" && (
               <div>
                 <label className="text-sm font-medium text-card-foreground mb-1.5 block">Cooperativa</label>
-                <input type="text" placeholder="Nome da sua cooperativa"
+                <input type="text" placeholder="Nome da sua cooperativa" value={cooperativa} onChange={e => setCooperativa(e.target.value)}
                   className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
             )}
@@ -64,7 +109,7 @@ export default function Register() {
               <label className="text-sm font-medium text-card-foreground mb-1.5 block">E-mail</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="email" placeholder="seu@email.com"
+                <input type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
               </div>
             </div>
@@ -73,7 +118,7 @@ export default function Register() {
               <label className="text-sm font-medium text-card-foreground mb-1.5 block">Senha</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type={showPassword ? "text" : "password"} placeholder="••••••••"
+                <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
                   className="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -83,14 +128,14 @@ export default function Register() {
             </div>
 
             <label className="flex items-start gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" className="rounded border-border mt-0.5" />
+              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="rounded border-border mt-0.5" />
               <span>Concordo com os <a href="#" className="text-primary underline">Termos de Uso</a> e a <a href="#" className="text-primary underline">Política de Privacidade</a> (LGPD)</span>
             </label>
 
-            <Link to="/"
-              className="w-full gradient-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-              Criar Conta <ArrowRight className="w-4 h-4" />
-            </Link>
+            <button type="submit" disabled={loading}
+              className="w-full gradient-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50">
+              {loading ? "Criando conta..." : "Criar Conta"} {!loading && <ArrowRight className="w-4 h-4" />}
+            </button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">

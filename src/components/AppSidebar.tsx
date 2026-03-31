@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, Users, GraduationCap, ClipboardCheck,
   BarChart3, Library, Award, MessageSquare, Bell, Settings,
-  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X
+  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload
 } from "lucide-react";
 
 const adminNav = [
@@ -17,6 +18,7 @@ const adminNav = [
   { label: "Materiais", icon: BookOpen, path: "/materials" },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
+  { label: "Mídias", icon: Upload, path: "/media" },
   { label: "Fórum", icon: MessageSquare, path: "/forum" },
   { label: "Notificações", icon: Bell, path: "/notifications" },
   { label: "Configurações", icon: Settings, path: "/settings" },
@@ -26,6 +28,17 @@ export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { profile, user, signOut } = useAuth();
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
+    : "U";
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
@@ -86,7 +99,7 @@ export default function AppSidebar() {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-secondary-foreground">AD</span>
+            <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -96,15 +109,15 @@ export default function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="flex-1 min-w-0"
               >
-                <p className="text-sm font-medium text-sidebar-foreground truncate">Admin</p>
-                <p className="text-xs text-sidebar-foreground/50 truncate">admin@coopedu.com</p>
+                <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
+                <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
               </motion.div>
             )}
           </AnimatePresence>
           {!collapsed && (
-            <Link to="/login" className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
+            <button onClick={handleSignOut} className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
               <LogOut className="w-4 h-4" />
-            </Link>
+            </button>
           )}
         </div>
       </div>
