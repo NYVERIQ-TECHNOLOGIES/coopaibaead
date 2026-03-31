@@ -28,6 +28,17 @@ export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { profile, user, signOut } = useAuth();
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
+    : "U";
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
