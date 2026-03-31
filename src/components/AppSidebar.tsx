@@ -99,7 +99,7 @@ export default function AppSidebar() {
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-secondary-foreground">AD</span>
+            <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
           </div>
           <AnimatePresence>
             {!collapsed && (
@@ -109,15 +109,15 @@ export default function AppSidebar() {
                 exit={{ opacity: 0 }}
                 className="flex-1 min-w-0"
               >
-                <p className="text-sm font-medium text-sidebar-foreground truncate">Admin</p>
-                <p className="text-xs text-sidebar-foreground/50 truncate">admin@coopedu.com</p>
+                <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
+                <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
               </motion.div>
             )}
           </AnimatePresence>
           {!collapsed && (
-            <Link to="/login" className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
+            <button onClick={handleSignOut} className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
               <LogOut className="w-4 h-4" />
-            </Link>
+            </button>
           )}
         </div>
       </div>
