@@ -55,7 +55,7 @@ export default function AppSidebar() {
               exit={{ opacity: 0, width: 0 }}
               className="overflow-hidden whitespace-nowrap"
             >
-              <h1 className="font-heading text-lg font-bold text-sidebar-primary-foreground">CoopEdu</h1>
+              <h1 className="font-heading text-lg font-bold text-sidebar-primary-foreground">Coopaiba</h1>
               <p className="text-xs text-sidebar-foreground/60">Plataforma EAD</p>
             </motion.div>
           )}
