@@ -4,8 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, Users, GraduationCap, ClipboardCheck,
-  BarChart3, Library, Award, MessageSquare, Bell, Settings,
-  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, Bell, Settings
+  BarChart3, Library, Award, Bell, Settings,
+  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload
 } from "lucide-react";
 
 const adminNav = [
