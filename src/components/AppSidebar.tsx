@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, Users, GraduationCap, ClipboardCheck,
   BarChart3, Library, Award, MessageSquare, Bell, Settings,
-  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload
+  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, Bell, Settings
 } from "lucide-react";
 
 const adminNav = [
