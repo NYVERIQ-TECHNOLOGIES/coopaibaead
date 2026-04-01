@@ -14,6 +14,173 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_books: {
+        Row: {
+          cooperado_only: boolean
+          course_id: string
+          created_at: string
+          id: string
+          size: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          cooperado_only?: boolean
+          course_id: string
+          created_at?: string
+          id?: string
+          size?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          cooperado_only?: boolean
+          course_id?: string
+          created_at?: string
+          id?: string
+          size?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_books_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_evaluations: {
+        Row: {
+          course_id: string
+          created_at: string
+          duration: number
+          id: string
+          questions: number
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          duration?: number
+          id?: string
+          questions?: number
+          status?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          questions?: number
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_evaluations_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_lessons: {
+        Row: {
+          completed: boolean
+          created_at: string
+          duration: string | null
+          id: string
+          module_id: string
+          sort_order: number
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          duration?: string | null
+          id?: string
+          module_id: string
+          sort_order?: number
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          duration?: string | null
+          id?: string
+          module_id?: string
+          sort_order?: number
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_modules: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          locked: boolean
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          locked?: boolean
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          locked?: boolean
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           cooperado_only: boolean
