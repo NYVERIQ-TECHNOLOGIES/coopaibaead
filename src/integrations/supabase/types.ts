@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      courses: {
+        Row: {
+          cooperado_only: boolean
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration: string | null
+          id: string
+          image: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          cooperado_only?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: string | null
+          id?: string
+          image?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          cooperado_only?: boolean
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration?: string | null
+          id?: string
+          image?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       media_files: {
         Row: {
           cooperado_only: boolean
