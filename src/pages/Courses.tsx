@@ -1,24 +1,101 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Filter, Grid3X3, List } from "lucide-react";
-import CourseCard from "@/components/CourseCard";
+import { Search, Plus, Pencil, Trash2, Lock } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-const courses = [
-  { id: "1", title: "Cooperativismo Básico", description: "Fundamentos do cooperativismo, princípios e valores que norteiam o movimento cooperativista mundial.", image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop", modules: 8, students: 245, duration: "12h", rating: 4.8, cooperadoOnly: false },
-  { id: "2", title: "Gestão Cooperativa", description: "Técnicas avançadas de gestão aplicadas ao contexto cooperativista e economia solidária.", image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop", modules: 12, students: 189, duration: "20h", rating: 4.7, cooperadoOnly: false },
-  { id: "3", title: "Finanças Solidárias", description: "Educação financeira voltada para cooperativas de crédito e economia solidária.", image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop", modules: 6, students: 312, duration: "8h", rating: 4.9, cooperadoOnly: true },
-  { id: "4", title: "Liderança Comunitária", description: "Desenvolvimento de habilidades de liderança para atuação em comunidades e cooperativas.", image: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=400&h=300&fit=crop", modules: 10, students: 178, duration: "15h", rating: 4.6, cooperadoOnly: false },
-  { id: "5", title: "Direito Cooperativo", description: "Legislação brasileira sobre cooperativas, estatutos e aspectos jurídicos do cooperativismo.", image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=400&h=300&fit=crop", modules: 7, students: 134, duration: "10h", rating: 4.5, cooperadoOnly: true },
-  { id: "6", title: "Marketing Social", description: "Estratégias de marketing para cooperativas e organizações do terceiro setor.", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop", modules: 5, students: 201, duration: "6h", rating: 4.7, cooperadoOnly: false },
-];
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  image: string | null;
+  duration: string | null;
+  cooperado_only: boolean;
+  created_at: string;
+}
+
+const emptyForm = { title: "", description: "", image: "", duration: "", cooperado_only: false };
 
 export default function Courses() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "cooperado">("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const { role } = useAuth();
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const isAdmin = role === "admin";
+
+  const { data: courses = [], isLoading } = useQuery({
+    queryKey: ["courses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as Course[];
+    },
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async (values: typeof emptyForm) => {
+      if (editingCourse) {
+        const { error } = await supabase.from("courses").update(values).eq("id", editingCourse.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("courses").insert(values);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      setDialogOpen(false);
+      toast({ title: editingCourse ? "Curso atualizado" : "Curso criado" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("courses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      setDeleteId(null);
+      toast({ title: "Curso removido" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const openNew = () => { setEditingCourse(null); setForm(emptyForm); setDialogOpen(true); };
+  const openEdit = (c: Course) => {
+    setEditingCourse(c);
+    setForm({ title: c.title, description: c.description || "", image: c.image || "", duration: c.duration || "", cooperado_only: c.cooperado_only });
+    setDialogOpen(true);
+  };
 
   const filtered = courses.filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
-    const matchFilter = filter === "all" || c.cooperadoOnly;
+    const matchFilter = filter === "all" || c.cooperado_only;
     return matchSearch && matchFilter;
   });
 
@@ -27,11 +104,15 @@ export default function Courses() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Cursos</h1>
-          <p className="text-muted-foreground mt-1">Gerencie os cursos da plataforma</p>
+          <p className="text-muted-foreground mt-1">
+            {isAdmin ? "Gerencie os cursos da plataforma" : "Explore os cursos disponíveis"}
+          </p>
         </div>
-        <button className="gradient-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium text-sm flex items-center gap-2 hover:opacity-90 transition-opacity w-fit">
-          <Plus className="w-4 h-4" /> Novo Curso
-        </button>
+        {isAdmin && (
+          <Button onClick={openNew} className="gradient-primary text-primary-foreground w-fit">
+            <Plus className="w-4 h-4 mr-2" /> Novo Curso
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -47,36 +128,122 @@ export default function Courses() {
           />
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}
-          >
+          <button onClick={() => setFilter("all")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
             Todos
           </button>
-          <button
-            onClick={() => setFilter("cooperado")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "cooperado" ? "bg-secondary text-secondary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}
-          >
+          <button onClick={() => setFilter("cooperado")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "cooperado" ? "bg-secondary text-secondary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
             Cooperados
           </button>
         </div>
       </div>
 
+      {/* Loading */}
+      {isLoading && (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      )}
+
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((course, i) => (
           <motion.div key={course.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <CourseCard {...course} />
+            <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card hover:shadow-elevated transition-shadow group">
+              <Link to={`/courses/${course.id}`}>
+                <div className="relative h-40 bg-muted">
+                  {course.image ? (
+                    <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Sem imagem</div>
+                  )}
+                  {course.cooperado_only && (
+                    <span className="absolute top-2 right-2 bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Cooperado
+                    </span>
+                  )}
+                </div>
+              </Link>
+              <div className="p-4">
+                <Link to={`/courses/${course.id}`}>
+                  <h3 className="font-heading font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">{course.title}</h3>
+                </Link>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description || "Sem descrição"}</p>
+                {course.duration && <p className="text-xs text-muted-foreground mt-2">⏱ {course.duration}</p>}
+                {isAdmin && (
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(course)}>
+                      <Pencil className="w-3 h-3 mr-1" /> Editar
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => setDeleteId(course.id)}>
+                      <Trash2 className="w-3 h-3 mr-1" /> Remover
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      {filtered.length === 0 && (
+      {!isLoading && filtered.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg font-heading">Nenhum curso encontrado</p>
-          <p className="text-sm mt-1">Tente ajustar os filtros de busca</p>
+          <p className="text-sm mt-1">
+            {isAdmin ? "Clique em 'Novo Curso' para adicionar" : "Tente ajustar os filtros de busca"}
+          </p>
         </div>
       )}
+
+      {/* Save Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCourse ? "Editar Curso" : "Novo Curso"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Título *</Label>
+              <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Nome do curso" />
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição do curso" />
+            </div>
+            <div>
+              <Label>URL da Imagem</Label>
+              <Input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
+            </div>
+            <div>
+              <Label>Duração</Label>
+              <Input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} placeholder="Ex: 12h" />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={form.cooperado_only} onCheckedChange={(v) => setForm({ ...form, cooperado_only: v })} />
+              <Label>Exclusivo para cooperados</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={() => saveMutation.mutate(form)} disabled={!form.title || saveMutation.isPending}>
+              {saveMutation.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>Tem certeza que deseja remover este curso? Esta ação não pode ser desfeita.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
