@@ -14,6 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          course_id: string
+          created_at: string
+          date: string
+          duration_minutes: number
+          id: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          date?: string
+          duration_minutes?: number
+          id?: string
+          status?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          date?: string
+          duration_minutes?: number
+          id?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          code: string
+          course_id: string
+          created_at: string
+          id: string
+          issued_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          code?: string
+          course_id: string
+          created_at?: string
+          id?: string
+          issued_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          issued_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       course_books: {
         Row: {
           cooperado_only: boolean
@@ -216,6 +298,44 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      enrollments: {
+        Row: {
+          course_id: string
+          enrolled_at: string
+          id: string
+          progress: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          enrolled_at?: string
+          id?: string
+          progress?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          enrolled_at?: string
+          id?: string
+          progress?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       media_files: {
         Row: {
