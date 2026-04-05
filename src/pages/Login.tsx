@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -56,10 +57,8 @@ export default function Login() {
         </div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="relative z-10 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-primary-foreground/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8">
-            <GraduationCap className="w-10 h-10 text-primary-foreground" />
-          </div>
-          <h1 className="text-4xl font-heading font-bold text-primary-foreground mb-4">CoopEdu</h1>
+          <img src={logoImg} alt="Coopaiba EAD" className="w-28 h-28 mx-auto mb-8 rounded-2xl object-contain" />
+          <h1 className="text-4xl font-heading font-bold text-primary-foreground mb-4">Coopaiba EAD</h1>
           <p className="text-lg text-primary-foreground/80 max-w-md">
             Plataforma de educação cooperativista. Aprenda, colabore e cresça junto com sua comunidade.
           </p>
@@ -83,10 +82,8 @@ export default function Login() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <h1 className="font-heading text-xl font-bold text-foreground">CoopEdu</h1>
+            <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain" />
+            <h1 className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</h1>
           </div>
 
           <h2 className="text-2xl font-heading font-bold text-foreground">Bem-vindo de volta</h2>
