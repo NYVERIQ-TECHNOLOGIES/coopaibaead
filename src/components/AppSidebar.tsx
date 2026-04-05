@@ -19,8 +19,7 @@ const adminNav = [
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
   { label: "Mídias", icon: Upload, path: "/media" },
-  
-  { label: "Notificações", icon: Bell, path: "/notifications" },
+  { label: "Administradores", icon: Shield, path: "/admins" },
   { label: "Configurações", icon: Settings, path: "/settings" },
 ];
 

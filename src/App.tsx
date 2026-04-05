@@ -17,6 +17,8 @@ import Evaluations from "@/pages/Evaluations";
 import SupplementaryMaterials from "@/pages/SupplementaryMaterials";
 import StudentDashboard from "@/pages/StudentDashboard";
 import MediaManager from "@/pages/MediaManager";
+import AdminManagement from "@/pages/AdminManagement";
+import SettingsPage from "@/pages/SettingsPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import NotFound from "@/pages/NotFound";
