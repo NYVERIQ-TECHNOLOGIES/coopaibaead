@@ -47,6 +47,8 @@ const App = () => (
               <Route path="/evaluations" element={<Evaluations />} />
               <Route path="/materials" element={<SupplementaryMaterials />} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
+              <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="/student" element={<StudentDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
