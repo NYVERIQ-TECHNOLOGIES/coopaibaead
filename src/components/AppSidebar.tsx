@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, Users, GraduationCap, ClipboardCheck,
-  BarChart3, Library, Award, Bell, Settings,
+  BarChart3, Library, Award, Settings,
   ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload
 } from "lucide-react";
 
@@ -19,8 +19,7 @@ const adminNav = [
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
   { label: "Mídias", icon: Upload, path: "/media" },
-  
-  { label: "Notificações", icon: Bell, path: "/notifications" },
+  { label: "Administradores", icon: Shield, path: "/admins" },
   { label: "Configurações", icon: Settings, path: "/settings" },
 ];
 

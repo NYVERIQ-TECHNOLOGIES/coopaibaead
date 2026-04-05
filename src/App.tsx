@@ -17,6 +17,8 @@ import Evaluations from "@/pages/Evaluations";
 import SupplementaryMaterials from "@/pages/SupplementaryMaterials";
 import StudentDashboard from "@/pages/StudentDashboard";
 import MediaManager from "@/pages/MediaManager";
+import AdminManagement from "@/pages/AdminManagement";
+import SettingsPage from "@/pages/SettingsPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import NotFound from "@/pages/NotFound";
@@ -45,6 +47,8 @@ const App = () => (
               <Route path="/evaluations" element={<Evaluations />} />
               <Route path="/materials" element={<SupplementaryMaterials />} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
+              <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="/student" element={<StudentDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
