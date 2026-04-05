@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import logoImg from "@/assets/logo-coopaiba.png";
 import {
-  LayoutDashboard, BookOpen, Users, GraduationCap, ClipboardCheck,
+  LayoutDashboard, BookOpen, Users, ClipboardCheck,
   BarChart3, Library, Award, Settings,
-  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload
+  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, MessageSquare
 } from "lucide-react";
 
 const adminNav = [
@@ -18,6 +19,7 @@ const adminNav = [
   { label: "Materiais", icon: BookOpen, path: "/materials" },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
+  { label: "Fórum", icon: MessageSquare, path: "/forum" },
   { label: "Mídias", icon: Upload, path: "/media" },
   { label: "Administradores", icon: Shield, path: "/admins" },
   { label: "Configurações", icon: Settings, path: "/settings" },
@@ -43,9 +45,7 @@ export default function AppSidebar() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-6 border-b border-sidebar-border">
-        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
-          <GraduationCap className="w-6 h-6 text-primary-foreground" />
-        </div>
+        <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain flex-shrink-0" />
         <AnimatePresence>
           {!collapsed && (
             <motion.div
@@ -54,8 +54,8 @@ export default function AppSidebar() {
               exit={{ opacity: 0, width: 0 }}
               className="overflow-hidden whitespace-nowrap"
             >
-              <h1 className="font-heading text-lg font-bold text-sidebar-primary-foreground">Coopaiba</h1>
-              <p className="text-xs text-sidebar-foreground/60">Plataforma EAD</p>
+              <h1 className="font-heading text-lg font-bold text-sidebar-primary-foreground">Coopaiba EAD</h1>
+              <p className="text-xs text-sidebar-foreground/60">Educação Cooperativista</p>
             </motion.div>
           )}
         </AnimatePresence>

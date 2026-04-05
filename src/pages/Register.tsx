@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield } from "lucide-react";
+import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -57,10 +58,8 @@ export default function Register() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-lg">
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <h1 className="font-heading text-xl font-bold text-foreground">CoopEdu</h1>
+          <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain" />
+          <h1 className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</h1>
         </div>
 
         <div className="bg-card rounded-2xl p-8 shadow-elevated border border-border">
