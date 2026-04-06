@@ -101,6 +101,7 @@ export type Database = {
           cooperado_only: boolean
           course_id: string
           created_at: string
+          file_url: string | null
           id: string
           size: string | null
           title: string
@@ -111,6 +112,7 @@ export type Database = {
           cooperado_only?: boolean
           course_id: string
           created_at?: string
+          file_url?: string | null
           id?: string
           size?: string | null
           title: string
@@ -121,6 +123,7 @@ export type Database = {
           cooperado_only?: boolean
           course_id?: string
           created_at?: string
+          file_url?: string | null
           id?: string
           size?: string | null
           title?: string
@@ -184,6 +187,7 @@ export type Database = {
       course_lessons: {
         Row: {
           completed: boolean
+          content_url: string | null
           created_at: string
           duration: string | null
           id: string
@@ -195,6 +199,7 @@ export type Database = {
         }
         Insert: {
           completed?: boolean
+          content_url?: string | null
           created_at?: string
           duration?: string | null
           id?: string
@@ -206,6 +211,7 @@ export type Database = {
         }
         Update: {
           completed?: boolean
+          content_url?: string | null
           created_at?: string
           duration?: string | null
           id?: string
