@@ -504,10 +504,9 @@ export default function CourseDetail() {
                         </div>
                       )}
                     </div>
-                  </div>
-                  </div>
-                );
-              })}
+                    </div>
+                  );
+                })}
               {books.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhum material vinculado</p>
               )}
