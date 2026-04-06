@@ -105,7 +105,6 @@ export default function AppSidebar() {
               <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
             )}
           </Link>
-          </div>
           <AnimatePresence>
             {!collapsed && (
               <motion.div
