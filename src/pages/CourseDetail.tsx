@@ -570,6 +570,10 @@ export default function CourseDetail() {
                 <Input value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="Ex: 15min" />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>URL do Conteúdo (vídeo, PDF, etc.)</Label>
+              <Input value={lessonContentUrl} onChange={(e) => setLessonContentUrl(e.target.value)} placeholder="https://... ou cole a URL do arquivo" />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLessonDialogOpen(false)}>Cancelar</Button>
