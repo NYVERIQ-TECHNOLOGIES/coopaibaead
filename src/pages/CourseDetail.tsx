@@ -655,6 +655,10 @@ export default function CourseDetail() {
                 <Input value={bookSize} onChange={(e) => setBookSize(e.target.value)} placeholder="Ex: 2.4 MB" />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>URL do Arquivo</Label>
+              <Input value={bookFileUrl} onChange={(e) => setBookFileUrl(e.target.value)} placeholder="https://... cole a URL do arquivo" />
+            </div>
             <div className="flex items-center gap-2">
               <Switch checked={bookCooperado} onCheckedChange={setBookCooperado} />
               <Label>Exclusivo para cooperados</Label>
