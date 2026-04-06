@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
-  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download
+  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -132,6 +132,19 @@ export default function CourseDetail() {
   const [bookSize, setBookSize] = useState("");
   const [bookCooperado, setBookCooperado] = useState(false);
   const [bookFileUrl, setBookFileUrl] = useState("");
+  const [uploadingLesson, setUploadingLesson] = useState(false);
+  const [uploadingBook, setUploadingBook] = useState(false);
+  const lessonFileRef = useRef<HTMLInputElement>(null);
+  const bookFileRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (file: File, folder: string): Promise<string> => {
+    const ext = file.name.split(".").pop();
+    const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("media").upload(path, file);
+    if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
+    return publicUrl;
+  };
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["course_modules", courseId] });
