@@ -672,6 +672,29 @@ export default function CourseDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Content Viewer Dialog */}
+      <Dialog open={contentDialogOpen} onOpenChange={setContentDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Visualizar Conteúdo</DialogTitle>
+          </DialogHeader>
+          {contentUrl && (
+            contentType === "pdf" || contentUrl.endsWith(".pdf") ? (
+              <iframe src={contentUrl} className="w-full h-[70vh] rounded-lg" />
+            ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg)/i) ? (
+              <video src={contentUrl} controls className="w-full rounded-lg max-h-[70vh]" />
+            ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg)/i) ? (
+              <audio src={contentUrl} controls className="w-full mt-8" />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">Conteúdo externo</p>
+                <Button asChild><a href={contentUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><ExternalLink className="w-4 h-4" /> Abrir em nova aba</a></Button>
+              </div>
+            )
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
