@@ -9,19 +9,20 @@ import {
   ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, MessageSquare
 } from "lucide-react";
 
-const adminNav = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+const navItems = [
+  { label: "Dashboard", icon: LayoutDashboard, path: "/", adminOnly: true },
+  { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
   { label: "Cursos", icon: BookOpen, path: "/courses" },
-  { label: "Alunos", icon: Users, path: "/students" },
-  { label: "Cooperados", icon: Shield, path: "/cooperados" },
-  { label: "Presença", icon: ClipboardCheck, path: "/attendance" },
+  { label: "Alunos", icon: Users, path: "/students", adminOnly: true },
+  { label: "Cooperados", icon: Shield, path: "/cooperados", adminOnly: true },
+  { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
   { label: "Avaliações", icon: BarChart3, path: "/evaluations" },
   { label: "Materiais", icon: BookOpen, path: "/materials" },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
   { label: "Fórum", icon: MessageSquare, path: "/forum" },
-  { label: "Mídias", icon: Upload, path: "/media" },
-  { label: "Administradores", icon: Shield, path: "/admins" },
+  { label: "Mídias", icon: Upload, path: "/media", adminOnly: true },
+  { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
   { label: "Configurações", icon: Settings, path: "/settings" },
 ];
 
@@ -30,7 +31,14 @@ export default function AppSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, role, signOut } = useAuth();
+  const isAdmin = role === "admin";
+
+  const filteredNav = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.studentOnly && isAdmin) return false;
+    return true;
+  });
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
@@ -63,7 +71,7 @@ export default function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
-        {adminNav.map((item) => {
+        {filteredNav.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <Link
