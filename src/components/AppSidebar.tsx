@@ -97,9 +97,14 @@ export default function AppSidebar() {
       {/* User section */}
       <div className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
-          </div>
+          <Link to="/profile" onClick={() => setMobileOpen(false)}
+            className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+            ) : (
+              <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
+            )}
+          </Link>
           <AnimatePresence>
             {!collapsed && (
               <motion.div

@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
-  ChevronDown, ChevronUp, Library, BarChart3, Loader2
+  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -112,6 +112,11 @@ export default function CourseDetail() {
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonType, setLessonType] = useState("video");
   const [lessonDuration, setLessonDuration] = useState("");
+  const [lessonContentUrl, setLessonContentUrl] = useState("");
+
+  const [contentDialogOpen, setContentDialogOpen] = useState(false);
+  const [contentUrl, setContentUrl] = useState("");
+  const [contentType, setContentType] = useState("");
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
   const [editEvalId, setEditEvalId] = useState<string | null>(null);
@@ -126,6 +131,7 @@ export default function CourseDetail() {
   const [bookType, setBookType] = useState("pdf");
   const [bookSize, setBookSize] = useState("");
   const [bookCooperado, setBookCooperado] = useState(false);
+  const [bookFileUrl, setBookFileUrl] = useState("");
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["course_modules", courseId] });
@@ -161,10 +167,10 @@ export default function CourseDetail() {
   const saveLessonMut = useMutation({
     mutationFn: async () => {
       if (editLessonId) {
-        const { error } = await supabase.from("course_lessons").update({ title: lessonTitle, type: lessonType, duration: lessonDuration }).eq("id", editLessonId);
+        const { error } = await supabase.from("course_lessons").update({ title: lessonTitle, type: lessonType, duration: lessonDuration, content_url: lessonContentUrl || null }).eq("id", editLessonId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("course_lessons").insert({ module_id: lessonModuleId!, title: lessonTitle, type: lessonType, duration: lessonDuration || "10min" });
+        const { error } = await supabase.from("course_lessons").insert({ module_id: lessonModuleId!, title: lessonTitle, type: lessonType, duration: lessonDuration || "10min", content_url: lessonContentUrl || null });
         if (error) throw error;
       }
     },
@@ -218,10 +224,10 @@ export default function CourseDetail() {
   const saveBookMut = useMutation({
     mutationFn: async () => {
       if (editBookId) {
-        const { error } = await supabase.from("course_books").update({ title: bookTitle, type: bookType, size: bookSize, cooperado_only: bookCooperado }).eq("id", editBookId);
+        const { error } = await supabase.from("course_books").update({ title: bookTitle, type: bookType, size: bookSize, cooperado_only: bookCooperado, file_url: bookFileUrl || null }).eq("id", editBookId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("course_books").insert({ course_id: courseId!, title: bookTitle, type: bookType, size: bookSize || "-", cooperado_only: bookCooperado });
+        const { error } = await supabase.from("course_books").insert({ course_id: courseId!, title: bookTitle, type: bookType, size: bookSize || "-", cooperado_only: bookCooperado, file_url: bookFileUrl || null });
         if (error) throw error;
       }
     },
@@ -241,12 +247,14 @@ export default function CourseDetail() {
   // ---- Helpers ----
   const openNewModule = () => { setEditModuleId(null); setModuleTitle(""); setModuleLocked(false); setModuleDialogOpen(true); };
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
-  const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonDialogOpen(true); };
-  const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonDialogOpen(true); };
+  const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonDialogOpen(true); };
+  const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonDialogOpen(true); };
   const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalDialogOpen(true); };
   const openEditEval = (ev: any) => { setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions); setEvalDialogOpen(true); };
-  const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookDialogOpen(true); };
-  const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookDialogOpen(true); };
+  const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
+  const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
+
+  const openContent = (url: string, type: string) => { setContentUrl(url); setContentType(type); setContentDialogOpen(true); };
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
   const completedLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0);
@@ -350,17 +358,22 @@ export default function CourseDetail() {
                     {(mod.lessons || []).map((lesson: any) => {
                       const Icon = typeIcons[lesson.type] || FileText;
                       return (
-                        <div key={lesson.id} className="flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group">
+                        <div key={lesson.id}
+                          className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
+                          onClick={() => lesson.content_url && openContent(lesson.content_url, lesson.type)}>
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${lesson.completed ? "bg-success/10" : "bg-muted"}`}>
                             {lesson.completed ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={`text-sm ${lesson.completed ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                           </div>
+                          {lesson.content_url && (
+                            <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          )}
                           <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
                           <span className="text-xs text-muted-foreground flex-shrink-0">{lesson.duration}</span>
                           {isAdmin && (
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                               <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" /></Button>
                               <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
                             </div>
@@ -459,7 +472,7 @@ export default function CourseDetail() {
               {books.map((b: any) => {
                 const Icon = bookTypeIcons[b.type] || FileText;
                 return (
-                  <div key={b.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
+                     <div key={b.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                         <Icon className="w-4 h-4 text-muted-foreground" />
@@ -473,15 +486,27 @@ export default function CourseDetail() {
                         </div>
                       </div>
                     </div>
-                    {isAdmin && (
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditBook(b)}><Edit className="w-3.5 h-3.5" /></Button>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteBookMut.mutate(b.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                    <div className="flex items-center gap-1">
+                      {b.file_url && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openContent(b.file_url, b.type)}>
+                            <Eye className="w-3.5 h-3.5 text-primary" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" asChild>
+                            <a href={b.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3.5 h-3.5 text-muted-foreground" /></a>
+                          </Button>
+                        </>
+                      )}
+                      {isAdmin && (
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditBook(b)}><Edit className="w-3.5 h-3.5" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteBookMut.mutate(b.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                        </div>
+                      )}
+                    </div>
+                    </div>
+                  );
+                })}
               {books.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhum material vinculado</p>
               )}
@@ -544,6 +569,10 @@ export default function CourseDetail() {
                 <Label>Duração</Label>
                 <Input value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="Ex: 15min" />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>URL do Conteúdo (vídeo, PDF, etc.)</Label>
+              <Input value={lessonContentUrl} onChange={(e) => setLessonContentUrl(e.target.value)} placeholder="https://... ou cole a URL do arquivo" />
             </div>
           </div>
           <DialogFooter>
@@ -626,6 +655,10 @@ export default function CourseDetail() {
                 <Input value={bookSize} onChange={(e) => setBookSize(e.target.value)} placeholder="Ex: 2.4 MB" />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>URL do Arquivo</Label>
+              <Input value={bookFileUrl} onChange={(e) => setBookFileUrl(e.target.value)} placeholder="https://... cole a URL do arquivo" />
+            </div>
             <div className="flex items-center gap-2">
               <Switch checked={bookCooperado} onCheckedChange={setBookCooperado} />
               <Label>Exclusivo para cooperados</Label>
@@ -637,6 +670,29 @@ export default function CourseDetail() {
               {saveBookMut.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Content Viewer Dialog */}
+      <Dialog open={contentDialogOpen} onOpenChange={setContentDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Visualizar Conteúdo</DialogTitle>
+          </DialogHeader>
+          {contentUrl && (
+            contentType === "pdf" || contentUrl.endsWith(".pdf") ? (
+              <iframe src={contentUrl} className="w-full h-[70vh] rounded-lg" />
+            ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg)/i) ? (
+              <video src={contentUrl} controls className="w-full rounded-lg max-h-[70vh]" />
+            ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg)/i) ? (
+              <audio src={contentUrl} controls className="w-full mt-8" />
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">Conteúdo externo</p>
+                <Button asChild><a href={contentUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><ExternalLink className="w-4 h-4" /> Abrir em nova aba</a></Button>
+              </div>
+            )
+          )}
         </DialogContent>
       </Dialog>
     </div>

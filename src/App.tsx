@@ -19,6 +19,7 @@ import StudentDashboard from "@/pages/StudentDashboard";
 import MediaManager from "@/pages/MediaManager";
 import AdminManagement from "@/pages/AdminManagement";
 import SettingsPage from "@/pages/SettingsPage";
+import ProfilePage from "@/pages/ProfilePage";
 import Forum from "@/pages/Forum";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
               <Route path="/forum" element={<Forum />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/student" element={<StudentDashboard />} />
             </Route>
             <Route path="*" element={<NotFound />} />
