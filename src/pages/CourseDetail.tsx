@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
-  ChevronDown, ChevronUp, Library, BarChart3, Loader2
+  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -358,17 +358,22 @@ export default function CourseDetail() {
                     {(mod.lessons || []).map((lesson: any) => {
                       const Icon = typeIcons[lesson.type] || FileText;
                       return (
-                        <div key={lesson.id} className="flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group">
+                        <div key={lesson.id}
+                          className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
+                          onClick={() => lesson.content_url && openContent(lesson.content_url, lesson.type)}>
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${lesson.completed ? "bg-success/10" : "bg-muted"}`}>
                             {lesson.completed ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={`text-sm ${lesson.completed ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                           </div>
+                          {lesson.content_url && (
+                            <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          )}
                           <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
                           <span className="text-xs text-muted-foreground flex-shrink-0">{lesson.duration}</span>
                           {isAdmin && (
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                               <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" /></Button>
                               <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
                             </div>
@@ -467,7 +472,7 @@ export default function CourseDetail() {
               {books.map((b: any) => {
                 const Icon = bookTypeIcons[b.type] || FileText;
                 return (
-                  <div key={b.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
+                     <div key={b.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                         <Icon className="w-4 h-4 text-muted-foreground" />
@@ -481,12 +486,25 @@ export default function CourseDetail() {
                         </div>
                       </div>
                     </div>
-                    {isAdmin && (
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditBook(b)}><Edit className="w-3.5 h-3.5" /></Button>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteBookMut.mutate(b.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {b.file_url && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openContent(b.file_url, b.type)}>
+                            <Eye className="w-3.5 h-3.5 text-primary" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" asChild>
+                            <a href={b.file_url} target="_blank" rel="noopener noreferrer"><Download className="w-3.5 h-3.5 text-muted-foreground" /></a>
+                          </Button>
+                        </>
+                      )}
+                      {isAdmin && (
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditBook(b)}><Edit className="w-3.5 h-3.5" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteBookMut.mutate(b.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                   </div>
                 );
               })}
