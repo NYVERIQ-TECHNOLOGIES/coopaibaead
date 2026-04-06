@@ -584,8 +584,29 @@ export default function CourseDetail() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>URL do Conteúdo (vídeo, PDF, etc.)</Label>
-              <Input value={lessonContentUrl} onChange={(e) => setLessonContentUrl(e.target.value)} placeholder="https://... ou cole a URL do arquivo" />
+              <Label>Conteúdo da Aula</Label>
+              <Input value={lessonContentUrl} onChange={(e) => setLessonContentUrl(e.target.value)} placeholder="Cole a URL ou envie um arquivo abaixo" />
+              <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                <Upload className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {uploadingLesson ? "Enviando..." : "Enviar arquivo do dispositivo"}
+                </span>
+                <input ref={lessonFileRef} type="file" className="hidden" accept="video/*,.pdf,audio/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingLesson(true);
+                    try {
+                      const url = await handleFileUpload(file, "lessons");
+                      setLessonContentUrl(url);
+                      toast({ title: "Arquivo enviado!" });
+                    } catch (err: any) {
+                      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+                    } finally {
+                      setUploadingLesson(false);
+                    }
+                  }} />
+              </label>
             </div>
           </div>
           <DialogFooter>
@@ -669,8 +690,31 @@ export default function CourseDetail() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>URL do Arquivo</Label>
-              <Input value={bookFileUrl} onChange={(e) => setBookFileUrl(e.target.value)} placeholder="https://... cole a URL do arquivo" />
+              <Label>Arquivo do Material</Label>
+              <Input value={bookFileUrl} onChange={(e) => setBookFileUrl(e.target.value)} placeholder="Cole a URL ou envie um arquivo abaixo" />
+              <label className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                <Upload className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">
+                  {uploadingBook ? "Enviando..." : "Enviar arquivo do dispositivo"}
+                </span>
+                <input ref={bookFileRef} type="file" className="hidden" accept="video/*,.pdf,audio/*,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingBook(true);
+                    try {
+                      const url = await handleFileUpload(file, "books");
+                      setBookFileUrl(url);
+                      const sizeMB = (file.size / (1024 * 1024)).toFixed(1) + " MB";
+                      setBookSize(sizeMB);
+                      toast({ title: "Arquivo enviado!" });
+                    } catch (err: any) {
+                      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+                    } finally {
+                      setUploadingBook(false);
+                    }
+                  }} />
+              </label>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={bookCooperado} onCheckedChange={setBookCooperado} />
