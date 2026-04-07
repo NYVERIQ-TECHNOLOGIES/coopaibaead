@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Pencil, Trash2, Lock } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Lock, Upload, Loader2, Image } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +38,8 @@ export default function Courses() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const imageFileRef = useRef<HTMLInputElement>(null);
   const { role } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -54,6 +56,15 @@ export default function Courses() {
       return data as Course[];
     },
   });
+
+  const handleImageUpload = async (file: File) => {
+    const ext = file.name.split(".").pop();
+    const path = `courses/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("media").upload(path, file);
+    if (error) throw error;
+    const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
+    return publicUrl;
+  };
 
   const saveMutation = useMutation({
     mutationFn: async (values: typeof emptyForm) => {
@@ -199,6 +210,7 @@ export default function Courses() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingCourse ? "Editar Curso" : "Novo Curso"}</DialogTitle>
+            <DialogDescription>Preencha as informações do curso</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -209,9 +221,59 @@ export default function Courses() {
               <Label>Descrição</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição do curso" />
             </div>
-            <div>
-              <Label>URL da Imagem</Label>
-              <Input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." />
+            <div className="space-y-2">
+              <Label>Imagem do Curso</Label>
+              {form.image && (
+                <div className="relative w-full h-32 rounded-lg overflow-hidden bg-muted mb-2">
+                  <img src={form.image} alt="Preview" className="w-full h-full object-cover" />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="absolute top-2 right-2 h-7 w-7 p-0"
+                    onClick={() => setForm({ ...form, image: "" })}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Input
+                  value={form.image}
+                  onChange={(e) => setForm({ ...form, image: e.target.value })}
+                  placeholder="Cole a URL da imagem ou Google Drive"
+                  className="flex-1"
+                />
+              </div>
+              <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                {uploadingImage ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                ) : (
+                  <Upload className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {uploadingImage ? "Enviando imagem..." : "Enviar foto do PC ou smartphone"}
+                </span>
+                <input
+                  ref={imageFileRef}
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploadingImage(true);
+                    try {
+                      const url = await handleImageUpload(file);
+                      setForm((prev) => ({ ...prev, image: url }));
+                      toast({ title: "Imagem enviada!" });
+                    } catch (err: any) {
+                      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+                    } finally {
+                      setUploadingImage(false);
+                    }
+                  }}
+                />
+              </label>
             </div>
             <div>
               <Label>Duração</Label>
@@ -224,7 +286,7 @@ export default function Courses() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate(form)} disabled={!form.title || saveMutation.isPending}>
+            <Button onClick={() => saveMutation.mutate(form)} disabled={!form.title || saveMutation.isPending} className="gradient-primary text-primary-foreground">
               {saveMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>

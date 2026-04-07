@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
-  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload
+  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
 } from "@/components/ui/dialog";
@@ -137,6 +138,34 @@ export default function CourseDetail() {
   const lessonFileRef = useRef<HTMLInputElement>(null);
   const bookFileRef = useRef<HTMLInputElement>(null);
 
+  // ---- Questions state ----
+  const [questionsDialogOpen, setQuestionsDialogOpen] = useState(false);
+  const [questionsEvalId, setQuestionsEvalId] = useState<string | null>(null);
+  const [questionsEvalTitle, setQuestionsEvalTitle] = useState("");
+  const [questionDialogOpen, setQuestionDialogOpen] = useState(false);
+  const [editQuestionId, setEditQuestionId] = useState<string | null>(null);
+  const [questionText, setQuestionText] = useState("");
+  const [optionA, setOptionA] = useState("");
+  const [optionB, setOptionB] = useState("");
+  const [optionC, setOptionC] = useState("");
+  const [optionD, setOptionD] = useState("");
+  const [correctOption, setCorrectOption] = useState("a");
+
+  // ---- Fetch questions for selected evaluation ----
+  const { data: questions = [], isLoading: loadingQuestions } = useQuery({
+    queryKey: ["evaluation_questions", questionsEvalId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("evaluation_questions")
+        .select("*")
+        .eq("evaluation_id", questionsEvalId!)
+        .order("sort_order");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!questionsEvalId,
+  });
+
   const handleFileUpload = async (file: File, folder: string): Promise<string> => {
     const ext = file.name.split(".").pop();
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -257,6 +286,48 @@ export default function CourseDetail() {
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
+  // ---- Question mutations ----
+  const saveQuestionMut = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        evaluation_id: questionsEvalId!,
+        question_text: questionText,
+        option_a: optionA,
+        option_b: optionB,
+        option_c: optionC,
+        option_d: optionD,
+        correct_option: correctOption,
+        sort_order: editQuestionId ? undefined : questions.length,
+      };
+      if (editQuestionId) {
+        const { evaluation_id, sort_order, ...updatePayload } = payload;
+        const { error } = await supabase.from("evaluation_questions").update(updatePayload).eq("id", editQuestionId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("evaluation_questions").insert(payload);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["evaluation_questions", questionsEvalId] });
+      setQuestionDialogOpen(false);
+      toast({ title: "Questão salva" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const deleteQuestionMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("evaluation_questions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["evaluation_questions", questionsEvalId] });
+      toast({ title: "Questão removida" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
   // ---- Helpers ----
   const openNewModule = () => { setEditModuleId(null); setModuleTitle(""); setModuleLocked(false); setModuleDialogOpen(true); };
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
@@ -268,6 +339,34 @@ export default function CourseDetail() {
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
   const openContent = (url: string, type: string) => { setContentUrl(url); setContentType(type); setContentDialogOpen(true); };
+
+  const openQuestions = (ev: any) => {
+    setQuestionsEvalId(ev.id);
+    setQuestionsEvalTitle(ev.title);
+    setQuestionsDialogOpen(true);
+  };
+
+  const openNewQuestion = () => {
+    setEditQuestionId(null);
+    setQuestionText("");
+    setOptionA("");
+    setOptionB("");
+    setOptionC("");
+    setOptionD("");
+    setCorrectOption("a");
+    setQuestionDialogOpen(true);
+  };
+
+  const openEditQuestion = (q: any) => {
+    setEditQuestionId(q.id);
+    setQuestionText(q.question_text);
+    setOptionA(q.option_a);
+    setOptionB(q.option_b);
+    setOptionC(q.option_c);
+    setOptionD(q.option_d);
+    setCorrectOption(q.correct_option);
+    setQuestionDialogOpen(true);
+  };
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
   const completedLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0);
@@ -445,6 +544,9 @@ export default function CourseDetail() {
                   </div>
                   {isAdmin && (
                     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar Questões" onClick={() => openQuestions(ev)}>
+                        <ListChecks className="w-3.5 h-3.5 text-primary" />
+                      </Button>
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleEvalStatusMut.mutate(ev)}>
                         {ev.status === "publicada" ? <Lock className="w-3.5 h-3.5 text-warning" /> : <CheckCircle className="w-3.5 h-3.5 text-success" />}
                       </Button>
@@ -485,7 +587,7 @@ export default function CourseDetail() {
               {books.map((b: any) => {
                 const Icon = bookTypeIcons[b.type] || FileText;
                 return (
-                     <div key={b.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
+                  <div key={b.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
                         <Icon className="w-4 h-4 text-muted-foreground" />
@@ -517,9 +619,9 @@ export default function CourseDetail() {
                         </div>
                       )}
                     </div>
-                    </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
               {books.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhum material vinculado</p>
               )}
@@ -750,6 +852,138 @@ export default function CourseDetail() {
               </div>
             )
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== QUESTIONS MANAGER DIALOG ===== */}
+      <Dialog open={questionsDialogOpen} onOpenChange={setQuestionsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ListChecks className="w-5 h-5 text-primary" />
+              Questões — {questionsEvalTitle}
+            </DialogTitle>
+            <DialogDescription>Gerencie as perguntas desta avaliação</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Button size="sm" onClick={openNewQuestion} className="gradient-primary text-primary-foreground gap-1">
+              <Plus className="w-3 h-3" /> Nova Questão
+            </Button>
+
+            {loadingQuestions ? (
+              <div className="flex justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              </div>
+            ) : questions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhuma questão cadastrada. Clique em "Nova Questão" para começar.</p>
+            ) : (
+              <div className="space-y-3">
+                {questions.map((q: any, idx: number) => (
+                  <div key={q.id} className="border border-border rounded-lg p-4 bg-muted/5 group">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-card-foreground">
+                          <span className="text-primary font-bold">{idx + 1}.</span> {q.question_text}
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
+                          {[
+                            { key: "a", text: q.option_a },
+                            { key: "b", text: q.option_b },
+                            { key: "c", text: q.option_c },
+                            { key: "d", text: q.option_d },
+                          ].filter(o => o.text).map((opt) => (
+                            <div
+                              key={opt.key}
+                              className={`text-xs px-2.5 py-1.5 rounded-md border ${
+                                q.correct_option === opt.key
+                                  ? "border-success bg-success/10 text-success font-medium"
+                                  : "border-border text-muted-foreground"
+                              }`}
+                            >
+                              <span className="font-bold uppercase">{opt.key})</span> {opt.text}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditQuestion(q)}>
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteQuestionMut.mutate(q.id)}>
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== QUESTION FORM DIALOG ===== */}
+      <Dialog open={questionDialogOpen} onOpenChange={setQuestionDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editQuestionId ? "Editar Questão" : "Nova Questão"}</DialogTitle>
+            <DialogDescription>Preencha o enunciado e as alternativas</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Enunciado da Questão</Label>
+              <Textarea
+                value={questionText}
+                onChange={(e) => setQuestionText(e.target.value)}
+                placeholder="Digite a pergunta..."
+                rows={3}
+              />
+            </div>
+            <div className="space-y-3">
+              <Label>Alternativas</Label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded ${correctOption === "a" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}`}>A</span>
+                  <Input value={optionA} onChange={(e) => setOptionA(e.target.value)} placeholder="Alternativa A" className="flex-1" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded ${correctOption === "b" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}`}>B</span>
+                  <Input value={optionB} onChange={(e) => setOptionB(e.target.value)} placeholder="Alternativa B" className="flex-1" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded ${correctOption === "c" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}`}>C</span>
+                  <Input value={optionC} onChange={(e) => setOptionC(e.target.value)} placeholder="Alternativa C (opcional)" className="flex-1" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-bold w-5 h-5 flex items-center justify-center rounded ${correctOption === "d" ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"}`}>D</span>
+                  <Input value={optionD} onChange={(e) => setOptionD(e.target.value)} placeholder="Alternativa D (opcional)" className="flex-1" />
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Resposta Correta</Label>
+              <Select value={correctOption} onValueChange={setCorrectOption}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="a">Alternativa A</SelectItem>
+                  <SelectItem value="b">Alternativa B</SelectItem>
+                  <SelectItem value="c">Alternativa C</SelectItem>
+                  <SelectItem value="d">Alternativa D</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuestionDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => saveQuestionMut.mutate()}
+              disabled={!questionText.trim() || !optionA.trim() || !optionB.trim() || saveQuestionMut.isPending}
+              className="gradient-primary text-primary-foreground"
+            >
+              {saveQuestionMut.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
