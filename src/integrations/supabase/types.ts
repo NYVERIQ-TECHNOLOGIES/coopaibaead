@@ -343,6 +343,56 @@ export type Database = {
           },
         ]
       }
+      evaluation_questions: {
+        Row: {
+          correct_option: string
+          created_at: string
+          evaluation_id: string
+          id: string
+          option_a: string
+          option_b: string
+          option_c: string
+          option_d: string
+          question_text: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          correct_option?: string
+          created_at?: string
+          evaluation_id: string
+          id?: string
+          option_a: string
+          option_b: string
+          option_c?: string
+          option_d?: string
+          question_text: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          correct_option?: string
+          created_at?: string
+          evaluation_id?: string
+          id?: string
+          option_a?: string
+          option_b?: string
+          option_c?: string
+          option_d?: string
+          question_text?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_questions_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "course_evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       forum_replies: {
         Row: {
           content: string
