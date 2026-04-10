@@ -13,7 +13,7 @@ import Students from "@/pages/Students";
 import LibraryPage from "@/pages/LibraryPage";
 import Certificates from "@/pages/Certificates";
 import Attendance from "@/pages/Attendance";
-import Evaluations from "@/pages/Evaluations";
+
 import SupplementaryMaterials from "@/pages/SupplementaryMaterials";
 import StudentDashboard from "@/pages/StudentDashboard";
 import MediaManager from "@/pages/MediaManager";
