@@ -14,7 +14,7 @@ const navItems = [
   { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
   { label: "Cursos", icon: BookOpen, path: "/courses" },
   { label: "Alunos", icon: Users, path: "/students", adminOnly: true },
-  { label: "Cooperados", icon: Shield, path: "/cooperados", adminOnly: true },
+  
   { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
   { label: "Avaliações", icon: BarChart3, path: "/evaluations" },
   { label: "Materiais", icon: BookOpen, path: "/materials" },
