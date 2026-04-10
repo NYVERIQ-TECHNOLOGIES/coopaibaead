@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Award, Search, CheckCircle, Clock, Upload, ToggleLeft, ToggleRight, FileImage, Trash2 } from "lucide-react";
+import { Award, Search, CheckCircle, Clock, Upload, ToggleLeft, ToggleRight, FileImage, Trash2, Download, Loader2, Plus } from "lucide-react";
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Certificates() {
@@ -25,8 +28,11 @@ export default function Certificates() {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [generateOpen, setGenerateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateFile, setTemplateFile] = useState<File | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
 
   // Certificates
   const { data: certificates = [], isLoading } = useQuery({
@@ -48,6 +54,26 @@ export default function Certificates() {
         .from("certificate_templates")
         .select("*")
         .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+    enabled: isAdmin,
+  });
+
+  // Students list for generation
+  const { data: students = [] } = useQuery({
+    queryKey: ["students-for-cert"],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
+      return data ?? [];
+    },
+    enabled: isAdmin,
+  });
+
+  // Courses list for generation
+  const { data: courses = [] } = useQuery({
+    queryKey: ["courses-for-cert"],
+    queryFn: async () => {
+      const { data } = await supabase.from("courses").select("id, title").order("title");
       return data ?? [];
     },
     enabled: isAdmin,
@@ -97,6 +123,37 @@ export default function Certificates() {
     },
   });
 
+  const generateCert = useMutation({
+    mutationFn: async () => {
+      if (!selectedStudent || !selectedCourse) throw new Error("Selecione aluno e curso");
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-certificate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ user_id: selectedStudent, course_id: selectedCourse }),
+        }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erro ao gerar certificado");
+      return json;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["certificates"] });
+      setGenerateOpen(false);
+      setSelectedStudent("");
+      setSelectedCourse("");
+      toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code}` });
+      // Open PDF in new tab
+      if (data.pdf_url) window.open(data.pdf_url, "_blank");
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
   const emitted = certificates.filter(c => c.status === "emitido").length;
   const pending = certificates.filter(c => c.status === "pendente").length;
 
@@ -114,9 +171,14 @@ export default function Certificates() {
           <p className="text-muted-foreground mt-1">Gerencie certificados e modelos</p>
         </div>
         {isAdmin && (
-          <Button onClick={() => setUploadOpen(true)} className="gap-2">
-            <Upload className="w-4 h-4" /> Enviar Modelo
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => setGenerateOpen(true)} className="gap-2">
+              <Plus className="w-4 h-4" /> Gerar Certificado
+            </Button>
+            <Button variant="outline" onClick={() => setUploadOpen(true)} className="gap-2">
+              <Upload className="w-4 h-4" /> Enviar Modelo
+            </Button>
+          </div>
         )}
       </div>
 
@@ -214,12 +276,12 @@ export default function Certificates() {
         <CertificatesTable search={search} setSearch={setSearch} filtered={filtered} isLoading={isLoading} />
       )}
 
-      {/* Upload dialog */}
+      {/* Upload template dialog */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Enviar Modelo de Certificado</DialogTitle>
-            <DialogDescription>Envie uma imagem (PNG, JPG) ou PDF como modelo base para os certificados.</DialogDescription>
+            <DialogDescription>Envie uma imagem (PNG, JPG) ou PDF como modelo base.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -240,6 +302,50 @@ export default function Certificates() {
             <Button variant="outline" onClick={() => setUploadOpen(false)}>Cancelar</Button>
             <Button onClick={() => uploadTemplate.mutate()} disabled={uploadTemplate.isPending || !templateFile || !templateName.trim()}>
               {uploadTemplate.isPending ? "Enviando..." : "Enviar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generate certificate dialog */}
+      <Dialog open={generateOpen} onOpenChange={setGenerateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerar Certificado</DialogTitle>
+            <DialogDescription>Selecione o aluno e o curso para gerar o certificado em PDF automaticamente.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Aluno</Label>
+              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
+                <SelectContent>
+                  {students.map((s) => (
+                    <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || "Sem nome"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Curso</Label>
+              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                <SelectTrigger><SelectValue placeholder="Selecione o curso" /></SelectTrigger>
+                <SelectContent>
+                  {courses.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGenerateOpen(false)}>Cancelar</Button>
+            <Button onClick={() => generateCert.mutate()} disabled={generateCert.isPending || !selectedStudent || !selectedCourse}>
+              {generateCert.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>
+              ) : (
+                <><Download className="w-4 h-4 mr-2" /> Gerar PDF</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

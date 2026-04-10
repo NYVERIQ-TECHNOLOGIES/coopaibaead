@@ -13,7 +13,7 @@ import Students from "@/pages/Students";
 import LibraryPage from "@/pages/LibraryPage";
 import Certificates from "@/pages/Certificates";
 import Attendance from "@/pages/Attendance";
-import Evaluations from "@/pages/Evaluations";
+
 import SupplementaryMaterials from "@/pages/SupplementaryMaterials";
 import StudentDashboard from "@/pages/StudentDashboard";
 import MediaManager from "@/pages/MediaManager";
@@ -46,7 +46,7 @@ const App = () => (
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin"]}><Attendance /></ProtectedRoute>} />
-              <Route path="/evaluations" element={<Evaluations />} />
+              
               <Route path="/materials" element={<SupplementaryMaterials />} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />

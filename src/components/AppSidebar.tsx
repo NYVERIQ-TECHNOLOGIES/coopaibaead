@@ -16,7 +16,7 @@ const navItems = [
   { label: "Alunos", icon: Users, path: "/students", adminOnly: true },
   
   { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
-  { label: "Avaliações", icon: BarChart3, path: "/evaluations" },
+  
   { label: "Materiais", icon: BookOpen, path: "/materials" },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
