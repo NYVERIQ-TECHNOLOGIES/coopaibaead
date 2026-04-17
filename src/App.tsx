@@ -42,18 +42,18 @@ const App = () => (
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetail />} />
               <Route path="/students" element={<ProtectedRoute allowedRoles={["admin"]}><Students /></ProtectedRoute>} />
-              
+
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin"]}><Attendance /></ProtectedRoute>} />
-              
+
               <Route path="/materials" element={<SupplementaryMaterials />} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
               <Route path="/forum" element={<Forum />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/student" element={<StudentDashboard />} />
+              <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

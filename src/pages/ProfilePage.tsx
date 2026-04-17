@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Camera, Save, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,9 +16,20 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [cooperativa, setCooperativa] = useState(profile?.cooperativa || "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
+  const [enrollmentNumber, setEnrollmentNumber] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("enrollment_number")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => setEnrollmentNumber(data?.enrollment_number || ""));
+  }, [user]);
 
   const initials = fullName
     ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -94,6 +105,10 @@ export default function ProfilePage() {
 
         {/* Fields */}
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <Label>Número de matrícula</Label>
+            <Input value={enrollmentNumber || "—"} disabled className="opacity-60 font-mono" />
+          </div>
           <div>
             <Label>Nome completo</Label>
             <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
