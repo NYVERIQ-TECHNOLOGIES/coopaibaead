@@ -20,10 +20,18 @@ export default function Login() {
 
   const redirectAfterLogin = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
-      navigate(roleData?.role === "admin" ? "/" : "/student");
+    if (!user) {
+      navigate("/login");
+      return;
     }
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    const role = roleData?.role;
+    if (role === "admin") navigate("/", { replace: true });
+    else navigate("/student", { replace: true });
   };
 
   const handleLogin = async (e: React.FormEvent) => {

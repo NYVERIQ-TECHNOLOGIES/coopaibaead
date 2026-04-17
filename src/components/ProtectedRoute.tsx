@@ -22,8 +22,19 @@ export default function ProtectedRoute({ children, allowedRoles }: Props) {
 
   if (!session) return <Navigate to="/login" replace />;
 
-  if (allowedRoles && role && !allowedRoles.includes(role)) {
-    return <Navigate to="/student" replace />;
+  // Esperar a role ser carregada antes de avaliar permissões
+  if (allowedRoles) {
+    if (!role) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      );
+    }
+    if (!allowedRoles.includes(role)) {
+      // Redirecionar para a home apropriada do papel atual
+      return <Navigate to={role === "admin" ? "/" : "/student"} replace />;
+    }
   }
 
   return <>{children}</>;

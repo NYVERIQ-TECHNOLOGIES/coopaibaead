@@ -9,17 +9,18 @@ import {
   ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, MessageSquare
 } from "lucide-react";
 
+// adminOnly: visível apenas para admin
+// studentOnly: visível apenas para aluno/cooperado
+// (sem flag): visível para ambos
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/", adminOnly: true },
   { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
   { label: "Cursos", icon: BookOpen, path: "/courses" },
   { label: "Alunos", icon: Users, path: "/students", adminOnly: true },
-  
   { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
-  
-  { label: "Materiais", icon: BookOpen, path: "/materials" },
+  { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
   { label: "Biblioteca", icon: Library, path: "/library" },
-  { label: "Certificados", icon: Award, path: "/certificates" },
+  { label: "Certificados", icon: Award, path: "/certificates", adminOnly: true },
   { label: "Fórum", icon: MessageSquare, path: "/forum" },
   { label: "Mídias", icon: Upload, path: "/media", adminOnly: true },
   { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
