@@ -11,8 +11,20 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [verifyingMfa, setVerifyingMfa] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const redirectAfterLogin = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
+      navigate(roleData?.role === "admin" ? "/" : "/student");
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,17 +38,45 @@ export default function Login() {
       return;
     }
 
-    // Fetch role to redirect properly
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).single();
-      if (roleData?.role === "admin") {
-        navigate("/");
-      } else {
-        navigate("/student");
+    // Check if MFA is required (assurance level upgrade needed)
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const totp = factors?.totp?.[0];
+      if (totp) {
+        setMfaFactorId(totp.id);
+        setMfaRequired(true);
+        setLoading(false);
+        return;
       }
     }
+
+    await redirectAfterLogin();
     setLoading(false);
+  };
+
+  const verifyMfa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mfaFactorId || mfaCode.length !== 6) return;
+    setVerifyingMfa(true);
+    const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
+    if (chErr || !ch) {
+      toast({ title: "Erro", description: chErr?.message, variant: "destructive" });
+      setVerifyingMfa(false);
+      return;
+    }
+    const { error } = await supabase.auth.mfa.verify({
+      factorId: mfaFactorId,
+      challengeId: ch.id,
+      code: mfaCode,
+    });
+    if (error) {
+      toast({ title: "Código inválido", description: error.message, variant: "destructive" });
+      setVerifyingMfa(false);
+      return;
+    }
+    await redirectAfterLogin();
+    setVerifyingMfa(false);
   };
 
   return (
