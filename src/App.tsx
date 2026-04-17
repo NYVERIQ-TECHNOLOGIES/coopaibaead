@@ -18,6 +18,7 @@ import SupplementaryMaterials from "@/pages/SupplementaryMaterials";
 import StudentDashboard from "@/pages/StudentDashboard";
 import MediaManager from "@/pages/MediaManager";
 import AdminManagement from "@/pages/AdminManagement";
+import AdminLogs from "@/pages/AdminLogs";
 import SettingsPage from "@/pages/SettingsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import Forum from "@/pages/Forum";
@@ -51,13 +52,16 @@ const App = () => (
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
 
+              {/* Certificados: alunos veem apenas os próprios; admins gerenciam tudo */}
+              <Route path="/certificates" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Certificates /></ProtectedRoute>} />
+
               {/* Restrito a admins */}
               <Route path="/students" element={<ProtectedRoute allowedRoles={["admin"]}><Students /></ProtectedRoute>} />
-              <Route path="/certificates" element={<ProtectedRoute allowedRoles={["admin"]}><Certificates /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin"]}><Attendance /></ProtectedRoute>} />
               <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin"]}><SupplementaryMaterials /></ProtectedRoute>} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
+              <Route path="/admin-logs" element={<ProtectedRoute allowedRoles={["admin"]}><AdminLogs /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

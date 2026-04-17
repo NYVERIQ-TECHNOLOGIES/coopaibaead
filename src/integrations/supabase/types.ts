@@ -191,6 +191,30 @@ export type Database = {
           },
         ]
       }
+      course_chat_messages: {
+        Row: {
+          content: string
+          course_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          course_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       course_evaluations: {
         Row: {
           course_id: string
@@ -612,9 +636,11 @@ export type Database = {
           avatar_url: string | null
           cooperativa: string | null
           created_at: string
+          deactivated_at: string | null
           enrollment_number: string | null
           full_name: string
           id: string
+          is_active: boolean
           updated_at: string
           user_id: string
         }
@@ -622,9 +648,11 @@ export type Database = {
           avatar_url?: string | null
           cooperativa?: string | null
           created_at?: string
+          deactivated_at?: string | null
           enrollment_number?: string | null
           full_name?: string
           id?: string
+          is_active?: boolean
           updated_at?: string
           user_id: string
         }
@@ -632,9 +660,11 @@ export type Database = {
           avatar_url?: string | null
           cooperativa?: string | null
           created_at?: string
+          deactivated_at?: string | null
           enrollment_number?: string | null
           full_name?: string
           id?: string
+          is_active?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -736,6 +766,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_course: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
       get_question_answer: { Args: { _question_id: string }; Returns: string }
       has_role: {
         Args: {

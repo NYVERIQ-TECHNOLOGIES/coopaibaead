@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
+import CourseChat from "@/components/CourseChat";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
@@ -646,6 +647,11 @@ export default function CourseDetail() {
           </div>
         )}
       </div>
+
+      {/* ========== COURSE CHAT ========== */}
+      {course && courseId && (
+        <CourseChat courseId={courseId} cooperadoOnly={course.cooperado_only} />
+      )}
 
       {/* ===== DIALOGS ===== */}
       <Dialog open={moduleDialogOpen} onOpenChange={setModuleDialogOpen}>

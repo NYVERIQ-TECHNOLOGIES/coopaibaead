@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, Download, Trash2, FileBarChart } from "lucide-react";
+import { Search, Download, FileBarChart, Power, PowerOff, FileSpreadsheet } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,8 @@ import {
 
 export default function Students() {
   const [search, setSearch] = useState("");
+  const [showInactive, setShowInactive] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -22,7 +24,7 @@ export default function Students() {
     queryFn: async () => {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number")
+        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at")
         .order("created_at", { ascending: false });
       if (!profiles) return [];
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
@@ -31,43 +33,46 @@ export default function Students() {
     },
   });
 
-  const deleteMut = useMutation({
-    mutationFn: async (userId: string) => {
+  const toggleActiveMut = useMutation({
+    mutationFn: async ({ userId, reactivate }: { userId: string; reactivate: boolean }) => {
       const { data, error } = await supabase.functions.invoke("delete-user", {
-        body: { user_id: userId },
+        body: { user_id: userId, reactivate },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
     },
-    onSuccess: () => {
+    onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["students-list"] });
-      toast({ title: "Aluno excluído" });
+      toast({ title: vars.reactivate ? "Aluno reativado" : "Aluno desativado" });
     },
     onError: (e: any) =>
-      toast({ title: "Erro ao excluir", description: e.message, variant: "destructive" }),
+      toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  const filtered = students.filter(
-    (s) =>
+  const filtered = students.filter((s) => {
+    const matchesSearch =
       (s.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (s.enrollment_number || "").toLowerCase().includes(search.toLowerCase())
-  );
+      (s.enrollment_number || "").toLowerCase().includes(search.toLowerCase());
+    const matchesActive = showInactive ? true : s.is_active !== false;
+    return matchesSearch && matchesActive;
+  });
 
-  const totalAlunos = students.filter((s) => s.role !== "admin").length;
-  const totalCooperados = students.filter((s) => s.role === "cooperado").length;
+  const totalAlunos = students.filter((s) => s.role !== "admin" && s.is_active !== false).length;
+  const totalCooperados = students.filter((s) => s.role === "cooperado" && s.is_active !== false).length;
   const totalAdmins = students.filter((s) => s.role === "admin").length;
+  const totalInativos = students.filter((s) => s.is_active === false).length;
 
   const exportCSV = () => {
-    const header = ["Matrícula", "Nome", "Tipo", "Cooperativa", "Data de Cadastro"];
+    const header = ["Matrícula", "Nome", "Tipo", "Cooperativa", "Status", "Data de Cadastro"];
     const rows = filtered.map((s) => [
       s.enrollment_number || "",
       (s.full_name || "").replace(/"/g, '""'),
       s.role,
       (s.cooperativa || "").replace(/"/g, '""'),
+      s.is_active === false ? "Inativo" : "Ativo",
       new Date(s.created_at).toLocaleDateString("pt-BR"),
     ]);
-    const csv =
-      [header, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+    const csv = [header, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -77,6 +82,114 @@ export default function Students() {
     URL.revokeObjectURL(url);
   };
 
+  const exportFullReport = async () => {
+    setGenerating(true);
+    try {
+      const userIds = filtered.map((s) => s.user_id);
+      if (userIds.length === 0) {
+        toast({ title: "Nenhum aluno para exportar" });
+        setGenerating(false);
+        return;
+      }
+
+      // Buscar enrollments, certificates e exam_attempts em paralelo
+      const [enrollRes, certRes, attemptsRes] = await Promise.all([
+        supabase
+          .from("enrollments")
+          .select("user_id, progress, courses(title)")
+          .in("user_id", userIds),
+        supabase
+          .from("certificates")
+          .select("user_id, status")
+          .in("user_id", userIds)
+          .eq("status", "emitido"),
+        supabase
+          .from("exam_attempts")
+          .select("user_id, score")
+          .in("user_id", userIds),
+      ]);
+
+      const enrollMap = new Map<string, Array<{ title: string; progress: number }>>();
+      (enrollRes.data ?? []).forEach((e: any) => {
+        const arr = enrollMap.get(e.user_id) ?? [];
+        arr.push({ title: e.courses?.title ?? "—", progress: e.progress ?? 0 });
+        enrollMap.set(e.user_id, arr);
+      });
+
+      const certMap = new Map<string, number>();
+      (certRes.data ?? []).forEach((c: any) => {
+        certMap.set(c.user_id, (certMap.get(c.user_id) ?? 0) + 1);
+      });
+
+      const scoreMap = new Map<string, { sum: number; count: number }>();
+      (attemptsRes.data ?? []).forEach((a: any) => {
+        const cur = scoreMap.get(a.user_id) ?? { sum: 0, count: 0 };
+        cur.sum += Number(a.score) || 0;
+        cur.count += 1;
+        scoreMap.set(a.user_id, cur);
+      });
+
+      const header = [
+        "Matrícula",
+        "Nome",
+        "Tipo",
+        "Cooperativa",
+        "Status",
+        "Data Cadastro",
+        "Cursos Matriculados",
+        "Progresso Médio (%)",
+        "Cursos com Detalhe",
+        "Certificados Emitidos",
+        "Avaliações Realizadas",
+        "Nota Média",
+      ];
+
+      const rows = filtered.map((s) => {
+        const enrolls = enrollMap.get(s.user_id) ?? [];
+        const avgProgress =
+          enrolls.length > 0
+            ? Math.round(enrolls.reduce((a, b) => a + b.progress, 0) / enrolls.length)
+            : 0;
+        const courseDetails = enrolls
+          .map((e) => `${e.title} (${e.progress}%)`)
+          .join(" | ");
+        const score = scoreMap.get(s.user_id);
+        const avgScore =
+          score && score.count > 0 ? (score.sum / score.count).toFixed(1) : "—";
+        return [
+          s.enrollment_number || "",
+          (s.full_name || "").replace(/"/g, '""'),
+          s.role,
+          (s.cooperativa || "").replace(/"/g, '""'),
+          s.is_active === false ? "Inativo" : "Ativo",
+          new Date(s.created_at).toLocaleDateString("pt-BR"),
+          enrolls.length,
+          avgProgress,
+          courseDetails.replace(/"/g, '""'),
+          certMap.get(s.user_id) ?? 0,
+          score?.count ?? 0,
+          avgScore,
+        ];
+      });
+
+      const csv = [header, ...rows]
+        .map((r) => r.map((v) => `"${v}"`).join(","))
+        .join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `relatorio-alunos-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "Relatório completo exportado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar relatório", description: e.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -84,18 +197,25 @@ export default function Students() {
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Alunos</h1>
           <p className="text-muted-foreground mt-1">{students.length} usuários cadastrados</p>
         </div>
-        <Button onClick={exportCSV} variant="outline" className="gap-2">
-          <Download className="w-4 h-4" /> Exportar CSV
-        </Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button onClick={exportCSV} variant="outline" className="gap-2">
+            <Download className="w-4 h-4" /> CSV Simples
+          </Button>
+          <Button onClick={exportFullReport} disabled={generating} className="gap-2">
+            <FileSpreadsheet className="w-4 h-4" />
+            {generating ? "Gerando..." : "Relatório Completo"}
+          </Button>
+        </div>
       </div>
 
       {/* Report cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total", value: students.length, color: "bg-primary/10 text-primary" },
           { label: "Alunos", value: totalAlunos, color: "bg-secondary/10 text-secondary" },
           { label: "Cooperados", value: totalCooperados, color: "bg-accent/10 text-accent" },
           { label: "Admins", value: totalAdmins, color: "bg-destructive/10 text-destructive" },
+          { label: "Inativos", value: totalInativos, color: "bg-muted text-muted-foreground" },
         ].map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${s.color}`}>
@@ -109,15 +229,26 @@ export default function Students() {
         ))}
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="Buscar por nome ou matrícula..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-        />
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou matrícula..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+            className="rounded border-border"
+          />
+          Mostrar inativos
+        </label>
       </div>
 
       {isLoading ? (
@@ -132,75 +263,95 @@ export default function Students() {
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aluno</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipo</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cooperativa</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cadastro</th>
                   <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((s, i) => (
-                  <motion.tr
-                    key={s.user_id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.02 }}
-                    className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="py-3 px-4 text-xs font-mono text-muted-foreground">
-                      {s.enrollment_number || "—"}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-primary-foreground">
-                            {s.full_name?.charAt(0) || "U"}
-                          </span>
+                {filtered.map((s, i) => {
+                  const inactive = s.is_active === false;
+                  const isAdmin = s.role === "admin";
+                  const isSelf = s.user_id === user?.id;
+                  return (
+                    <motion.tr
+                      key={s.user_id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.02 }}
+                      className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${inactive ? "opacity-60" : ""}`}
+                    >
+                      <td className="py-3 px-4 text-xs font-mono text-muted-foreground">
+                        {s.enrollment_number || "—"}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-primary-foreground">
+                              {s.full_name?.charAt(0) || "U"}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium text-card-foreground">{s.full_name || "Sem nome"}</p>
                         </div>
-                        <p className="text-sm font-medium text-card-foreground">{s.full_name || "Sem nome"}</p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                        {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{s.cooperativa || "—"}</td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">
-                      {new Date(s.created_at).toLocaleDateString("pt-BR")}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      {s.user_id !== user?.id && s.role !== "admin" && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="ghost" className="text-destructive hover:bg-destructive/10">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir aluno?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir <strong>{s.full_name}</strong> ({s.enrollment_number})?
-                                Esta ação removerá permanentemente o usuário, perfil e funções.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteMut.mutate(s.user_id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                          {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground">{s.cooperativa || "—"}</td>
+                      <td className="py-3 px-4">
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${inactive ? "bg-muted text-muted-foreground" : "bg-success/10 text-success"}`}>
+                          {inactive ? "Inativo" : "Ativo"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {new Date(s.created_at).toLocaleDateString("pt-BR")}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {!isSelf && !isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className={inactive ? "text-success hover:bg-success/10" : "text-destructive hover:bg-destructive/10"}
                               >
-                                Excluir
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </td>
-                  </motion.tr>
-                ))}
+                                {inactive ? <Power className="w-4 h-4" /> : <PowerOff className="w-4 h-4" />}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {inactive ? "Reativar aluno?" : "Desativar aluno?"}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {inactive ? (
+                                    <>Reativar <strong>{s.full_name}</strong> ({s.enrollment_number})? O usuário poderá acessar a plataforma novamente.</>
+                                  ) : (
+                                    <>Desativar <strong>{s.full_name}</strong> ({s.enrollment_number})? O usuário não poderá mais entrar, mas todo o histórico de cursos, certificados e notas será preservado.</>
+                                  )}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => toggleActiveMut.mutate({ userId: s.user_id, reactivate: inactive })}
+                                  className={inactive ? "bg-success text-success-foreground hover:bg-success/90" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+                                >
+                                  {inactive ? "Reativar" : "Desativar"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
