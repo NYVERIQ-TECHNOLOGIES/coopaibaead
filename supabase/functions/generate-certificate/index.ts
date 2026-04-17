@@ -143,7 +143,8 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("generate-certificate internal error:", err);
+    return new Response(JSON.stringify({ error: "Ocorreu um erro interno ao gerar o certificado." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
