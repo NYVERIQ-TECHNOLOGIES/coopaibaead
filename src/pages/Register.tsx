@@ -29,13 +29,15 @@ export default function Register() {
 
     const fullName = `${firstName} ${lastName}`.trim();
 
+    // SECURITY: Never send `role` in signup metadata. Role is always set to 'aluno'
+    // server-side by the handle_new_user trigger. Admin elevation only via create-admin
+    // edge function (which verifies caller is already an admin).
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
-          role: userType,
           cooperativa: userType === "cooperado" ? cooperativa : null,
         },
         emailRedirectTo: window.location.origin,
