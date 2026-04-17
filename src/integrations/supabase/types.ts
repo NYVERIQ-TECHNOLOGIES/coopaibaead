@@ -640,6 +640,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_mfa_factors: {
+        Row: {
+          factor_id: string
+          factor_type: string
+          friendly_name: string | null
+          id: string
+          user_id: string
+          verified_at: string
+        }
+        Insert: {
+          factor_id: string
+          factor_type?: string
+          friendly_name?: string | null
+          id?: string
+          user_id: string
+          verified_at?: string
+        }
+        Update: {
+          factor_id?: string
+          factor_type?: string
+          friendly_name?: string | null
+          id?: string
+          user_id?: string
+          verified_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

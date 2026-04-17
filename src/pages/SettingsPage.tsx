@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff } from "lucide-react";
+import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import TwoFactorSetup from "@/components/TwoFactorSetup";
 
 export default function SettingsPage() {
   const { profile, user } = useAuth();
@@ -118,7 +119,7 @@ export default function SettingsPage() {
                   type={showPw ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  minLength={6}
+                  minLength={8}
                 />
                 <button
                   type="button"
@@ -127,12 +128,21 @@ export default function SettingsPage() {
                 >
                   {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Mínimo 8 caracteres. Senhas vazadas em violações conhecidas serão rejeitadas.
+                </p>
               </div>
             </div>
-            <Button onClick={changePassword} disabled={changingPw || newPassword.length < 6} className="gap-2">
+            <Button onClick={changePassword} disabled={changingPw || newPassword.length < 8} className="gap-2">
               <Lock className="w-4 h-4" /> {changingPw ? "Alterando..." : "Alterar Senha"}
             </Button>
           </Section>
+
+          <div className="mt-6">
+            <Section title="Autenticação de 2 fatores" desc="Adicione uma camada extra de proteção à sua conta" icon={ShieldCheck}>
+              <TwoFactorSetup />
+            </Section>
+          </div>
         </TabsContent>
 
         <TabsContent value="notifications">

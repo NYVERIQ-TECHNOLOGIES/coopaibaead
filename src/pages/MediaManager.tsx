@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { getSignedUrl } from "@/lib/storage";
 
 type FileType = "video" | "pdf" | "video_aula";
 
@@ -82,15 +83,14 @@ export default function MediaManager() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
-
+      // Store storage path; signed URL is generated when previewing
       const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(1) + " MB";
 
       const { error: insertError } = await supabase.from("media_files").insert({
         title,
         description: description || null,
         file_type: fileType,
-        file_url: publicUrl,
+        file_url: path,
         file_size: fileSizeMB,
         course_id: courseName || null,
         module_name: moduleName || null,
@@ -197,7 +197,7 @@ export default function MediaManager() {
                 </div>
                 <div className="flex gap-2 mt-3 pt-3 border-t border-border">
                   <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs"
-                    onClick={() => setPreviewUrl(file.file_url)}>
+                    onClick={async () => setPreviewUrl(await getSignedUrl(file.file_url, "media"))}>
                     <Eye className="w-3 h-3" /> Visualizar
                   </Button>
                   {isAdmin && (

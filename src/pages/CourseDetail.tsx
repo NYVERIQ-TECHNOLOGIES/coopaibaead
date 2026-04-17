@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import StudentExamDialog from "@/components/StudentExamDialog";
+import SignedImage from "@/components/SignedImage";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
@@ -182,8 +183,7 @@ export default function CourseDetail() {
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from("media").upload(path, file);
     if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
-    return publicUrl;
+    return path;
   };
 
   const invalidateAll = () => {
@@ -410,7 +410,7 @@ export default function CourseDetail() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative rounded-2xl overflow-hidden h-48 lg:h-64">
         {course.image ? (
-          <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+          <SignedImage path={course.image} alt={course.title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">Sem imagem</div>
         )}

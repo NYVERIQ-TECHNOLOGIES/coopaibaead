@@ -18,6 +18,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import SignedImage from "@/components/SignedImage";
 
 interface Course {
   id: string;
@@ -62,8 +63,8 @@ export default function Courses() {
     const path = `courses/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from("media").upload(path, file);
     if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
-    return publicUrl;
+    // Store storage path; signed URL is generated on render
+    return path;
   };
 
   const saveMutation = useMutation({
@@ -163,7 +164,7 @@ export default function Courses() {
               <Link to={`/courses/${course.id}`}>
                 <div className="relative h-40 bg-muted">
                   {course.image ? (
-                    <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+                    <SignedImage path={course.image} alt={course.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Sem imagem</div>
                   )}

@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import SignedImage from "@/components/SignedImage";
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth();
@@ -89,7 +90,7 @@ export default function StudentDashboard() {
               <Link key={course.id} to={`/courses/${course.id}`}>
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   className="bg-card rounded-xl shadow-card border border-border hover:shadow-elevated transition-shadow overflow-hidden">
-                  {course.image && <img src={course.image} alt={course.title} className="w-full h-36 object-cover" />}
+                  {course.image && <SignedImage path={course.image} alt={course.title} className="w-full h-36 object-cover" />}
                   <div className="p-4">
                     <h3 className="font-heading font-semibold text-card-foreground">{course.title}</h3>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{course.description}</p>
