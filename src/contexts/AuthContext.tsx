@@ -29,7 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       supabase.from("user_roles").select("role").eq("user_id", userId).single(),
     ]);
     if (profileRes.data) setProfile(profileRes.data);
-    if (roleRes.data) setRole(roleRes.data.role);
+    if (roleRes.data) {
+      setRole(roleRes.data.role);
+      // Log admin access (server-side function silently no-ops for non-admins)
+      if (roleRes.data.role === "admin") {
+        supabase.rpc("log_admin_access", { _user_agent: navigator.userAgent }).then(() => {});
+      }
+    }
   };
 
   useEffect(() => {
