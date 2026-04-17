@@ -409,7 +409,7 @@ export default function CourseDetail() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         className="relative rounded-2xl overflow-hidden h-48 lg:h-64">
         {course.image ? (
-          <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+          <SignedImage path={course.image} alt={course.title} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">Sem imagem</div>
         )}
