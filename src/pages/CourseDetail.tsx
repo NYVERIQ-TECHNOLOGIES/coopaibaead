@@ -22,6 +22,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import StudentExamDialog from "@/components/StudentExamDialog";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
@@ -150,6 +151,16 @@ export default function CourseDetail() {
   const [optionC, setOptionC] = useState("");
   const [optionD, setOptionD] = useState("");
   const [correctOption, setCorrectOption] = useState("a");
+
+  // ---- Student exam state ----
+  const [examOpen, setExamOpen] = useState(false);
+  const [examEvalId, setExamEvalId] = useState<string | null>(null);
+  const [examEvalTitle, setExamEvalTitle] = useState("");
+  const startExam = (ev: any) => {
+    setExamEvalId(ev.id);
+    setExamEvalTitle(ev.title);
+    setExamOpen(true);
+  };
 
   // ---- Fetch questions for selected evaluation ----
   const { data: questions = [], isLoading: loadingQuestions } = useQuery({
@@ -542,7 +553,7 @@ export default function CourseDetail() {
                       </div>
                     </div>
                   </div>
-                  {isAdmin && (
+                  {isAdmin ? (
                     <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar Questões" onClick={() => openQuestions(ev)}>
                         <ListChecks className="w-3.5 h-3.5 text-primary" />
@@ -553,6 +564,12 @@ export default function CourseDetail() {
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditEval(ev)}><Edit className="w-3.5 h-3.5" /></Button>
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteEvalMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
                     </div>
+                  ) : (
+                    ev.status === "publicada" && (
+                      <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1">
+                        <ListChecks className="w-3.5 h-3.5" /> Responder
+                      </Button>
+                    )
                   )}
                 </div>
               ))}
