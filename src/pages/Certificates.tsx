@@ -35,16 +35,21 @@ export default function Certificates() {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
 
-  // Certificates
+  // Certificates - alunos veem apenas os próprios emitidos; admins veem todos
   const { data: certificates = [], isLoading } = useQuery({
-    queryKey: ["certificates"],
+    queryKey: ["certificates", isAdmin, user?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      let query = supabase
         .from("certificates")
         .select("*, courses(title), profiles!certificates_user_id_fkey(full_name)")
         .order("created_at", { ascending: false });
+      if (!isAdmin && user) {
+        query = query.eq("user_id", user.id).eq("status", "emitido");
+      }
+      const { data } = await query;
       return data ?? [];
     },
+    enabled: isAdmin || !!user,
   });
 
   // Templates

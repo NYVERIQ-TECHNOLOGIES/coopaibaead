@@ -24,6 +24,24 @@ export default function Login() {
       navigate("/login");
       return;
     }
+
+    // Block deactivated users
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (profile && profile.is_active === false) {
+      await supabase.auth.signOut();
+      toast({
+        title: "Conta desativada",
+        description: "Sua conta foi desativada. Entre em contato com o administrador.",
+        variant: "destructive",
+      });
+      navigate("/login", { replace: true });
+      return;
+    }
+
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")

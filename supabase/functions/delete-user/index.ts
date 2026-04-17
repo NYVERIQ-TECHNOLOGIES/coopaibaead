@@ -5,6 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// IMPORTANT: Despite the function name, this performs a SOFT DELETE (deactivation)
+// to preserve historical records (enrollments, certificates, exam attempts).
+// Set { reactivate: true } in body to re-enable a previously deactivated user.
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -16,7 +19,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate caller is an admin
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Não autorizado" }), {
@@ -37,7 +39,7 @@ Deno.serve(async (req) => {
       .select("role")
       .eq("user_id", user.id)
       .eq("role", "admin")
-      .single();
+      .maybeSingle();
     if (!roleData) {
       return new Response(JSON.stringify({ error: "Apenas administradores" }), {
         status: 403,
@@ -45,7 +47,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { user_id } = await req.json();
+    const { user_id, reactivate } = await req.json();
     if (!user_id || typeof user_id !== "string") {
       return new Response(JSON.stringify({ error: "user_id é obrigatório" }), {
         status: 400,
@@ -54,29 +56,58 @@ Deno.serve(async (req) => {
     }
 
     if (user_id === user.id) {
-      return new Response(JSON.stringify({ error: "Você não pode excluir sua própria conta" }), {
+      return new Response(JSON.stringify({ error: "Você não pode alterar sua própria conta" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Delete public rows first (no FK cascade configured on auth.users)
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
-    await supabaseAdmin.from("profiles").delete().eq("user_id", user_id);
-
-    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(user_id);
-    if (delErr) {
-      return new Response(JSON.stringify({ error: delErr.message }), {
+    // Block deactivating other admins
+    const { data: targetRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user_id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (targetRole) {
+      return new Response(JSON.stringify({ error: "Não é possível alterar contas de administradores" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    const isReactivate = reactivate === true;
+
+    // Soft delete: mark profile as inactive (preserves all historical data)
+    const { error: profErr } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        is_active: !isReactivate ? false : true,
+        deactivated_at: !isReactivate ? new Date().toISOString() : null,
+      })
+      .eq("user_id", user_id);
+    if (profErr) {
+      return new Response(JSON.stringify({ error: profErr.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Force sign-out by invalidating refresh tokens (only on deactivate)
+    if (!isReactivate) {
+      try {
+        await supabaseAdmin.auth.admin.signOut(user_id, "global");
+      } catch (_e) {
+        // best effort
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, action: isReactivate ? "reactivated" : "deactivated" }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (err) {
-    console.error("delete-user error:", err);
+    console.error("delete-user (soft) error:", err);
     return new Response(JSON.stringify({ error: "Ocorreu um erro interno." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
