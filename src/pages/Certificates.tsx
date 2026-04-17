@@ -19,6 +19,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SignedImage from "@/components/SignedImage";
 
 export default function Certificates() {
   const [search, setSearch] = useState("");
@@ -86,10 +87,9 @@ export default function Certificates() {
       const path = `templates/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("media").upload(path, templateFile);
       if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("media").getPublicUrl(path);
       const { error } = await supabase.from("certificate_templates").insert({
         name: templateName.trim(),
-        file_url: urlData.publicUrl,
+        file_url: path,
         uploaded_by: user?.id,
       });
       if (error) throw error;
@@ -226,7 +226,7 @@ export default function Certificates() {
                     className={`bg-card rounded-xl border shadow-card overflow-hidden transition-all ${tpl.active ? "border-primary/50" : "border-border opacity-70"}`}>
                     <div className="aspect-video bg-muted/30 flex items-center justify-center overflow-hidden">
                       {tpl.file_url.match(/\.(png|jpg|jpeg|webp|svg)$/i) ? (
-                        <img src={tpl.file_url} alt={tpl.name} className="w-full h-full object-contain" />
+                        <SignedImage path={tpl.file_url} alt={tpl.name} className="w-full h-full object-contain" />
                       ) : (
                         <FileImage className="w-16 h-16 text-muted-foreground/30" />
                       )}

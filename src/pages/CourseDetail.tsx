@@ -182,8 +182,7 @@ export default function CourseDetail() {
     const path = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from("media").upload(path, file);
     if (error) throw error;
-    const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(path);
-    return publicUrl;
+    return path;
   };
 
   const invalidateAll = () => {
