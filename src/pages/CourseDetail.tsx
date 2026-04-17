@@ -1003,6 +1003,14 @@ export default function CourseDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Student exam-taking dialog */}
+      <StudentExamDialog
+        open={examOpen}
+        onOpenChange={setExamOpen}
+        evaluationId={examEvalId}
+        evaluationTitle={examEvalTitle}
+      />
     </div>
   );
 }
