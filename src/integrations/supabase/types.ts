@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_access_logs: {
+        Row: {
+          accessed_at: string
+          id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accessed_at?: string
+          id?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accessed_at?: string
+          id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           course_id: string
@@ -423,6 +444,39 @@ export type Database = {
           },
         ]
       }
+      exam_attempts: {
+        Row: {
+          answers: Json
+          correct_count: number
+          evaluation_id: string
+          id: string
+          score: number
+          submitted_at: string
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          correct_count?: number
+          evaluation_id: string
+          id?: string
+          score?: number
+          submitted_at?: string
+          total_questions?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          correct_count?: number
+          evaluation_id?: string
+          id?: string
+          score?: number
+          submitted_at?: string
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       forum_replies: {
         Row: {
           content: string
@@ -558,6 +612,7 @@ export type Database = {
           avatar_url: string | null
           cooperativa: string | null
           created_at: string
+          enrollment_number: string | null
           full_name: string
           id: string
           updated_at: string
@@ -567,6 +622,7 @@ export type Database = {
           avatar_url?: string | null
           cooperativa?: string | null
           created_at?: string
+          enrollment_number?: string | null
           full_name?: string
           id?: string
           updated_at?: string
@@ -576,6 +632,7 @@ export type Database = {
           avatar_url?: string | null
           cooperativa?: string | null
           created_at?: string
+          enrollment_number?: string | null
           full_name?: string
           id?: string
           updated_at?: string
@@ -659,6 +716,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }
+      submit_exam_answers: {
+        Args: { _answers: Json; _evaluation_id: string }
+        Returns: Json
       }
     }
     Enums: {
