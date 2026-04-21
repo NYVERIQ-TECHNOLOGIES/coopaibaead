@@ -38,10 +38,11 @@ const bookTypeIcons: Record<string, any> = { pdf: FileText, video: Video, audio:
 
 export default function CourseDetail() {
   const { id: courseId } = useParams<{ id: string }>();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isAdmin = role === "admin";
+  const [generatingCert, setGeneratingCert] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState({ modules: true, evaluations: true, books: true });
   const toggleSection = (key: keyof typeof expandedSections) =>
