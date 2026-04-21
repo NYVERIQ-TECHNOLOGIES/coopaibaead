@@ -548,7 +548,36 @@ export default function CourseDetail() {
         <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
           <div className="h-full gradient-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
         </div>
-        <p className="text-xs text-muted-foreground mt-2">{completedLessons} de {totalLessons} aulas concluídas</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          {completedUnits} de {totalUnits} itens concluídos ({totalLessons} aulas + {publishedEvals.length} avaliações)
+        </p>
+
+        {!isAdmin && (
+          <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-3">
+            {existingCert ? (
+              <Link to="/certificates" className="inline-flex">
+                <Button size="sm" className="gradient-primary text-primary-foreground gap-2">
+                  <Award className="w-4 h-4" /> Ver Certificado ({existingCert.code})
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleGenerateCertificate}
+                disabled={!isCourseComplete || generatingCert}
+                className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
+              >
+                {generatingCert ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
+                {generatingCert ? "Gerando..." : "Gerar Certificado"}
+              </Button>
+            )}
+            {!isCourseComplete && !existingCert && (
+              <span className="text-xs text-muted-foreground">
+                Conclua 100% do curso para liberar o certificado.
+              </span>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* ========== MODULES & LESSONS ========== */}
