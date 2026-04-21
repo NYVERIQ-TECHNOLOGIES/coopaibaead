@@ -619,15 +619,27 @@ export default function CourseDetail() {
                   <div className="divide-y divide-border/50">
                     {(mod.lessons || []).map((lesson: any) => {
                       const Icon = typeIcons[lesson.type] || FileText;
+                      const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
                       return (
                         <div key={lesson.id}
                           className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
                           onClick={() => lesson.content_url && openContent(lesson.content_url, lesson.type)}>
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${lesson.completed ? "bg-success/10" : "bg-muted"}`}>
-                            {lesson.completed ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
-                          </div>
+                          {!isAdmin ? (
+                            <button
+                              type="button"
+                              title={userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                              onClick={(e) => { e.stopPropagation(); toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
+                            >
+                              {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                            </button>
+                          ) : (
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${userCompleted ? "bg-success/10" : "bg-muted"}`}>
+                              {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${lesson.completed ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
+                            <p className={`text-sm ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                           </div>
                           {lesson.content_url && (
                             <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
