@@ -43,17 +43,75 @@ Deno.serve(async (req) => {
       .eq("user_id", user.id)
       .eq("role", "admin")
       .maybeSingle();
+    const isAdmin = !!roleData;
 
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403,
+    const body = await req.json();
+    let { user_id, course_id } = body;
+    if (!course_id) {
+      return new Response(JSON.stringify({ error: "course_id required" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { user_id, course_id } = await req.json();
-    if (!user_id || !course_id) {
-      return new Response(JSON.stringify({ error: "user_id and course_id required" }), {
+    // Non-admins may only request their own certificate, and only at 100% progress
+    if (!isAdmin) {
+      user_id = user.id;
+
+      // Count total lessons in course
+      const { data: mods } = await supabaseAdmin
+        .from("course_modules")
+        .select("id")
+        .eq("course_id", course_id);
+      const moduleIds = (mods || []).map((m: any) => m.id);
+      let totalLessons = 0;
+      if (moduleIds.length > 0) {
+        const { count } = await supabaseAdmin
+          .from("course_lessons")
+          .select("id", { count: "exact", head: true })
+          .in("module_id", moduleIds);
+        totalLessons = count ?? 0;
+      }
+
+      const { data: lessons } = moduleIds.length > 0 ? await supabaseAdmin
+        .from("course_lessons")
+        .select("id")
+        .in("module_id", moduleIds) : { data: [] as any[] };
+      const lessonIds = (lessons || []).map((l: any) => l.id);
+
+      let completedLessons = 0;
+      if (lessonIds.length > 0) {
+        const { count } = await supabaseAdmin
+          .from("lesson_completions")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .in("lesson_id", lessonIds);
+        completedLessons = count ?? 0;
+      }
+
+      if (totalLessons === 0 || completedLessons < totalLessons) {
+        return new Response(JSON.stringify({ error: "Conclua 100% do curso antes de gerar o certificado." }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent duplicates
+      const { data: existing } = await supabaseAdmin
+        .from("certificates")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("course_id", course_id)
+        .eq("status", "emitido")
+        .maybeSingle();
+      if (existing) {
+        return new Response(JSON.stringify({ error: "Certificado já emitido para este curso." }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (!user_id) {
+      return new Response(JSON.stringify({ error: "user_id required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
