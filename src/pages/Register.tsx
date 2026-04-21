@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield, Camera, Loader2 } from "lucide-react";
 import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,8 +16,24 @@ export default function Register() {
   const [cooperativa, setCooperativa] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Foto muito grande", description: "O arquivo deve ter no máximo 5MB.", variant: "destructive" });
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +48,7 @@ export default function Register() {
     // SECURITY: Never send `role` in signup metadata. Role is always set to 'aluno'
     // server-side by the handle_new_user trigger. Admin elevation only via create-admin
     // edge function (which verifies caller is already an admin).
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -50,10 +66,29 @@ export default function Register() {
       return;
     }
 
+    // Upload optional profile photo if a session is available right after signup
+    const newUserId = signUpData.user?.id;
+    if (photoFile && newUserId) {
+      try {
+        const ext = photoFile.name.split(".").pop();
+        const path = `${newUserId}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("avatars").upload(path, photoFile, { upsert: true });
+        if (!upErr) {
+          const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+          // Profile row is created by handle_new_user trigger; update its avatar_url
+          await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", newUserId);
+        }
+      } catch {
+        // Non-blocking — user can update photo later in profile
+      }
+    }
+
     toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." });
     navigate("/login");
     setLoading(false);
   };
+
+  const initials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "U";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -70,13 +105,13 @@ export default function Register() {
 
           {/* Type selector */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <button onClick={() => setUserType("aluno")}
+            <button type="button" onClick={() => setUserType("aluno")}
               className={`p-4 rounded-xl border-2 transition-all text-center ${userType === "aluno" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"}`}>
               <User className={`w-6 h-6 mx-auto mb-2 ${userType === "aluno" ? "text-primary" : "text-muted-foreground"}`} />
               <p className={`text-sm font-semibold ${userType === "aluno" ? "text-primary" : "text-card-foreground"}`}>Aluno</p>
               <p className="text-xs text-muted-foreground mt-1">Acesso aos cursos gerais</p>
             </button>
-            <button onClick={() => setUserType("cooperado")}
+            <button type="button" onClick={() => setUserType("cooperado")}
               className={`p-4 rounded-xl border-2 transition-all text-center ${userType === "cooperado" ? "border-secondary bg-secondary/5" : "border-border hover:border-muted-foreground"}`}>
               <Shield className={`w-6 h-6 mx-auto mb-2 ${userType === "cooperado" ? "text-secondary" : "text-muted-foreground"}`} />
               <p className={`text-sm font-semibold ${userType === "cooperado" ? "text-secondary" : "text-card-foreground"}`}>Cooperado</p>
@@ -85,6 +120,27 @@ export default function Register() {
           </div>
 
           <form className="space-y-4" onSubmit={handleRegister}>
+            {/* Photo picker */}
+            <div className="flex flex-col items-center gap-2 mb-2">
+              <button
+                type="button"
+                onClick={() => photoRef.current?.click()}
+                className="relative w-20 h-20 rounded-full border-4 border-primary/20 bg-primary/10 flex items-center justify-center overflow-hidden group cursor-pointer"
+                aria-label="Adicionar foto de perfil"
+              >
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Pré-visualização" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-lg font-bold text-primary">{initials}</span>
+                )}
+                <span className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="w-5 h-5 text-primary-foreground" />
+                </span>
+              </button>
+              <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+              <p className="text-xs text-muted-foreground">Foto de perfil (opcional)</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-card-foreground mb-1.5 block">Nome</label>
@@ -135,7 +191,7 @@ export default function Register() {
 
             <button type="submit" disabled={loading}
               className="w-full gradient-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50">
-              {loading ? "Criando conta..." : "Criar Conta"} {!loading && <ArrowRight className="w-4 h-4" />}
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando conta...</> : <>Criar Conta <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
 

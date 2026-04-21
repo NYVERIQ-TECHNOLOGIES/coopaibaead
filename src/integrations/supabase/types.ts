@@ -800,6 +800,10 @@ export type Database = {
         Returns: boolean
       }
       log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }
+      reset_course_progress: {
+        Args: { _course_id: string }
+        Returns: undefined
+      }
       submit_exam_answers: {
         Args: { _answers: Json; _evaluation_id: string }
         Returns: Json

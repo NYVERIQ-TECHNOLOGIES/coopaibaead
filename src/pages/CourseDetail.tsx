@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
-  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks
+  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks, XCircle
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -124,6 +124,7 @@ export default function CourseDetail() {
   const completedLessonIds = new Set(myCompletions.map((c: any) => c.lesson_id));
 
   // ---- Fetch user exam attempts for this course's evaluations ----
+  const PASS_THRESHOLD = 60;
   const evalIds = evaluations.map((e: any) => e.id);
   const { data: myAttempts = [] } = useQuery({
     queryKey: ["my_exam_attempts", courseId, user?.id, evalIds.length],
@@ -131,7 +132,7 @@ export default function CourseDetail() {
       if (!user || evalIds.length === 0) return [];
       const { data, error } = await supabase
         .from("exam_attempts")
-        .select("evaluation_id")
+        .select("evaluation_id, score")
         .eq("user_id", user.id)
         .in("evaluation_id", evalIds);
       if (error) throw error;
@@ -139,7 +140,16 @@ export default function CourseDetail() {
     },
     enabled: !!user && evalIds.length > 0,
   });
-  const completedEvalIds = new Set(myAttempts.map((a: any) => a.evaluation_id));
+  // Best score per evaluation
+  const bestScoreByEval = new Map<string, number>();
+  for (const a of myAttempts as any[]) {
+    const prev = bestScoreByEval.get(a.evaluation_id) ?? 0;
+    if (Number(a.score) > prev) bestScoreByEval.set(a.evaluation_id, Number(a.score));
+  }
+  // An evaluation is "completed" only if the student passed (>= 60%)
+  const passedEvalIds = new Set(
+    Array.from(bestScoreByEval.entries()).filter(([, s]) => s >= PASS_THRESHOLD).map(([id]) => id)
+  );
 
   // ---- Existing certificate ----
   const { data: existingCert } = useQuery({
@@ -212,9 +222,11 @@ export default function CourseDetail() {
   const [examOpen, setExamOpen] = useState(false);
   const [examEvalId, setExamEvalId] = useState<string | null>(null);
   const [examEvalTitle, setExamEvalTitle] = useState("");
+  const [examEvalType, setExamEvalType] = useState<string>("exercicio");
   const startExam = (ev: any) => {
     setExamEvalId(ev.id);
     setExamEvalTitle(ev.title);
+    setExamEvalType(ev.type);
     setExamOpen(true);
   };
 
@@ -440,7 +452,7 @@ export default function CourseDetail() {
   const completedLessonsCount = isAdmin
     ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
     : completedLessonIds.size;
-  const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => completedEvalIds.has(e.id)).length;
+  const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => passedEvalIds.has(e.id)).length;
   const completedLessons = completedLessonsCount; // legacy var name kept for the lessons-only count display
   const completedUnits = completedLessonsCount + completedEvalsCount;
   const progressPct = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
@@ -689,41 +701,78 @@ export default function CourseDetail() {
               </div>
             )}
             <div className="divide-y divide-border">
-              {evaluations.map((ev: any) => (
-                <div key={ev.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <BarChart3 className="w-4 h-4 text-accent flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-card-foreground">{ev.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="secondary" className="text-[10px]">{evalTypeLabels[ev.type] || ev.type}</Badge>
-                        <Badge variant="outline" className={`text-[10px] ${evalStatusStyles[ev.status] || ""}`}>
-                          {ev.status === "rascunho" ? "Rascunho" : ev.status === "publicada" ? "Publicada" : "Encerrada"}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground">{ev.duration}min • {ev.questions} questões</span>
+              {evaluations.map((ev: any) => {
+                const userAttempts = (myAttempts as any[]).filter((a) => a.evaluation_id === ev.id);
+                const userBest = bestScoreByEval.get(ev.id) ?? 0;
+                const userPassed = passedEvalIds.has(ev.id);
+                const isFinal = ev.type === "prova";
+                const attemptsUsed = userAttempts.length;
+                const finalLockedOut = isFinal && !userPassed && attemptsUsed >= 3;
+                return (
+                  <div key={ev.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <BarChart3 className="w-4 h-4 text-accent flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-card-foreground">{ev.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <Badge variant="secondary" className="text-[10px]">{evalTypeLabels[ev.type] || ev.type}</Badge>
+                          <Badge variant="outline" className={`text-[10px] ${evalStatusStyles[ev.status] || ""}`}>
+                            {ev.status === "rascunho" ? "Rascunho" : ev.status === "publicada" ? "Publicada" : "Encerrada"}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">{ev.duration}min • {ev.questions} questões</span>
+                          {!isAdmin && userAttempts.length > 0 && (
+                            userPassed ? (
+                              <Badge className="text-[10px] bg-success/10 text-success hover:bg-success/20 gap-1">
+                                <CheckCircle className="w-3 h-3" /> Concluído ({userBest}%)
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] text-destructive border-destructive/40 gap-1">
+                                <XCircle className="w-3 h-3" /> Não atingiu média ({userBest}%)
+                              </Badge>
+                            )
+                          )}
+                          {!isAdmin && isFinal && !userPassed && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Tentativas: {attemptsUsed}/3
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    {isAdmin ? (
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar Questões" onClick={() => openQuestions(ev)}>
+                          <ListChecks className="w-3.5 h-3.5 text-primary" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleEvalStatusMut.mutate(ev)}>
+                          {ev.status === "publicada" ? <Lock className="w-3.5 h-3.5 text-warning" /> : <CheckCircle className="w-3.5 h-3.5 text-success" />}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditEval(ev)}><Edit className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteEvalMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                      </div>
+                    ) : (
+                      ev.status === "publicada" && (
+                        userPassed ? (
+                          <Badge className="bg-success/10 text-success gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" /> Concluído
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => startExam(ev)}
+                            className="gradient-primary text-primary-foreground gap-1"
+                            disabled={finalLockedOut}
+                            title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}
+                          >
+                            <ListChecks className="w-3.5 h-3.5" />
+                            {attemptsUsed > 0 ? "Refazer" : "Responder"}
+                          </Button>
+                        )
+                      )
+                    )}
                   </div>
-                  {isAdmin ? (
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar Questões" onClick={() => openQuestions(ev)}>
-                        <ListChecks className="w-3.5 h-3.5 text-primary" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleEvalStatusMut.mutate(ev)}>
-                        {ev.status === "publicada" ? <Lock className="w-3.5 h-3.5 text-warning" /> : <CheckCircle className="w-3.5 h-3.5 text-success" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditEval(ev)}><Edit className="w-3.5 h-3.5" /></Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteEvalMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                    </div>
-                  ) : (
-                    ev.status === "publicada" && (
-                      <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1">
-                        <ListChecks className="w-3.5 h-3.5" /> Responder
-                      </Button>
-                    )
-                  )}
-                </div>
-              ))}
+                );
+              })}
               {evaluations.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação vinculada</p>
               )}
@@ -1169,6 +1218,8 @@ export default function CourseDetail() {
         }}
         evaluationId={examEvalId}
         evaluationTitle={examEvalTitle}
+        evaluationType={examEvalType}
+        courseId={courseId ?? null}
       />
     </div>
   );
