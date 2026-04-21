@@ -450,7 +450,7 @@ export default function CourseDetail() {
   const completedLessonsCount = isAdmin
     ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
     : completedLessonIds.size;
-  const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => completedEvalIds.has(e.id)).length;
+  const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => passedEvalIds.has(e.id)).length;
   const completedLessons = completedLessonsCount; // legacy var name kept for the lessons-only count display
   const completedUnits = completedLessonsCount + completedEvalsCount;
   const progressPct = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
