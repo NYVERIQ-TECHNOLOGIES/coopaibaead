@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
@@ -38,10 +38,11 @@ const bookTypeIcons: Record<string, any> = { pdf: FileText, video: Video, audio:
 
 export default function CourseDetail() {
   const { id: courseId } = useParams<{ id: string }>();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isAdmin = role === "admin";
+  const [generatingCert, setGeneratingCert] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState({ modules: true, evaluations: true, books: true });
   const toggleSection = (key: keyof typeof expandedSections) =>
@@ -102,6 +103,59 @@ export default function CourseDetail() {
       return data;
     },
     enabled: !!courseId,
+  });
+
+  // ---- Fetch user lesson completions for this course ----
+  const lessonIds = modules.flatMap((m: any) => (m.lessons || []).map((l: any) => l.id));
+  const { data: myCompletions = [] } = useQuery({
+    queryKey: ["my_lesson_completions", courseId, user?.id, lessonIds.length],
+    queryFn: async () => {
+      if (!user || lessonIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("lesson_completions")
+        .select("lesson_id")
+        .eq("user_id", user.id)
+        .in("lesson_id", lessonIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user && lessonIds.length > 0,
+  });
+  const completedLessonIds = new Set(myCompletions.map((c: any) => c.lesson_id));
+
+  // ---- Fetch user exam attempts for this course's evaluations ----
+  const evalIds = evaluations.map((e: any) => e.id);
+  const { data: myAttempts = [] } = useQuery({
+    queryKey: ["my_exam_attempts", courseId, user?.id, evalIds.length],
+    queryFn: async () => {
+      if (!user || evalIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("exam_attempts")
+        .select("evaluation_id")
+        .eq("user_id", user.id)
+        .in("evaluation_id", evalIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user && evalIds.length > 0,
+  });
+  const completedEvalIds = new Set(myAttempts.map((a: any) => a.evaluation_id));
+
+  // ---- Existing certificate ----
+  const { data: existingCert } = useQuery({
+    queryKey: ["my_course_cert", courseId, user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("certificates")
+        .select("id, code, status")
+        .eq("user_id", user.id)
+        .eq("course_id", courseId!)
+        .eq("status", "emitido")
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user && !!courseId,
   });
 
   // ---- Dialog state ----
@@ -381,8 +435,63 @@ export default function CourseDetail() {
   };
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
-  const completedLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0);
-  const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
+  const totalUnits = totalLessons + publishedEvals.length;
+  const completedLessonsCount = isAdmin
+    ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
+    : completedLessonIds.size;
+  const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => completedEvalIds.has(e.id)).length;
+  const completedLessons = completedLessonsCount; // legacy var name kept for the lessons-only count display
+  const completedUnits = completedLessonsCount + completedEvalsCount;
+  const progressPct = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
+  const isCourseComplete = totalUnits > 0 && completedUnits >= totalUnits;
+
+  // ---- Toggle lesson completion (student) ----
+  const toggleLessonCompletionMut = useMutation({
+    mutationFn: async ({ lessonId, completed }: { lessonId: string; completed: boolean }) => {
+      if (!user) throw new Error("Não autenticado");
+      if (completed) {
+        const { error } = await supabase.from("lesson_completions").delete().eq("user_id", user.id).eq("lesson_id", lessonId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("lesson_completions").insert({ user_id: user.id, lesson_id: lessonId });
+        if (error) throw error;
+      }
+    },
+    onSuccess: async (_, vars) => {
+      await qc.invalidateQueries({ queryKey: ["my_lesson_completions", courseId, user?.id] });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  // ---- Generate certificate (student self-issue at 100%) ----
+  const handleGenerateCertificate = async () => {
+    if (!user || !courseId) return;
+    setGeneratingCert(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-certificate", {
+        body: { course_id: courseId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Certificado gerado!", description: "Veja em 'Certificados'." });
+      qc.invalidateQueries({ queryKey: ["my_course_cert", courseId, user.id] });
+      qc.invalidateQueries({ queryKey: ["my-cert-count", user.id] });
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar certificado", description: e.message, variant: "destructive" });
+    } finally {
+      setGeneratingCert(false);
+    }
+  };
+
+  // Sync enrollment.progress in background when computed progress changes
+  useEffect(() => {
+    if (!user || isAdmin || totalUnits === 0) return;
+    supabase.from("enrollments").update({ progress: progressPct }).eq("user_id", user.id).eq("course_id", courseId!).then(() => {
+      qc.invalidateQueries({ queryKey: ["my-enrollments", user.id] });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressPct, totalUnits, user?.id, courseId, isAdmin]);
 
   if (loadingCourse || loadingModules) {
     return (
@@ -439,7 +548,36 @@ export default function CourseDetail() {
         <div className="w-full h-2.5 bg-muted rounded-full overflow-hidden">
           <div className="h-full gradient-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
         </div>
-        <p className="text-xs text-muted-foreground mt-2">{completedLessons} de {totalLessons} aulas concluídas</p>
+        <p className="text-xs text-muted-foreground mt-2">
+          {completedUnits} de {totalUnits} itens concluídos ({totalLessons} aulas + {publishedEvals.length} avaliações)
+        </p>
+
+        {!isAdmin && (
+          <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-3">
+            {existingCert ? (
+              <Link to="/certificates" className="inline-flex">
+                <Button size="sm" className="gradient-primary text-primary-foreground gap-2">
+                  <Award className="w-4 h-4" /> Ver Certificado ({existingCert.code})
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleGenerateCertificate}
+                disabled={!isCourseComplete || generatingCert}
+                className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
+              >
+                {generatingCert ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
+                {generatingCert ? "Gerando..." : "Gerar Certificado"}
+              </Button>
+            )}
+            {!isCourseComplete && !existingCert && (
+              <span className="text-xs text-muted-foreground">
+                Conclua 100% do curso para liberar o certificado.
+              </span>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* ========== MODULES & LESSONS ========== */}
@@ -481,15 +619,27 @@ export default function CourseDetail() {
                   <div className="divide-y divide-border/50">
                     {(mod.lessons || []).map((lesson: any) => {
                       const Icon = typeIcons[lesson.type] || FileText;
+                      const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
                       return (
                         <div key={lesson.id}
                           className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
                           onClick={() => lesson.content_url && openContent(lesson.content_url, lesson.type)}>
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${lesson.completed ? "bg-success/10" : "bg-muted"}`}>
-                            {lesson.completed ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
-                          </div>
+                          {!isAdmin ? (
+                            <button
+                              type="button"
+                              title={userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                              onClick={(e) => { e.stopPropagation(); toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
+                              className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
+                            >
+                              {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                            </button>
+                          ) : (
+                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${userCompleted ? "bg-success/10" : "bg-muted"}`}>
+                              {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${lesson.completed ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
+                            <p className={`text-sm ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                           </div>
                           {lesson.content_url && (
                             <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
@@ -1013,7 +1163,10 @@ export default function CourseDetail() {
       {/* Student exam-taking dialog */}
       <StudentExamDialog
         open={examOpen}
-        onOpenChange={setExamOpen}
+        onOpenChange={(v) => {
+          setExamOpen(v);
+          if (!v) qc.invalidateQueries({ queryKey: ["my_exam_attempts", courseId, user?.id] });
+        }}
         evaluationId={examEvalId}
         evaluationTitle={examEvalTitle}
       />
