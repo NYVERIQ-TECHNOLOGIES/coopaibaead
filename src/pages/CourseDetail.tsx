@@ -484,6 +484,15 @@ export default function CourseDetail() {
     }
   };
 
+  // Sync enrollment.progress in background when computed progress changes
+  useEffect(() => {
+    if (!user || isAdmin || totalUnits === 0) return;
+    supabase.from("enrollments").update({ progress: progressPct }).eq("user_id", user.id).eq("course_id", courseId!).then(() => {
+      qc.invalidateQueries({ queryKey: ["my-enrollments", user.id] });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressPct, totalUnits, user?.id, courseId, isAdmin]);
+
   if (loadingCourse || loadingModules) {
     return (
       <div className="flex justify-center items-center py-20">
