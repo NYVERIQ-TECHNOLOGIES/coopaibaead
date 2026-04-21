@@ -701,41 +701,78 @@ export default function CourseDetail() {
               </div>
             )}
             <div className="divide-y divide-border">
-              {evaluations.map((ev: any) => (
-                <div key={ev.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <BarChart3 className="w-4 h-4 text-accent flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-card-foreground">{ev.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="secondary" className="text-[10px]">{evalTypeLabels[ev.type] || ev.type}</Badge>
-                        <Badge variant="outline" className={`text-[10px] ${evalStatusStyles[ev.status] || ""}`}>
-                          {ev.status === "rascunho" ? "Rascunho" : ev.status === "publicada" ? "Publicada" : "Encerrada"}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground">{ev.duration}min • {ev.questions} questões</span>
+              {evaluations.map((ev: any) => {
+                const userAttempts = (myAttempts as any[]).filter((a) => a.evaluation_id === ev.id);
+                const userBest = bestScoreByEval.get(ev.id) ?? 0;
+                const userPassed = passedEvalIds.has(ev.id);
+                const isFinal = ev.type === "prova";
+                const attemptsUsed = userAttempts.length;
+                const finalLockedOut = isFinal && !userPassed && attemptsUsed >= 3;
+                return (
+                  <div key={ev.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <BarChart3 className="w-4 h-4 text-accent flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-card-foreground">{ev.title}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <Badge variant="secondary" className="text-[10px]">{evalTypeLabels[ev.type] || ev.type}</Badge>
+                          <Badge variant="outline" className={`text-[10px] ${evalStatusStyles[ev.status] || ""}`}>
+                            {ev.status === "rascunho" ? "Rascunho" : ev.status === "publicada" ? "Publicada" : "Encerrada"}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">{ev.duration}min • {ev.questions} questões</span>
+                          {!isAdmin && userAttempts.length > 0 && (
+                            userPassed ? (
+                              <Badge className="text-[10px] bg-success/10 text-success hover:bg-success/20 gap-1">
+                                <CheckCircle className="w-3 h-3" /> Concluído ({userBest}%)
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] text-destructive border-destructive/40 gap-1">
+                                <XCircle className="w-3 h-3" /> Não atingiu média ({userBest}%)
+                              </Badge>
+                            )
+                          )}
+                          {!isAdmin && isFinal && !userPassed && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Tentativas: {attemptsUsed}/3
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    {isAdmin ? (
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar Questões" onClick={() => openQuestions(ev)}>
+                          <ListChecks className="w-3.5 h-3.5 text-primary" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleEvalStatusMut.mutate(ev)}>
+                          {ev.status === "publicada" ? <Lock className="w-3.5 h-3.5 text-warning" /> : <CheckCircle className="w-3.5 h-3.5 text-success" />}
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditEval(ev)}><Edit className="w-3.5 h-3.5" /></Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteEvalMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                      </div>
+                    ) : (
+                      ev.status === "publicada" && (
+                        userPassed ? (
+                          <Badge className="bg-success/10 text-success gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" /> Concluído
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => startExam(ev)}
+                            className="gradient-primary text-primary-foreground gap-1"
+                            disabled={finalLockedOut}
+                            title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}
+                          >
+                            <ListChecks className="w-3.5 h-3.5" />
+                            {attemptsUsed > 0 ? "Refazer" : "Responder"}
+                          </Button>
+                        )
+                      )
+                    )}
                   </div>
-                  {isAdmin ? (
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar Questões" onClick={() => openQuestions(ev)}>
-                        <ListChecks className="w-3.5 h-3.5 text-primary" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => toggleEvalStatusMut.mutate(ev)}>
-                        {ev.status === "publicada" ? <Lock className="w-3.5 h-3.5 text-warning" /> : <CheckCircle className="w-3.5 h-3.5 text-success" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditEval(ev)}><Edit className="w-3.5 h-3.5" /></Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteEvalMut.mutate(ev.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-                    </div>
-                  ) : (
-                    ev.status === "publicada" && (
-                      <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1">
-                        <ListChecks className="w-3.5 h-3.5" /> Responder
-                      </Button>
-                    )
-                  )}
-                </div>
-              ))}
+                );
+              })}
               {evaluations.length === 0 && (
                 <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação vinculada</p>
               )}
