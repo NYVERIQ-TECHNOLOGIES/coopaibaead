@@ -105,6 +105,59 @@ export default function CourseDetail() {
     enabled: !!courseId,
   });
 
+  // ---- Fetch user lesson completions for this course ----
+  const lessonIds = modules.flatMap((m: any) => (m.lessons || []).map((l: any) => l.id));
+  const { data: myCompletions = [] } = useQuery({
+    queryKey: ["my_lesson_completions", courseId, user?.id, lessonIds.length],
+    queryFn: async () => {
+      if (!user || lessonIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("lesson_completions")
+        .select("lesson_id")
+        .eq("user_id", user.id)
+        .in("lesson_id", lessonIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user && lessonIds.length > 0,
+  });
+  const completedLessonIds = new Set(myCompletions.map((c: any) => c.lesson_id));
+
+  // ---- Fetch user exam attempts for this course's evaluations ----
+  const evalIds = evaluations.map((e: any) => e.id);
+  const { data: myAttempts = [] } = useQuery({
+    queryKey: ["my_exam_attempts", courseId, user?.id, evalIds.length],
+    queryFn: async () => {
+      if (!user || evalIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("exam_attempts")
+        .select("evaluation_id")
+        .eq("user_id", user.id)
+        .in("evaluation_id", evalIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!user && evalIds.length > 0,
+  });
+  const completedEvalIds = new Set(myAttempts.map((a: any) => a.evaluation_id));
+
+  // ---- Existing certificate ----
+  const { data: existingCert } = useQuery({
+    queryKey: ["my_course_cert", courseId, user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("certificates")
+        .select("id, code, status")
+        .eq("user_id", user.id)
+        .eq("course_id", courseId!)
+        .eq("status", "emitido")
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user && !!courseId,
+  });
+
   // ---- Dialog state ----
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
   const [editModuleId, setEditModuleId] = useState<string | null>(null);
