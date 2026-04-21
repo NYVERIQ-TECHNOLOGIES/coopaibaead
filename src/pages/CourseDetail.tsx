@@ -435,11 +435,16 @@ export default function CourseDetail() {
   };
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
-  const completedLessons = isAdmin
+  const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
+  const totalUnits = totalLessons + publishedEvals.length;
+  const completedLessonsCount = isAdmin
     ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
     : completedLessonIds.size;
-  const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-  const isCourseComplete = totalLessons > 0 && completedLessons >= totalLessons;
+  const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => completedEvalIds.has(e.id)).length;
+  const completedLessons = completedLessonsCount; // legacy var name kept for the lessons-only count display
+  const completedUnits = completedLessonsCount + completedEvalsCount;
+  const progressPct = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
+  const isCourseComplete = totalUnits > 0 && completedUnits >= totalUnits;
 
   // ---- Toggle lesson completion (student) ----
   const toggleLessonCompletionMut = useMutation({
