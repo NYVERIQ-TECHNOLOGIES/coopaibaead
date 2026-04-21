@@ -222,9 +222,11 @@ export default function CourseDetail() {
   const [examOpen, setExamOpen] = useState(false);
   const [examEvalId, setExamEvalId] = useState<string | null>(null);
   const [examEvalTitle, setExamEvalTitle] = useState("");
+  const [examEvalType, setExamEvalType] = useState<string>("exercicio");
   const startExam = (ev: any) => {
     setExamEvalId(ev.id);
     setExamEvalTitle(ev.title);
+    setExamEvalType(ev.type);
     setExamOpen(true);
   };
 
@@ -1179,6 +1181,8 @@ export default function CourseDetail() {
         }}
         evaluationId={examEvalId}
         evaluationTitle={examEvalTitle}
+        evaluationType={examEvalType}
+        courseId={courseId ?? null}
       />
     </div>
   );
