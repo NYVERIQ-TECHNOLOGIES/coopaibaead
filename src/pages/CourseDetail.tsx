@@ -435,8 +435,49 @@ export default function CourseDetail() {
   };
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
-  const completedLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0);
+  const completedLessons = isAdmin
+    ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
+    : completedLessonIds.size;
   const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+  const isCourseComplete = totalLessons > 0 && completedLessons >= totalLessons;
+
+  // ---- Toggle lesson completion (student) ----
+  const toggleLessonCompletionMut = useMutation({
+    mutationFn: async ({ lessonId, completed }: { lessonId: string; completed: boolean }) => {
+      if (!user) throw new Error("Não autenticado");
+      if (completed) {
+        const { error } = await supabase.from("lesson_completions").delete().eq("user_id", user.id).eq("lesson_id", lessonId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("lesson_completions").insert({ user_id: user.id, lesson_id: lessonId });
+        if (error) throw error;
+      }
+    },
+    onSuccess: async (_, vars) => {
+      await qc.invalidateQueries({ queryKey: ["my_lesson_completions", courseId, user?.id] });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  // ---- Generate certificate (student self-issue at 100%) ----
+  const handleGenerateCertificate = async () => {
+    if (!user || !courseId) return;
+    setGeneratingCert(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-certificate", {
+        body: { course_id: courseId },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast({ title: "Certificado gerado!", description: "Veja em 'Certificados'." });
+      qc.invalidateQueries({ queryKey: ["my_course_cert", courseId, user.id] });
+      qc.invalidateQueries({ queryKey: ["my-cert-count", user.id] });
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar certificado", description: e.message, variant: "destructive" });
+    } finally {
+      setGeneratingCert(false);
+    }
+  };
 
   if (loadingCourse || loadingModules) {
     return (
