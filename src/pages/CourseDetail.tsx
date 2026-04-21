@@ -1163,7 +1163,10 @@ export default function CourseDetail() {
       {/* Student exam-taking dialog */}
       <StudentExamDialog
         open={examOpen}
-        onOpenChange={setExamOpen}
+        onOpenChange={(v) => {
+          setExamOpen(v);
+          if (!v) qc.invalidateQueries({ queryKey: ["my_exam_attempts", courseId, user?.id] });
+        }}
         evaluationId={examEvalId}
         evaluationTitle={examEvalTitle}
       />
