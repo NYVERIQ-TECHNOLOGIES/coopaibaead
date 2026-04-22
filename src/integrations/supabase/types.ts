@@ -147,6 +147,27 @@ export type Database = {
           },
         ]
       }
+      cooperativas: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       course_books: {
         Row: {
           cooperado_only: boolean
