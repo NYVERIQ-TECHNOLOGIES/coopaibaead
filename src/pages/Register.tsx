@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield, Camera, Loader2 } from "lucide-react";
 import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +15,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cooperativa, setCooperativa] = useState("");
+  const [cooperativasList, setCooperativasList] = useState<{ id: string; name: string }[]>([]);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -21,6 +23,18 @@ export default function Register() {
   const photoRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    supabase
+      .from("cooperativas")
+      .select("id, name")
+      .eq("active", true)
+      .order("name")
+      .then(({ data }) => {
+        if (data && data.length) setCooperativasList(data);
+        else setCooperativasList([{ id: "default", name: "Coopaíba" }]);
+      });
+  }, []);
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -41,13 +55,14 @@ export default function Register() {
       toast({ title: "Aceite os termos", description: "Você precisa concordar com os Termos de Uso.", variant: "destructive" });
       return;
     }
+    if (userType === "cooperado" && !cooperativa) {
+      toast({ title: "Selecione a cooperativa", description: "Escolha uma cooperativa para continuar.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
 
     const fullName = `${firstName} ${lastName}`.trim();
 
-    // SECURITY: Never send `role` in signup metadata. Role is always set to 'aluno'
-    // server-side by the handle_new_user trigger. Admin elevation only via create-admin
-    // edge function (which verifies caller is already an admin).
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
@@ -56,7 +71,7 @@ export default function Register() {
           full_name: fullName,
           cooperativa: userType === "cooperado" ? cooperativa : null,
         },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     });
 
@@ -66,24 +81,48 @@ export default function Register() {
       return;
     }
 
-    // Upload optional profile photo if a session is available right after signup
     const newUserId = signUpData.user?.id;
-    if (photoFile && newUserId) {
+
+    // Atualiza o profile com cooperativa (cooperado) e foto, e ajusta o role se necessário
+    if (newUserId) {
       try {
-        const ext = photoFile.name.split(".").pop();
-        const path = `${newUserId}/${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("avatars").upload(path, photoFile, { upsert: true });
-        if (!upErr) {
-          const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-          // Profile row is created by handle_new_user trigger; update its avatar_url
-          await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("user_id", newUserId);
+        // Aguarda o trigger handle_new_user criar o profile
+        await new Promise((r) => setTimeout(r, 400));
+
+        const updates: Record<string, unknown> = {};
+        if (userType === "cooperado" && cooperativa) {
+          updates.cooperativa = cooperativa;
+        }
+
+        if (photoFile) {
+          const ext = photoFile.name.split(".").pop();
+          const path = `${newUserId}/${Date.now()}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("avatars")
+            .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
+          if (!upErr) {
+            const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+            updates.avatar_url = publicUrl;
+          }
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await supabase.from("profiles").update(updates).eq("user_id", newUserId);
+        }
+
+        // Aluno cooperado: garantir o role correto
+        if (userType === "cooperado") {
+          await supabase.from("user_roles").upsert(
+            { user_id: newUserId, role: "cooperado" },
+            { onConflict: "user_id,role" }
+          );
         }
       } catch {
-        // Non-blocking — user can update photo later in profile
+        // Não bloqueia o cadastro
       }
     }
 
-    toast({ title: "Conta criada!", description: "Verifique seu e-mail para confirmar o cadastro." });
+    toast({ title: "Conta criada com sucesso!", description: "Você já pode fazer login." });
     navigate("/login");
     setLoading(false);
   };
@@ -156,9 +195,17 @@ export default function Register() {
 
             {userType === "cooperado" && (
               <div>
-                <label className="text-sm font-medium text-card-foreground mb-1.5 block">Cooperativa</label>
-                <input type="text" placeholder="Nome da sua cooperativa" value={cooperativa} onChange={e => setCooperativa(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                <label className="text-sm font-medium text-card-foreground mb-1.5 block">Cooperativa *</label>
+                <Select value={cooperativa} onValueChange={setCooperativa}>
+                  <SelectTrigger className="w-full bg-background">
+                    <SelectValue placeholder="Selecione sua cooperativa" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cooperativasList.map((c) => (
+                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

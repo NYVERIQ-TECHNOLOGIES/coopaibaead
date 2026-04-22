@@ -39,6 +39,8 @@ export default function MediaManager() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewType, setPreviewType] = useState<FileType | null>(null);
+  const [previewTitle, setPreviewTitle] = useState<string>("");
 
   // Form
   const [title, setTitle] = useState("");
@@ -197,7 +199,12 @@ export default function MediaManager() {
                 </div>
                 <div className="flex gap-2 mt-3 pt-3 border-t border-border">
                   <Button size="sm" variant="outline" className="flex-1 gap-1 text-xs"
-                    onClick={async () => setPreviewUrl(await getSignedUrl(file.file_url, "media"))}>
+                    onClick={async () => {
+                      const url = await getSignedUrl(file.file_url, "media");
+                      setPreviewUrl(url);
+                      setPreviewType(file.file_type);
+                      setPreviewTitle(file.title);
+                    }}>
                     <Eye className="w-3 h-3" /> Visualizar
                   </Button>
                   {isAdmin && (
@@ -301,17 +308,39 @@ export default function MediaManager() {
       </Dialog>
 
       {/* Preview Dialog */}
-      <Dialog open={!!previewUrl} onOpenChange={() => setPreviewUrl(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+      <Dialog open={!!previewUrl} onOpenChange={(o) => { if (!o) { setPreviewUrl(null); setPreviewType(null); } }}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Visualização</DialogTitle>
+            <DialogTitle className="truncate pr-8">{previewTitle || "Visualização"}</DialogTitle>
           </DialogHeader>
           {previewUrl && (
-            previewUrl.endsWith(".pdf") ? (
-              <iframe src={previewUrl} className="w-full h-[60vh] rounded-lg" />
+            previewType === "pdf" ? (
+              <div className="w-full h-[70vh] rounded-lg overflow-hidden border border-border bg-muted">
+                <object data={previewUrl} type="application/pdf" className="w-full h-full">
+                  <iframe
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(previewUrl)}&embedded=true`}
+                    className="w-full h-full"
+                    title={previewTitle}
+                  />
+                  <div className="p-6 text-center text-sm text-muted-foreground">
+                    Não foi possível renderizar o PDF.{" "}
+                    <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                      Abrir em nova aba
+                    </a>
+                  </div>
+                </object>
+              </div>
             ) : (
-              <video src={previewUrl} controls className="w-full rounded-lg max-h-[60vh]" />
+              <video src={previewUrl} controls className="w-full rounded-lg max-h-[70vh]" />
             )
+          )}
+          {previewUrl && (
+            <div className="flex justify-end pt-2">
+              <a href={previewUrl} target="_blank" rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline">
+                Abrir em nova aba ↗
+              </a>
+            </div>
           )}
         </DialogContent>
       </Dialog>
