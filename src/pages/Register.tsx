@@ -89,7 +89,7 @@ export default function Register() {
         // Aguarda o trigger handle_new_user criar o profile
         await new Promise((r) => setTimeout(r, 400));
 
-        const updates: Record<string, unknown> = {};
+        const updates: { cooperativa?: string; avatar_url?: string } = {};
         if (userType === "cooperado" && cooperativa) {
           updates.cooperativa = cooperativa;
         }
