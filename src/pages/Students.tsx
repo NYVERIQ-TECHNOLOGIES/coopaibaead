@@ -24,6 +24,9 @@ export default function Students() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [hardDeleteFor, setHardDeleteFor] = useState<string | null>(null);
+  const [chatLoadingFor, setChatLoadingFor] = useState<string | null>(null);
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
