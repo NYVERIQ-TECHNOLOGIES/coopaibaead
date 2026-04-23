@@ -77,6 +77,37 @@ Deno.serve(async (req) => {
     }
 
     const isReactivate = reactivate === true;
+    const isHardDelete = (await Promise.resolve(req)).headers.get("x-hard-delete") === "1"
+      ? true
+      : false;
+    // re-read body flag (already consumed above isn't possible) — rely on body field
+    const body = { user_id, reactivate, hard_delete: undefined as boolean | undefined };
+    try {
+      // body already parsed; read hard_delete from a re-parse fallback
+    } catch {}
+    // Re-parse from request clone above wasn't done; instead, accept hard_delete passed in body
+    // (we already destructured user_id and reactivate; parse again safely)
+
+    // Note: body re-parse not possible after .json(); rely on a second optional read of headers
+    const hardDelete = isHardDelete;
+
+    if (hardDelete && !isReactivate) {
+      // Permanently delete the auth user; cascading FKs will remove profile/role rows where set up.
+      // For safety, also explicitly delete dependent rows that lack ON DELETE CASCADE.
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+      await supabaseAdmin.from("profiles").delete().eq("user_id", user_id);
+      const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+      if (delErr) {
+        return new Response(JSON.stringify({ error: delErr.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({ success: true, action: "deleted" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Soft delete: mark profile as inactive (preserves all historical data)
     const { error: profErr } = await supabaseAdmin
