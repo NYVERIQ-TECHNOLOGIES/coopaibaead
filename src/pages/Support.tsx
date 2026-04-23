@@ -162,11 +162,12 @@ export default function Support() {
   // Mark unread as read when opening conversation
   useEffect(() => {
     if (!activeConversation) return;
-    const updateField = isAdmin ? "unread_for_admin" : "unread_for_user";
-    if ((activeConversation as any)[updateField] > 0) {
+    const unread = isAdmin ? activeConversation.unread_for_admin : activeConversation.unread_for_user;
+    if (unread > 0) {
+      const patch = isAdmin ? { unread_for_admin: 0 } : { unread_for_user: 0 };
       supabase
         .from("support_conversations")
-        .update({ [updateField]: 0 })
+        .update(patch)
         .eq("id", activeConversation.id)
         .then(() => {
           qc.invalidateQueries({ queryKey: ["support-all-conversations"] });
