@@ -106,8 +106,9 @@ export default function Register() {
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: trimmedName,
           cooperativa: userType === "cooperado" ? cooperativa : null,
+          cpf: cleanCpf,
         },
         emailRedirectTo: `${window.location.origin}/login`,
       },
@@ -127,7 +128,10 @@ export default function Register() {
         // Aguarda o trigger handle_new_user criar o profile
         await new Promise((r) => setTimeout(r, 400));
 
-        const updates: { cooperativa?: string; avatar_url?: string } = {};
+        const updates: { cooperativa?: string; avatar_url?: string; cpf?: string; full_name?: string } = {
+          cpf: cleanCpf,
+          full_name: trimmedName,
+        };
         if (userType === "cooperado" && cooperativa) {
           updates.cooperativa = cooperativa;
         }
@@ -165,7 +169,14 @@ export default function Register() {
     setLoading(false);
   };
 
-  const initials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "U";
+  const initials = fullName
+    .trim()
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "U";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -218,16 +229,35 @@ export default function Register() {
               <p className="text-xs text-muted-foreground">Foto de perfil (opcional)</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium text-card-foreground mb-1.5 block">Nome</label>
-                <input type="text" placeholder="Seu nome" value={firstName} onChange={e => setFirstName(e.target.value)} required
-                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            <div>
+              <label className="text-sm font-medium text-card-foreground mb-1.5 block">Nome completo *</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Seu nome completo"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
-              <div>
-                <label className="text-sm font-medium text-card-foreground mb-1.5 block">Sobrenome</label>
-                <input type="text" placeholder="Seu sobrenome" value={lastName} onChange={e => setLastName(e.target.value)} required
-                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-card-foreground mb-1.5 block">CPF *</label>
+              <div className="relative">
+                <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  required
+                  maxLength={14}
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
             </div>
 
