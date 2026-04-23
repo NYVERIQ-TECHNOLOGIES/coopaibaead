@@ -886,6 +886,30 @@ export type Database = {
           },
         ]
       }
+      profiles_public: {
+        Row: {
+          avatar_url: string | null
+          cooperativa: string | null
+          full_name: string | null
+          is_active: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          cooperativa?: string | null
+          full_name?: string | null
+          is_active?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          cooperativa?: string | null
+          full_name?: string | null
+          is_active?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_course: {
