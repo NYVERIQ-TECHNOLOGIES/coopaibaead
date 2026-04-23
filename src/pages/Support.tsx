@@ -285,63 +285,133 @@ export default function Support() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] gap-4 h-[calc(100%-5rem)]">
-          {/* Conversations list */}
+          {/* Conversations / New message */}
           <Card className="flex flex-col overflow-hidden">
-            <div className="p-3 border-b">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar conversa..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="divide-y">
-                {filteredConversations.length === 0 && (
-                  <div className="p-6 text-center text-sm text-muted-foreground">
-                    Nenhuma conversa ainda.
+            <Tabs value={tab} onValueChange={(v) => setTab(v as "inbox" | "new")} className="flex-1 flex flex-col">
+              <TabsList className="grid grid-cols-2 m-2">
+                <TabsTrigger value="inbox" className="gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5" /> Conversas
+                </TabsTrigger>
+                <TabsTrigger value="new" className="gap-1.5">
+                  <UserPlus className="w-3.5 h-3.5" /> Nova mensagem
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="inbox" className="flex-1 flex flex-col mt-0 overflow-hidden">
+                <div className="p-3 border-b border-t">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar conversa..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9"
+                    />
                   </div>
-                )}
-                {filteredConversations.map((c) => {
-                  const p = profilesMap[c.user_id];
-                  const active = c.id === selectedId;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => setSelectedId(c.id)}
-                      className={`w-full text-left p-3 hover:bg-muted/50 transition flex gap-3 items-start ${
-                        active ? "bg-muted" : ""
-                      }`}
-                    >
-                      <Avatar className="w-10 h-10 flex-shrink-0">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                          {initials(p?.full_name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="font-medium text-sm truncate">{p?.full_name || "Usuário"}</p>
-                          {c.unread_for_admin > 0 && (
-                            <Badge className="h-5 min-w-5 px-1.5 rounded-full text-[10px]">
-                              {c.unread_for_admin}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {c.last_message_preview || "Sem mensagens"}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {format(new Date(c.last_message_at), "dd/MM HH:mm", { locale: ptBR })}
-                        </p>
+                </div>
+                <ScrollArea className="flex-1">
+                  <div className="divide-y">
+                    {filteredConversations.length === 0 && (
+                      <div className="p-6 text-center text-sm text-muted-foreground">
+                        Nenhuma conversa ainda.
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </ScrollArea>
+                    )}
+                    {filteredConversations.map((c) => {
+                      const p = profilesMap[c.user_id];
+                      const active = c.id === selectedId;
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => setSelectedId(c.id)}
+                          className={`w-full text-left p-3 hover:bg-muted/50 transition flex gap-3 items-start ${
+                            active ? "bg-muted" : ""
+                          }`}
+                        >
+                          <Avatar className="w-10 h-10 flex-shrink-0">
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              {initials(p?.full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium text-sm truncate">{p?.full_name || "Usuário"}</p>
+                              {c.unread_for_admin > 0 && (
+                                <Badge className="h-5 min-w-5 px-1.5 rounded-full text-[10px]">
+                                  {c.unread_for_admin}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {c.last_message_preview || "Sem mensagens"}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {format(new Date(c.last_message_at), "dd/MM HH:mm", { locale: ptBR })}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="new" className="flex-1 flex flex-col mt-0 overflow-hidden">
+                <div className="p-3 border-b border-t">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar usuário..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    Selecione um usuário para abrir um chat privado.
+                  </p>
+                </div>
+                <ScrollArea className="flex-1">
+                  <div className="divide-y">
+                    {filteredUsers.length === 0 && (
+                      <div className="p-6 text-center text-sm text-muted-foreground">
+                        Nenhum usuário encontrado.
+                      </div>
+                    )}
+                    {filteredUsers.map((u) => {
+                      const hasConv = allConversations.some((c) => c.user_id === u.user_id);
+                      return (
+                        <div
+                          key={u.user_id}
+                          className="w-full p-3 flex gap-3 items-center hover:bg-muted/50 transition"
+                        >
+                          <Avatar className="w-10 h-10 flex-shrink-0">
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm">
+                              {initials(u.full_name)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{u.full_name || "Usuário"}</p>
+                            {hasConv && (
+                              <p className="text-[10px] text-muted-foreground">Conversa existente</p>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={hasConv ? "outline" : "default"}
+                            disabled={startingId === u.user_id}
+                            onClick={() => startConversationWith(u.user_id)}
+                            className="gap-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            {hasConv ? "Abrir" : "Iniciar"}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
           </Card>
 
           {/* Chat area */}
