@@ -115,8 +115,8 @@ export default function Students() {
         return;
       }
 
-      // Buscar enrollments, certificates e exam_attempts em paralelo
-      const [enrollRes, certRes, attemptsRes] = await Promise.all([
+      // Buscar enrollments, certificates, exam_attempts e e-mails em paralelo
+      const [enrollRes, certRes, attemptsRes, emailMap] = await Promise.all([
         supabase
           .from("enrollments")
           .select("user_id, progress, courses(title)")
@@ -130,6 +130,7 @@ export default function Students() {
           .from("exam_attempts")
           .select("user_id, score")
           .in("user_id", userIds),
+        fetchEmails(userIds),
       ]);
 
       const enrollMap = new Map<string, Array<{ title: string; progress: number }>>();
@@ -155,6 +156,8 @@ export default function Students() {
       const header = [
         "Matrícula",
         "Nome",
+        "E-mail",
+        "CPF",
         "Tipo",
         "Cooperativa",
         "Status",
@@ -182,6 +185,8 @@ export default function Students() {
         return [
           s.enrollment_number || "",
           (s.full_name || "").replace(/"/g, '""'),
+          emailMap[s.user_id] || "",
+          formatCpf((s as any).cpf),
           s.role,
           (s.cooperativa || "").replace(/"/g, '""'),
           s.is_active === false ? "Inativo" : "Ativo",
