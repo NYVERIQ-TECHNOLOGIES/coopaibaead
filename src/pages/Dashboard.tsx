@@ -10,6 +10,21 @@ const COLORS = ["hsl(220, 70%, 45%)", "hsl(170, 50%, 40%)", "hsl(35, 90%, 55%)",
 
 
 export default function Dashboard() {
+  const { user } = useAuth();
+
+  const { data: enrollmentNumber } = useQuery({
+    queryKey: ["admin-enrollment-number", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("enrollment_number")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data?.enrollment_number ?? null;
+    },
+  });
+
   const { data: counts } = useQuery({
     queryKey: ["dashboard-counts"],
     queryFn: async () => {
