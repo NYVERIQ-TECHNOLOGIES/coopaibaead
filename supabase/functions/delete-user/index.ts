@@ -5,9 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// IMPORTANT: Despite the function name, this performs a SOFT DELETE (deactivation)
-// to preserve historical records (enrollments, certificates, exam attempts).
-// Set { reactivate: true } in body to re-enable a previously deactivated user.
+// Performs either:
+// - SOFT DELETE (default): marks profile inactive, preserves historical data
+// - REACTIVATE: { reactivate: true }
+// - HARD DELETE: { hard_delete: true } — removes auth user + profile + role permanently
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -47,7 +48,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { user_id, reactivate } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { user_id, reactivate, hard_delete } = body as {
+      user_id?: string;
+      reactivate?: boolean;
+      hard_delete?: boolean;
+    };
+
     if (!user_id || typeof user_id !== "string") {
       return new Response(JSON.stringify({ error: "user_id é obrigatório" }), {
         status: 400,
@@ -62,7 +69,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Block deactivating other admins
+    // Block any operation on other admins
     const { data: targetRole } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -77,8 +84,26 @@ Deno.serve(async (req) => {
     }
 
     const isReactivate = reactivate === true;
+    const isHardDelete = hard_delete === true;
 
-    // Soft delete: mark profile as inactive (preserves all historical data)
+    // HARD DELETE: remove user permanently
+    if (isHardDelete) {
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+      await supabaseAdmin.from("profiles").delete().eq("user_id", user_id);
+      const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(user_id);
+      if (delErr) {
+        return new Response(JSON.stringify({ error: delErr.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({ success: true, action: "deleted" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Soft delete (default) or reactivate
     const { error: profErr } = await supabaseAdmin
       .from("profiles")
       .update({
@@ -93,7 +118,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Force sign-out by invalidating refresh tokens (only on deactivate)
     if (!isReactivate) {
       try {
         await supabaseAdmin.auth.admin.signOut(user_id, "global");
@@ -107,7 +131,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
-    console.error("delete-user (soft) error:", err);
+    console.error("delete-user error:", err);
     return new Response(JSON.stringify({ error: "Ocorreu um erro interno." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Search, Download, FileBarChart, Power, PowerOff, FileSpreadsheet } from "lucide-react";
+import { Search, Download, FileBarChart, Power, FileSpreadsheet, MessageCircle, MoreVertical, Trash2, PowerOff } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +11,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Students() {
   const [search, setSearch] = useState("");
@@ -19,6 +24,9 @@ export default function Students() {
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const [hardDeleteFor, setHardDeleteFor] = useState<string | null>(null);
+  const [chatLoadingFor, setChatLoadingFor] = useState<string | null>(null);
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
@@ -49,6 +57,61 @@ export default function Students() {
     onError: (e: any) =>
       toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
+
+  const hardDeleteMut = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: userId, hard_delete: true },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["students-list"] });
+      toast({ title: "Usuário excluído permanentemente" });
+    },
+    onError: (e: any) =>
+      toast({ title: "Erro ao excluir", description: e.message, variant: "destructive" }),
+  });
+
+  const changeRoleMut = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: "aluno" | "cooperado" | "admin" }) => {
+      const { data, error } = await supabase.functions.invoke("manage-user-role", {
+        body: { user_id: userId, new_role: newRole },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["students-list"] });
+      toast({ title: "Tipo de usuário atualizado" });
+    },
+    onError: (e: any) =>
+      toast({ title: "Erro ao alterar tipo", description: e.message, variant: "destructive" }),
+  });
+
+  const startChatWith = async (targetUserId: string) => {
+    if (!user) return;
+    setChatLoadingFor(targetUserId);
+    try {
+      const { data: existing } = await supabase
+        .from("support_conversations")
+        .select("id")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+      if (!existing) {
+        const { error } = await supabase
+          .from("support_conversations")
+          .insert({ user_id: targetUserId, subject: "Mensagem do administrador" });
+        if (error) throw error;
+      }
+      navigate("/support");
+    } catch (e: any) {
+      toast({ title: "Erro ao abrir chat", description: e.message, variant: "destructive" });
+    } finally {
+      setChatLoadingFor(null);
+    }
+  };
 
   const filtered = students.filter((s) => {
     const matchesSearch =
@@ -343,9 +406,26 @@ export default function Students() {
                         {emailMap[s.user_id] || "—"}
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                          {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
-                        </span>
+                        {isSelf || isAdmin ? (
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                            {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
+                          </span>
+                        ) : (
+                          <Select
+                            value={s.role}
+                            onValueChange={(v) => changeRoleMut.mutate({ userId: s.user_id, newRole: v as any })}
+                            disabled={changeRoleMut.isPending}
+                          >
+                            <SelectTrigger className="h-8 w-[120px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="aluno">Aluno</SelectItem>
+                              <SelectItem value="cooperado">Cooperado</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm text-muted-foreground">{s.cooperativa || "—"}</td>
                       <td className="py-3 px-4">
@@ -357,49 +437,55 @@ export default function Students() {
                         {new Date(s.created_at).toLocaleDateString("pt-BR")}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {!isSelf && !isAdmin && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className={inactive ? "text-success hover:bg-success/10" : "text-destructive hover:bg-destructive/10"}
-                              >
-                                {inactive ? <Power className="w-4 h-4" /> : <PowerOff className="w-4 h-4" />}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  {inactive ? "Reativar aluno?" : "Desativar aluno?"}
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {inactive ? (
-                                    <>Reativar <strong>{s.full_name}</strong> ({s.enrollment_number})? O usuário poderá acessar a plataforma novamente.</>
-                                  ) : (
-                                    <>Desativar <strong>{s.full_name}</strong> ({s.enrollment_number})? O usuário não poderá mais entrar, mas todo o histórico de cursos, certificados e notas será preservado.</>
-                                  )}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
+                        <div className="flex items-center justify-end gap-1">
+                          {!isSelf && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Iniciar conversa"
+                              disabled={chatLoadingFor === s.user_id}
+                              onClick={() => startChatWith(s.user_id)}
+                              className="text-primary hover:bg-primary/10"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {!isSelf && !isAdmin && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost" title="Mais ações">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
                                   onClick={() => toggleActiveMut.mutate({ userId: s.user_id, reactivate: inactive })}
-                                  className={inactive ? "bg-success text-success-foreground hover:bg-success/90" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+                                  className={inactive ? "text-success focus:text-success" : ""}
                                 >
-                                  {inactive ? "Reativar" : "Desativar"}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
+                                  {inactive ? (
+                                    <><Power className="w-4 h-4 mr-2" /> Reativar usuário</>
+                                  ) : (
+                                    <><PowerOff className="w-4 h-4 mr-2" /> Desativar usuário</>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setHardDeleteFor(s.user_id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Excluir permanentemente
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </td>
                     </motion.tr>
                   );
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
@@ -409,6 +495,31 @@ export default function Students() {
           </div>
         </motion.div>
       )}
+
+      <AlertDialog open={!!hardDeleteFor} onOpenChange={(o) => !o && setHardDeleteFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Excluir permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação <strong>não pode ser desfeita</strong>. O usuário será removido do sistema de
+              autenticação e seu perfil será apagado. Registros históricos vinculados (matrículas,
+              certificados, notas) podem ser perdidos. Considere "Desativar" para preservar o histórico.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (hardDeleteFor) hardDeleteMut.mutate(hardDeleteFor);
+                setHardDeleteFor(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
