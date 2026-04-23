@@ -809,29 +809,19 @@ export type Database = {
           },
         ]
       }
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          full_name: string | null
-          user_id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          full_name?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          full_name?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       can_access_course: {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
+      }
+      get_public_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+        }[]
       }
       get_question_answer: { Args: { _question_id: string }; Returns: string }
       has_role: {
@@ -840,6 +830,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      list_public_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+        }[]
       }
       log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }
       reset_course_progress: {
