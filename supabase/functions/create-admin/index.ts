@@ -26,42 +26,34 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if caller is admin OR if no admins exist (bootstrap)
+    // Always require an authenticated admin caller. The bootstrap branch was
+    // removed because it could be exploited if admin rows are ever wiped.
     const authHeader = req.headers.get("Authorization");
-    let isBootstrap = false;
-
-    const { count } = await supabaseAdmin
-      .from("user_roles")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "admin");
-
-    if (count === 0) {
-      isBootstrap = true;
-    } else if (authHeader) {
-      const token = authHeader.replace("Bearer ", "");
-      const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-      if (!user) {
-        return new Response(
-          JSON.stringify({ error: "Não autorizado" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const { data: roleData } = await supabaseAdmin
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .single();
-      if (!roleData) {
-        return new Response(
-          JSON.stringify({ error: "Apenas administradores podem criar outros administradores" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    } else {
+    if (!authHeader) {
       return new Response(
         JSON.stringify({ error: "Não autorizado" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Não autorizado" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const { data: roleData } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .single();
+    if (!roleData) {
+      return new Response(
+        JSON.stringify({ error: "Apenas administradores podem criar outros administradores" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
