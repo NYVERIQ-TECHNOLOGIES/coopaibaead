@@ -437,49 +437,55 @@ export default function Students() {
                         {new Date(s.created_at).toLocaleDateString("pt-BR")}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {!isSelf && !isAdmin && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className={inactive ? "text-success hover:bg-success/10" : "text-destructive hover:bg-destructive/10"}
-                              >
-                                {inactive ? <Power className="w-4 h-4" /> : <PowerOff className="w-4 h-4" />}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  {inactive ? "Reativar aluno?" : "Desativar aluno?"}
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {inactive ? (
-                                    <>Reativar <strong>{s.full_name}</strong> ({s.enrollment_number})? O usuário poderá acessar a plataforma novamente.</>
-                                  ) : (
-                                    <>Desativar <strong>{s.full_name}</strong> ({s.enrollment_number})? O usuário não poderá mais entrar, mas todo o histórico de cursos, certificados e notas será preservado.</>
-                                  )}
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
+                        <div className="flex items-center justify-end gap-1">
+                          {!isSelf && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Iniciar conversa"
+                              disabled={chatLoadingFor === s.user_id}
+                              onClick={() => startChatWith(s.user_id)}
+                              className="text-primary hover:bg-primary/10"
+                            >
+                              <MessageCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {!isSelf && !isAdmin && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="sm" variant="ghost" title="Mais ações">
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
                                   onClick={() => toggleActiveMut.mutate({ userId: s.user_id, reactivate: inactive })}
-                                  className={inactive ? "bg-success text-success-foreground hover:bg-success/90" : "bg-destructive text-destructive-foreground hover:bg-destructive/90"}
+                                  className={inactive ? "text-success focus:text-success" : ""}
                                 >
-                                  {inactive ? "Reativar" : "Desativar"}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
+                                  {inactive ? (
+                                    <><Power className="w-4 h-4 mr-2" /> Reativar usuário</>
+                                  ) : (
+                                    <><PowerOff className="w-4 h-4 mr-2" /> Desativar usuário</>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => setHardDeleteFor(s.user_id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" /> Excluir permanentemente
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
                       </td>
                     </motion.tr>
                   );
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={9} className="text-center py-8 text-muted-foreground">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
