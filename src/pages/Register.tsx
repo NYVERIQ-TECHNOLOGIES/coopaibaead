@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield, Camera, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield, Camera, Loader2, IdCard } from "lucide-react";
 import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState<"aluno" | "cooperado">("aluno");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [cooperativa, setCooperativa] = useState("");
@@ -23,6 +23,31 @@ export default function Register() {
   const photoRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Máscara CPF: 000.000.000-00
+  const formatCpf = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 11);
+    return d
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  };
+
+  // Validação de CPF (dígitos verificadores)
+  const isValidCpf = (value: string) => {
+    const c = value.replace(/\D/g, "");
+    if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+    let sum = 0;
+    for (let i = 0; i < 9; i++) sum += parseInt(c[i]) * (10 - i);
+    let d1 = (sum * 10) % 11;
+    if (d1 === 10) d1 = 0;
+    if (d1 !== parseInt(c[9])) return false;
+    sum = 0;
+    for (let i = 0; i < 10; i++) sum += parseInt(c[i]) * (11 - i);
+    let d2 = (sum * 10) % 11;
+    if (d2 === 10) d2 = 0;
+    return d2 === parseInt(c[10]);
+  };
 
   useEffect(() => {
     supabase
@@ -51,6 +76,18 @@ export default function Register() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim() || fullName.trim().split(/\s+/).length < 2) {
+      toast({ title: "Nome completo obrigatório", description: "Informe seu nome completo (nome e sobrenome).", variant: "destructive" });
+      return;
+    }
+    if (!cpf.trim()) {
+      toast({ title: "CPF obrigatório", description: "Informe seu CPF para criar a conta.", variant: "destructive" });
+      return;
+    }
+    if (!isValidCpf(cpf)) {
+      toast({ title: "CPF inválido", description: "Digite um CPF válido para continuar.", variant: "destructive" });
+      return;
+    }
     if (!agreed) {
       toast({ title: "Aceite os termos", description: "Você precisa concordar com os Termos de Uso.", variant: "destructive" });
       return;
@@ -61,15 +98,17 @@ export default function Register() {
     }
     setLoading(true);
 
-    const fullName = `${firstName} ${lastName}`.trim();
+    const cleanCpf = cpf.replace(/\D/g, "");
+    const trimmedName = fullName.trim();
 
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: trimmedName,
           cooperativa: userType === "cooperado" ? cooperativa : null,
+          cpf: cleanCpf,
         },
         emailRedirectTo: `${window.location.origin}/login`,
       },
@@ -89,7 +128,10 @@ export default function Register() {
         // Aguarda o trigger handle_new_user criar o profile
         await new Promise((r) => setTimeout(r, 400));
 
-        const updates: { cooperativa?: string; avatar_url?: string } = {};
+        const updates: { cooperativa?: string; avatar_url?: string; cpf?: string; full_name?: string } = {
+          cpf: cleanCpf,
+          full_name: trimmedName,
+        };
         if (userType === "cooperado" && cooperativa) {
           updates.cooperativa = cooperativa;
         }
@@ -127,7 +169,14 @@ export default function Register() {
     setLoading(false);
   };
 
-  const initials = `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase() || "U";
+  const initials = fullName
+    .trim()
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "U";
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-background">
@@ -180,16 +229,35 @@ export default function Register() {
               <p className="text-xs text-muted-foreground">Foto de perfil (opcional)</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium text-card-foreground mb-1.5 block">Nome</label>
-                <input type="text" placeholder="Seu nome" value={firstName} onChange={e => setFirstName(e.target.value)} required
-                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            <div>
+              <label className="text-sm font-medium text-card-foreground mb-1.5 block">Nome completo *</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Seu nome completo"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
-              <div>
-                <label className="text-sm font-medium text-card-foreground mb-1.5 block">Sobrenome</label>
-                <input type="text" placeholder="Seu sobrenome" value={lastName} onChange={e => setLastName(e.target.value)} required
-                  className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-card-foreground mb-1.5 block">CPF *</label>
+              <div className="relative">
+                <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="000.000.000-00"
+                  value={cpf}
+                  onChange={(e) => setCpf(formatCpf(e.target.value))}
+                  required
+                  maxLength={14}
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
             </div>
 
