@@ -76,6 +76,18 @@ export default function Register() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!fullName.trim() || fullName.trim().split(/\s+/).length < 2) {
+      toast({ title: "Nome completo obrigatório", description: "Informe seu nome completo (nome e sobrenome).", variant: "destructive" });
+      return;
+    }
+    if (!cpf.trim()) {
+      toast({ title: "CPF obrigatório", description: "Informe seu CPF para criar a conta.", variant: "destructive" });
+      return;
+    }
+    if (!isValidCpf(cpf)) {
+      toast({ title: "CPF inválido", description: "Digite um CPF válido para continuar.", variant: "destructive" });
+      return;
+    }
     if (!agreed) {
       toast({ title: "Aceite os termos", description: "Você precisa concordar com os Termos de Uso.", variant: "destructive" });
       return;
@@ -86,7 +98,8 @@ export default function Register() {
     }
     setLoading(true);
 
-    const fullName = `${firstName} ${lastName}`.trim();
+    const cleanCpf = cpf.replace(/\D/g, "");
+    const trimmedName = fullName.trim();
 
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
