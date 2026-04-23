@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield, Camera, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield, Camera, Loader2, IdCard } from "lucide-react";
 import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
