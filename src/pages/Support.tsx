@@ -9,9 +9,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, MessageSquare, Search, Headphones, ShieldCheck, Trash2 } from "lucide-react";
+import { Send, MessageSquare, Search, Headphones, ShieldCheck, Trash2, UserPlus, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -49,6 +50,9 @@ export default function Support() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<"inbox" | "new">("inbox");
+  const [userSearch, setUserSearch] = useState("");
+  const [startingId, setStartingId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // ============== USER VIEW: own conversation ==============
