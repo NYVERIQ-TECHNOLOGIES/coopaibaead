@@ -406,9 +406,26 @@ export default function Students() {
                         {emailMap[s.user_id] || "—"}
                       </td>
                       <td className="py-3 px-4">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                          {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
-                        </span>
+                        {isSelf || isAdmin ? (
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
+                            {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
+                          </span>
+                        ) : (
+                          <Select
+                            value={s.role}
+                            onValueChange={(v) => changeRoleMut.mutate({ userId: s.user_id, newRole: v as any })}
+                            disabled={changeRoleMut.isPending}
+                          >
+                            <SelectTrigger className="h-8 w-[120px] text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="aluno">Aluno</SelectItem>
+                              <SelectItem value="cooperado">Cooperado</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm text-muted-foreground">{s.cooperativa || "—"}</td>
                       <td className="py-3 px-4">
