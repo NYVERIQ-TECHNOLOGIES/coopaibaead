@@ -97,7 +97,7 @@ export default function Students() {
       const rows = filtered.map((s) => [
         s.enrollment_number || "",
         (s.full_name || "").replace(/"/g, '""'),
-        emailMap[s.user_id] || "",
+        emails[s.user_id] || "",
         formatCpf((s as any).cpf),
         s.role,
         (s.cooperativa || "").replace(/"/g, '""'),
