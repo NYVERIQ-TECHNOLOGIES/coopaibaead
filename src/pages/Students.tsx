@@ -336,6 +336,12 @@ export default function Students() {
                           <p className="text-sm font-medium text-card-foreground">{s.full_name || "Sem nome"}</p>
                         </div>
                       </td>
+                      <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                        {formatCpf((s as any).cpf) || "—"}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground break-all">
+                        {emailMap[s.user_id] || "—"}
+                      </td>
                       <td className="py-3 px-4">
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
                           {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
