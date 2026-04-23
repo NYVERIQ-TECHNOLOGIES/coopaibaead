@@ -22,6 +22,7 @@ import AdminLogs from "@/pages/AdminLogs";
 import SettingsPage from "@/pages/SettingsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import Forum from "@/pages/Forum";
+import Support from "@/pages/Support";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/courses/:id" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><CourseDetail /></ProtectedRoute>} />
               <Route path="/library" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><LibraryPage /></ProtectedRoute>} />
               <Route path="/forum" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Forum /></ProtectedRoute>} />
+              <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
 
               {/* Disponível a todos autenticados */}
               <Route path="/settings" element={<SettingsPage />} />
