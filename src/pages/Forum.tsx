@@ -49,13 +49,13 @@ export default function Forum() {
     },
   });
 
-  // Fetch profiles for author names
+  // Fetch profiles for author names (uses safe RPC: only name + avatar)
   const { data: profiles = [] } = useQuery({
     queryKey: ["profiles_forum"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("user_id, full_name, avatar_url");
+      const { data, error } = await supabase.rpc("list_public_profiles");
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
