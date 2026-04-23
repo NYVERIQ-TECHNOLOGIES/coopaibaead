@@ -24,7 +24,7 @@ export default function Students() {
     queryFn: async () => {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at")
+        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf")
         .order("created_at", { ascending: false });
       if (!profiles) return [];
       const { data: roles } = await supabase.from("user_roles").select("user_id, role");
