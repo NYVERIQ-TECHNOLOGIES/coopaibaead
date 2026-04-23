@@ -495,6 +495,31 @@ export default function Students() {
           </div>
         </motion.div>
       )}
+
+      <AlertDialog open={!!hardDeleteFor} onOpenChange={(o) => !o && setHardDeleteFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">Excluir permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação <strong>não pode ser desfeita</strong>. O usuário será removido do sistema de
+              autenticação e seu perfil será apagado. Registros históricos vinculados (matrículas,
+              certificados, notas) podem ser perdidos. Considere "Desativar" para preservar o histórico.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (hardDeleteFor) hardDeleteMut.mutate(hardDeleteFor);
+                setHardDeleteFor(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
