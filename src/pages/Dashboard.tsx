@@ -1,11 +1,13 @@
 import { motion } from "framer-motion";
-import { Users, BookOpen, Award, TrendingUp, UserCheck, AlertTriangle, Clock } from "lucide-react";
+import { Users, BookOpen, Award, TrendingUp, UserCheck, AlertTriangle, Clock, IdCard } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import StatCard from "@/components/StatCard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const COLORS = ["hsl(220, 70%, 45%)", "hsl(170, 50%, 40%)", "hsl(35, 90%, 55%)", "hsl(280, 60%, 50%)"];
+
 
 export default function Dashboard() {
   const { data: counts } = useQuery({
