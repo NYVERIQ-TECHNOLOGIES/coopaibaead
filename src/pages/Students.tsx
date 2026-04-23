@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Search, Download, FileBarChart, Power, PowerOff, FileSpreadsheet } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,6 +15,7 @@ export default function Students() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
@@ -78,14 +79,25 @@ export default function Students() {
     return ((data as any)?.emails ?? {}) as Record<string, string>;
   };
 
+  // Carrega e-mails de todos os alunos exibidos
+  useEffect(() => {
+    if (students.length === 0) return;
+    const ids = students.map((s: any) => s.user_id);
+    fetchEmails(ids)
+      .then(setEmailMap)
+      .catch(() => {
+        // silencioso: a tabela ainda funciona sem e-mails
+      });
+  }, [students]);
+
   const exportCSV = async () => {
     try {
-      const emailMap = await fetchEmails(filtered.map((s) => s.user_id));
+      const emails = { ...emailMap, ...(await fetchEmails(filtered.map((s) => s.user_id).filter((id) => !emailMap[id]))) };
       const header = ["Matrícula", "Nome", "E-mail", "CPF", "Tipo", "Cooperativa", "Status", "Data de Cadastro"];
       const rows = filtered.map((s) => [
         s.enrollment_number || "",
         (s.full_name || "").replace(/"/g, '""'),
-        emailMap[s.user_id] || "",
+        emails[s.user_id] || "",
         formatCpf((s as any).cpf),
         s.role,
         (s.cooperativa || "").replace(/"/g, '""'),
@@ -289,6 +301,8 @@ export default function Students() {
                 <tr className="border-b border-border bg-muted/30">
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Matrícula</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aluno</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">CPF</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">E-mail</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipo</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cooperativa</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
@@ -321,6 +335,12 @@ export default function Students() {
                           </div>
                           <p className="text-sm font-medium text-card-foreground">{s.full_name || "Sem nome"}</p>
                         </div>
+                      </td>
+                      <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                        {formatCpf((s as any).cpf) || "—"}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground break-all">
+                        {emailMap[s.user_id] || "—"}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
