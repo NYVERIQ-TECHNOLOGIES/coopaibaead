@@ -92,7 +92,7 @@ export default function Students() {
 
   const exportCSV = async () => {
     try {
-      const emailMap = await fetchEmails(filtered.map((s) => s.user_id));
+      const emails = { ...emailMap, ...(await fetchEmails(filtered.map((s) => s.user_id).filter((id) => !emailMap[id]))) };
       const header = ["Matrícula", "Nome", "E-mail", "CPF", "Tipo", "Cooperativa", "Status", "Data de Cadastro"];
       const rows = filtered.map((s) => [
         s.enrollment_number || "",
