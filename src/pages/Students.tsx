@@ -79,6 +79,17 @@ export default function Students() {
     return ((data as any)?.emails ?? {}) as Record<string, string>;
   };
 
+  // Carrega e-mails de todos os alunos exibidos
+  useEffect(() => {
+    if (students.length === 0) return;
+    const ids = students.map((s: any) => s.user_id);
+    fetchEmails(ids)
+      .then(setEmailMap)
+      .catch(() => {
+        // silencioso: a tabela ainda funciona sem e-mails
+      });
+  }, [students]);
+
   const exportCSV = async () => {
     try {
       const emailMap = await fetchEmails(filtered.map((s) => s.user_id));
