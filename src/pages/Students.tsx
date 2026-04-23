@@ -62,24 +62,47 @@ export default function Students() {
   const totalAdmins = students.filter((s) => s.role === "admin").length;
   const totalInativos = students.filter((s) => s.is_active === false).length;
 
-  const exportCSV = () => {
-    const header = ["Matrícula", "Nome", "Tipo", "Cooperativa", "Status", "Data de Cadastro"];
-    const rows = filtered.map((s) => [
-      s.enrollment_number || "",
-      (s.full_name || "").replace(/"/g, '""'),
-      s.role,
-      (s.cooperativa || "").replace(/"/g, '""'),
-      s.is_active === false ? "Inativo" : "Ativo",
-      new Date(s.created_at).toLocaleDateString("pt-BR"),
-    ]);
-    const csv = [header, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `alunos-coopaiba-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const formatCpf = (v?: string | null) => {
+    if (!v) return "";
+    const d = v.replace(/\D/g, "");
+    if (d.length !== 11) return v;
+    return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  };
+
+  const fetchEmails = async (userIds: string[]): Promise<Record<string, string>> => {
+    if (userIds.length === 0) return {};
+    const { data, error } = await supabase.functions.invoke("list-user-emails", {
+      body: { user_ids: userIds },
+    });
+    if (error) throw error;
+    return ((data as any)?.emails ?? {}) as Record<string, string>;
+  };
+
+  const exportCSV = async () => {
+    try {
+      const emailMap = await fetchEmails(filtered.map((s) => s.user_id));
+      const header = ["Matrícula", "Nome", "E-mail", "CPF", "Tipo", "Cooperativa", "Status", "Data de Cadastro"];
+      const rows = filtered.map((s) => [
+        s.enrollment_number || "",
+        (s.full_name || "").replace(/"/g, '""'),
+        emailMap[s.user_id] || "",
+        formatCpf((s as any).cpf),
+        s.role,
+        (s.cooperativa || "").replace(/"/g, '""'),
+        s.is_active === false ? "Inativo" : "Ativo",
+        new Date(s.created_at).toLocaleDateString("pt-BR"),
+      ]);
+      const csv = [header, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `alunos-coopaiba-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({ title: "Erro ao exportar", description: e.message, variant: "destructive" });
+    }
   };
 
   const exportFullReport = async () => {
