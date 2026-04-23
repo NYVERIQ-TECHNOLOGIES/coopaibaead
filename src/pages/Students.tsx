@@ -15,6 +15,7 @@ export default function Students() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [emailMap, setEmailMap] = useState<Record<string, string>>({});
   const { user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
