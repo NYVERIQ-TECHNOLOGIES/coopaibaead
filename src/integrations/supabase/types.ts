@@ -677,6 +677,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           cooperativa: string | null
+          cpf: string | null
           created_at: string
           deactivated_at: string | null
           enrollment_number: string | null
@@ -689,6 +690,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           cooperativa?: string | null
+          cpf?: string | null
           created_at?: string
           deactivated_at?: string | null
           enrollment_number?: string | null
@@ -701,6 +703,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           cooperativa?: string | null
+          cpf?: string | null
           created_at?: string
           deactivated_at?: string | null
           enrollment_number?: string | null
