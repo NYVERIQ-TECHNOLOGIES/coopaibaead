@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, Clock, Award, TrendingUp, Play } from "lucide-react";
+import { BookOpen, Clock, Award, TrendingUp, Play, IdCard } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +9,19 @@ import SignedImage from "@/components/SignedImage";
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth();
+
+  const { data: enrollmentNumber } = useQuery({
+    queryKey: ["my-enrollment-number", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("enrollment_number")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data?.enrollment_number ?? null;
+    },
+  });
 
   const { data: enrollments = [] } = useQuery({
     queryKey: ["my-enrollments", user?.id],
