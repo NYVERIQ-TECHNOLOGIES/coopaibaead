@@ -51,10 +51,9 @@ export default function CourseChat({ courseId, cooperadoOnly }: Props) {
     queryKey: ["course-chat-authors", courseId, userIds.join(",")],
     queryFn: async () => {
       if (userIds.length === 0) return [];
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url")
-        .in("user_id", userIds);
+      const { data } = await supabase.rpc("get_public_profiles", {
+        _user_ids: userIds,
+      });
       return data ?? [];
     },
     enabled: userIds.length > 0,

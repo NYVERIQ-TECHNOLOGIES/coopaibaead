@@ -815,6 +815,14 @@ export type Database = {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
+      get_public_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_question_answer: { Args: { _question_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -822,6 +830,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      list_public_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          user_id: string
+        }[]
       }
       log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }
       reset_course_progress: {
