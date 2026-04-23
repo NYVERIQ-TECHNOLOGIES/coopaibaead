@@ -232,9 +232,9 @@ export default function Login() {
                   <label className="flex items-center gap-2 text-muted-foreground">
                     <input type="checkbox" className="rounded border-border" /> Lembrar-me
                   </label>
-                  <a href="#" className="text-primary hover:underline font-medium">
-                    Esqueci a senha
-                  </a>
+                  <Link to="/forgot-password" className="text-primary hover:underline font-medium">
+                    Esqueci minha senha?
+                  </Link>
                 </div>
 
                 <button
