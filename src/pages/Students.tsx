@@ -58,6 +58,61 @@ export default function Students() {
       toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
+  const hardDeleteMut = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: userId, hard_delete: true },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["students-list"] });
+      toast({ title: "Usuário excluído permanentemente" });
+    },
+    onError: (e: any) =>
+      toast({ title: "Erro ao excluir", description: e.message, variant: "destructive" }),
+  });
+
+  const changeRoleMut = useMutation({
+    mutationFn: async ({ userId, newRole }: { userId: string; newRole: "aluno" | "cooperado" | "admin" }) => {
+      const { data, error } = await supabase.functions.invoke("manage-user-role", {
+        body: { user_id: userId, new_role: newRole },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["students-list"] });
+      toast({ title: "Tipo de usuário atualizado" });
+    },
+    onError: (e: any) =>
+      toast({ title: "Erro ao alterar tipo", description: e.message, variant: "destructive" }),
+  });
+
+  const startChatWith = async (targetUserId: string) => {
+    if (!user) return;
+    setChatLoadingFor(targetUserId);
+    try {
+      const { data: existing } = await supabase
+        .from("support_conversations")
+        .select("id")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+      if (!existing) {
+        const { error } = await supabase
+          .from("support_conversations")
+          .insert({ user_id: targetUserId, subject: "Mensagem do administrador" });
+        if (error) throw error;
+      }
+      navigate("/support");
+    } catch (e: any) {
+      toast({ title: "Erro ao abrir chat", description: e.message, variant: "destructive" });
+    } finally {
+      setChatLoadingFor(null);
+    }
+  };
+
   const filtered = students.filter((s) => {
     const matchesSearch =
       (s.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
