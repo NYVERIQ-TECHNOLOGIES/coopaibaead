@@ -222,6 +222,53 @@ export default function Support() {
       ? name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
       : "?";
 
+  // List of all users (admin only) — used to start new conversations
+  const { data: allUsers = [] } = useQuery<ProfileLite[]>({
+    queryKey: ["support-all-users"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("list_public_profiles");
+      if (error) throw error;
+      return (data || []) as ProfileLite[];
+    },
+  });
+
+  const startConversationWith = async (targetUserId: string) => {
+    if (!user) return;
+    setStartingId(targetUserId);
+    try {
+      const { data: existing } = await supabase
+        .from("support_conversations")
+        .select("id")
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+      let convId = existing?.id;
+      if (!convId) {
+        const { data: created, error } = await supabase
+          .from("support_conversations")
+          .insert({ user_id: targetUserId, subject: "Mensagem do administrador" })
+          .select("id")
+          .single();
+        if (error) throw error;
+        convId = created.id;
+      }
+      await qc.invalidateQueries({ queryKey: ["support-all-conversations"] });
+      setSelectedId(convId!);
+      setTab("inbox");
+      toast.success("Conversa aberta");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao iniciar conversa");
+    } finally {
+      setStartingId(null);
+    }
+  };
+
+  const filteredUsers = allUsers.filter((u) => {
+    if (u.user_id === user?.id) return false;
+    if (!userSearch.trim()) return true;
+    return u.full_name?.toLowerCase().includes(userSearch.toLowerCase());
+  });
+
   // ====== ADMIN LAYOUT (list + chat) ======
   if (isAdmin) {
     const activeProfile = activeConversation ? profilesMap[activeConversation.user_id] : null;
