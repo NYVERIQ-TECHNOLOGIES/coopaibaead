@@ -62,9 +62,22 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Visão geral da plataforma Coopaiba EAD</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Visão geral da plataforma Coopaiba EAD</p>
+        </div>
+        {enrollmentNumber && (
+          <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-card">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <IdCard className="w-4 h-4 text-primary" />
+            </div>
+            <div className="leading-tight">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Matrícula</p>
+              <p className="font-mono font-semibold text-sm text-foreground">{enrollmentNumber}</p>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
