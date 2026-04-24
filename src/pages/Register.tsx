@@ -109,6 +109,7 @@ export default function Register() {
           full_name: trimmedName,
           cooperativa: userType === "cooperado" ? cooperativa : null,
           cpf: cleanCpf,
+          user_type: userType,
         },
         emailRedirectTo: `${window.location.origin}/login`,
       },
