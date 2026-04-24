@@ -109,6 +109,7 @@ export default function Register() {
           full_name: trimmedName,
           cooperativa: userType === "cooperado" ? cooperativa : null,
           cpf: cleanCpf,
+          user_type: userType,
         },
         emailRedirectTo: `${window.location.origin}/login`,
       },
@@ -152,13 +153,7 @@ export default function Register() {
           await supabase.from("profiles").update(updates).eq("user_id", newUserId);
         }
 
-        // Aluno cooperado: garantir o role correto
-        if (userType === "cooperado") {
-          await supabase.from("user_roles").upsert(
-            { user_id: newUserId, role: "cooperado" },
-            { onConflict: "user_id,role" }
-          );
-        }
+        // O role (aluno/cooperado) é definido pelo trigger handle_new_user via user_metadata.user_type
       } catch {
         // Não bloqueia o cadastro
       }
