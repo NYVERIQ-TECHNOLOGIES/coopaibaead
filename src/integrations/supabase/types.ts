@@ -910,6 +910,71 @@ export type Database = {
         }
         Relationships: []
       }
+      public_evaluation_questions: {
+        Row: {
+          created_at: string | null
+          evaluation_id: string | null
+          id: string | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question_text: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          evaluation_id?: string | null
+          id?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question_text?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          evaluation_id?: string | null
+          id?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question_text?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_questions_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "course_evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_course: {
