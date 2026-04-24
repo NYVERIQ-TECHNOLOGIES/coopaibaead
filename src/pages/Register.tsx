@@ -153,11 +153,7 @@ export default function Register() {
           await supabase.from("profiles").update(updates).eq("user_id", newUserId);
         }
 
-        // Aluno cooperado: substituir o role padrão (aluno) por cooperado
-        if (userType === "cooperado") {
-          await supabase.from("user_roles").delete().eq("user_id", newUserId);
-          await supabase.from("user_roles").insert({ user_id: newUserId, role: "cooperado" });
-        }
+        // O role (aluno/cooperado) é definido pelo trigger handle_new_user via user_metadata.user_type
       } catch {
         // Não bloqueia o cadastro
       }
