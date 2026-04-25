@@ -977,6 +977,14 @@ export type Database = {
       }
     }
     Functions: {
+      assign_default_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      assign_default_role_bulk: { Args: never; Returns: number }
       can_access_course: {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
@@ -990,6 +998,17 @@ export type Database = {
         }[]
       }
       get_question_answer: { Args: { _question_id: string }; Returns: string }
+      get_users_without_role: {
+        Args: never
+        Returns: {
+          cooperativa: string
+          created_at: string
+          enrollment_number: string
+          full_name: string
+          is_active: boolean
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
