@@ -654,15 +654,37 @@ export default function UnlistedUsers() {
 
         {/* ===== TAB 2: MATRÍCULAS FALTANDO ===== */}
         <TabsContent value="matriculas" className="space-y-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar matrícula, nome ou email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar matrícula, nome ou email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportMissingCSV}
+                disabled={filteredMissing.length === 0}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" /> Exportar CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportMissingPDF}
+                disabled={filteredMissing.length === 0}
+                className="gap-2"
+              >
+                <FileText className="w-4 h-4" /> Exportar PDF
+              </Button>
+            </div>
           </div>
 
           {/* Explicação dos motivos */}
