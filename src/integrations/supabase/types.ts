@@ -989,6 +989,35 @@ export type Database = {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
+      get_duplicate_enrollments: {
+        Args: never
+        Returns: {
+          enrollment_number: string
+          occurrences: number
+          user_ids: string[]
+        }[]
+      }
+      get_enrollment_diagnostics: {
+        Args: never
+        Returns: {
+          total_duplicates: number
+          total_invalid_format: number
+          total_missing_gaps: number
+          total_profiles: number
+          total_with_valid_enrollment: number
+          total_without_enrollment: number
+        }[]
+      }
+      get_missing_enrollments_with_users: {
+        Args: never
+        Returns: {
+          missing_enrollment_number: string
+          possible_user_created_at: string
+          possible_user_email: string
+          possible_user_id: string
+          possible_user_name: string
+        }[]
+      }
       get_public_profiles: {
         Args: { _user_ids: string[] }
         Returns: {
@@ -998,6 +1027,19 @@ export type Database = {
         }[]
       }
       get_question_answer: { Args: { _question_id: string }; Returns: string }
+      get_users_with_invalid_enrollment: {
+        Args: never
+        Returns: {
+          cooperativa: string
+          created_at: string
+          email: string
+          enrollment_number: string
+          full_name: string
+          is_active: boolean
+          reason: string
+          user_id: string
+        }[]
+      }
       get_users_without_role: {
         Args: never
         Returns: {
@@ -1015,6 +1057,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      link_enrollment_to_user: {
+        Args: { _enrollment_number: string; _user_id: string }
+        Returns: undefined
       }
       list_public_profiles: {
         Args: never
