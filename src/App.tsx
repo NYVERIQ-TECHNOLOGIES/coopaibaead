@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
 import Students from "@/pages/Students";
+import UnlistedUsers from "@/pages/UnlistedUsers";
 import LibraryPage from "@/pages/LibraryPage";
 import Certificates from "@/pages/Certificates";
 import Attendance from "@/pages/Attendance";
@@ -63,6 +64,7 @@ const App = () => (
 
               {/* Restrito a admins */}
               <Route path="/students" element={<ProtectedRoute allowedRoles={["admin"]}><Students /></ProtectedRoute>} />
+              <Route path="/unlisted-users" element={<ProtectedRoute allowedRoles={["admin"]}><UnlistedUsers /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin"]}><Attendance /></ProtectedRoute>} />
               <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin"]}><SupplementaryMaterials /></ProtectedRoute>} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />

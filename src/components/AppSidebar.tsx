@@ -6,7 +6,7 @@ import logoImg from "@/assets/logo-coopaiba.png";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardCheck,
   BarChart3, Library, Award, Settings,
-  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, MessageSquare, Activity, Headphones
+  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, MessageSquare, Activity, Headphones, UserX
 } from "lucide-react";
 
 // adminOnly: visível apenas para admin
@@ -17,6 +17,7 @@ const navItems = [
   { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
   { label: "Cursos", icon: BookOpen, path: "/courses" },
   { label: "Alunos", icon: Users, path: "/students", adminOnly: true },
+  { label: "Não listados", icon: UserX, path: "/unlisted-users", adminOnly: true },
   { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
   { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
   { label: "Biblioteca", icon: Library, path: "/library" },
