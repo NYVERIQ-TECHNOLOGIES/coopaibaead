@@ -764,6 +764,9 @@ export default function UnlistedUsers() {
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Email
                       </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Motivo provável
+                      </th>
                       <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Ação
                       </th>
@@ -785,6 +788,9 @@ export default function UnlistedUsers() {
                         </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
                           {m.possible_user_email || "—"}
+                        </td>
+                        <td className="py-3 px-4 text-xs text-muted-foreground max-w-xs">
+                          {inferMissingReason(m)}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <Button
