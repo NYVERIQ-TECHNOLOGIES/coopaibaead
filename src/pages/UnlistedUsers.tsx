@@ -2,8 +2,10 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Search, UserPlus, Users, UserCheck, UserX, Loader2,
-  AlertTriangle, FileWarning, Copy, Hash, Link2, Download,
+  AlertTriangle, FileWarning, Copy, Hash, Link2, Download, FileText,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -79,6 +81,16 @@ function downloadCSV(filename: string, rows: (string | number | null | undefined
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function inferMissingReason(m: MissingEnrollment): string {
+  if (m.possible_user_id && m.possible_user_name) {
+    return "Usuário cadastrado sem matrícula — possível dono identificado";
+  }
+  if (m.possible_user_id) {
+    return "Cadastro incompleto sem nome — possível dono identificado";
+  }
+  return "Sem dono identificado — provável exclusão, alteração manual ou falha de importação";
 }
 
 export default function UnlistedUsers() {
@@ -289,9 +301,22 @@ export default function UnlistedUsers() {
     );
     rows.push([]);
     rows.push(["MATRÍCULAS FALTANTES + SUGESTÃO DE VÍNCULO"]);
-    rows.push(["Matrícula faltante", "Possível usuário", "Email"]);
+    rows.push([
+      "Matrícula faltante",
+      "Possível usuário",
+      "Email",
+      "Motivo provável",
+      "Detectado em",
+    ]);
+    const detectedAt = new Date().toLocaleString("pt-BR");
     missingEnrollments.forEach((m) =>
-      rows.push([m.missing_enrollment_number, m.possible_user_name, m.possible_user_email]),
+      rows.push([
+        m.missing_enrollment_number,
+        m.possible_user_name,
+        m.possible_user_email,
+        inferMissingReason(m),
+        detectedAt,
+      ]),
     );
     rows.push([]);
     rows.push(["MATRÍCULAS DUPLICADAS"]);
@@ -300,6 +325,91 @@ export default function UnlistedUsers() {
     downloadCSV(`relatorio-cadastro-${new Date().toISOString().slice(0, 10)}.csv`, rows);
     toast({ title: "Relatório baixado" });
   };
+
+  const handleExportMissingCSV = () => {
+    const detectedAt = new Date().toLocaleString("pt-BR");
+    const rows: (string | number | null)[][] = [];
+    rows.push(["RELATÓRIO DE AUDITORIA — MATRÍCULAS FALTANTES (COOPAÍBA)"]);
+    rows.push([`Gerado em: ${detectedAt}`]);
+    rows.push([`Total de lacunas detectadas: ${filteredMissing.length}`]);
+    rows.push([]);
+    rows.push([
+      "Matrícula faltante",
+      "Possível dono",
+      "Email",
+      "Motivo provável",
+      "Detectado em",
+    ]);
+    filteredMissing.forEach((m) =>
+      rows.push([
+        m.missing_enrollment_number,
+        m.possible_user_name || "—",
+        m.possible_user_email || "—",
+        inferMissingReason(m),
+        detectedAt,
+      ]),
+    );
+    downloadCSV(
+      `matriculas-faltantes-${new Date().toISOString().slice(0, 10)}.csv`,
+      rows,
+    );
+    toast({ title: "CSV de auditoria baixado" });
+  };
+
+  const handleExportMissingPDF = () => {
+    const detectedAt = new Date().toLocaleString("pt-BR");
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Relatório de Auditoria — Matrículas Faltantes", 40, 40);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Coopaíba — EAD", 40, 58);
+    doc.text(`Gerado em: ${detectedAt}`, 40, 72);
+    doc.text(`Total de lacunas detectadas: ${filteredMissing.length}`, 40, 86);
+
+    autoTable(doc, {
+      startY: 105,
+      head: [
+        ["Matrícula faltante", "Possível dono", "Email", "Motivo provável", "Detectado em"],
+      ],
+      body: filteredMissing.map((m) => [
+        m.missing_enrollment_number,
+        m.possible_user_name || "—",
+        m.possible_user_email || "—",
+        inferMissingReason(m),
+        detectedAt,
+      ]),
+      styles: { fontSize: 8, cellPadding: 5, overflow: "linebreak" },
+      headStyles: { fillColor: [88, 28, 135], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 245, 252] },
+      columnStyles: {
+        0: { cellWidth: 90, font: "courier", fontStyle: "bold" },
+        1: { cellWidth: 150 },
+        2: { cellWidth: 170 },
+        3: { cellWidth: 230 },
+        4: { cellWidth: 110 },
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.height ?? pageSize.getHeight();
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount} — Documento de auditoria interna`,
+          40,
+          pageHeight - 20,
+        );
+      },
+    });
+
+    doc.save(`matriculas-faltantes-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast({ title: "PDF de auditoria baixado" });
+  };
+
 
   const totalIssues =
     (diagnostics?.total_without_enrollment ?? 0) +
@@ -544,15 +654,37 @@ export default function UnlistedUsers() {
 
         {/* ===== TAB 2: MATRÍCULAS FALTANDO ===== */}
         <TabsContent value="matriculas" className="space-y-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar matrícula, nome ou email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar matrícula, nome ou email..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportMissingCSV}
+                disabled={filteredMissing.length === 0}
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" /> Exportar CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportMissingPDF}
+                disabled={filteredMissing.length === 0}
+                className="gap-2"
+              >
+                <FileText className="w-4 h-4" /> Exportar PDF
+              </Button>
+            </div>
           </div>
 
           {/* Explicação dos motivos */}
@@ -632,6 +764,9 @@ export default function UnlistedUsers() {
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Email
                       </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Motivo provável
+                      </th>
                       <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Ação
                       </th>
@@ -653,6 +788,9 @@ export default function UnlistedUsers() {
                         </td>
                         <td className="py-3 px-4 text-sm text-muted-foreground">
                           {m.possible_user_email || "—"}
+                        </td>
+                        <td className="py-3 px-4 text-xs text-muted-foreground max-w-xs">
+                          {inferMissingReason(m)}
                         </td>
                         <td className="py-3 px-4 text-right">
                           <Button
