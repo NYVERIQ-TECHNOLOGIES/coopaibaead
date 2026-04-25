@@ -2,8 +2,10 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Search, UserPlus, Users, UserCheck, UserX, Loader2,
-  AlertTriangle, FileWarning, Copy, Hash, Link2, Download,
+  AlertTriangle, FileWarning, Copy, Hash, Link2, Download, FileText,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
