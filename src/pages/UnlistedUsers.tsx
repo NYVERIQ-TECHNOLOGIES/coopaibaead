@@ -555,10 +555,56 @@ export default function UnlistedUsers() {
             />
           </div>
 
+          {/* Explicação dos motivos */}
+          <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-card-foreground">
+                  Por que esses números sumiram?
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  A sequência de matrículas segue o padrão{" "}
+                  <span className="font-mono font-semibold text-foreground">COOP-XXXXXX</span> e
+                  deve ser contínua. Quando um número não aparece, normalmente é por um destes
+                  motivos:
+                </p>
+                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside ml-1">
+                  <li>
+                    <span className="font-medium text-foreground">Usuário excluído:</span> a conta
+                    foi removida do sistema, mas o número não foi reaproveitado.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Cadastro incompleto:</span> o
+                    usuário iniciou o registro, recebeu um número, mas nunca finalizou o perfil.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Matrícula apagada manualmente:</span>{" "}
+                    alguém limpou o campo <span className="font-mono">enrollment_number</span> do
+                    perfil sem reatribuir.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Matrícula alterada:</span> o
+                    número foi trocado por outro, deixando uma lacuna na sequência.
+                  </li>
+                  <li>
+                    <span className="font-medium text-foreground">Falha na importação:</span>{" "}
+                    cadastros migrados de planilhas podem ter pulado números.
+                  </li>
+                </ul>
+                <p className="text-xs text-muted-foreground leading-relaxed pt-1">
+                  As sugestões abaixo são geradas a partir de usuários{" "}
+                  <span className="font-medium text-foreground">sem matrícula</span> (mais antigos
+                  primeiro), para que você possa vinculá-los aos números faltantes e fechar as
+                  lacunas.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <p className="text-sm text-muted-foreground">
             <span className="font-semibold text-foreground">{filteredMissing.length}</span>{" "}
-            matrícula(s) faltante(s) na sequência. Sugestões geradas a partir dos usuários sem
-            matrícula (mais antigos primeiro).
+            matrícula(s) faltante(s) identificada(s) na sequência.
           </p>
 
           {missingLoading ? (
