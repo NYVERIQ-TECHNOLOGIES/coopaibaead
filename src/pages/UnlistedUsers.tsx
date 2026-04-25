@@ -301,9 +301,22 @@ export default function UnlistedUsers() {
     );
     rows.push([]);
     rows.push(["MATRÍCULAS FALTANTES + SUGESTÃO DE VÍNCULO"]);
-    rows.push(["Matrícula faltante", "Possível usuário", "Email"]);
+    rows.push([
+      "Matrícula faltante",
+      "Possível usuário",
+      "Email",
+      "Motivo provável",
+      "Detectado em",
+    ]);
+    const detectedAt = new Date().toLocaleString("pt-BR");
     missingEnrollments.forEach((m) =>
-      rows.push([m.missing_enrollment_number, m.possible_user_name, m.possible_user_email]),
+      rows.push([
+        m.missing_enrollment_number,
+        m.possible_user_name,
+        m.possible_user_email,
+        inferMissingReason(m),
+        detectedAt,
+      ]),
     );
     rows.push([]);
     rows.push(["MATRÍCULAS DUPLICADAS"]);
@@ -312,6 +325,91 @@ export default function UnlistedUsers() {
     downloadCSV(`relatorio-cadastro-${new Date().toISOString().slice(0, 10)}.csv`, rows);
     toast({ title: "Relatório baixado" });
   };
+
+  const handleExportMissingCSV = () => {
+    const detectedAt = new Date().toLocaleString("pt-BR");
+    const rows: (string | number | null)[][] = [];
+    rows.push(["RELATÓRIO DE AUDITORIA — MATRÍCULAS FALTANTES (COOPAÍBA)"]);
+    rows.push([`Gerado em: ${detectedAt}`]);
+    rows.push([`Total de lacunas detectadas: ${filteredMissing.length}`]);
+    rows.push([]);
+    rows.push([
+      "Matrícula faltante",
+      "Possível dono",
+      "Email",
+      "Motivo provável",
+      "Detectado em",
+    ]);
+    filteredMissing.forEach((m) =>
+      rows.push([
+        m.missing_enrollment_number,
+        m.possible_user_name || "—",
+        m.possible_user_email || "—",
+        inferMissingReason(m),
+        detectedAt,
+      ]),
+    );
+    downloadCSV(
+      `matriculas-faltantes-${new Date().toISOString().slice(0, 10)}.csv`,
+      rows,
+    );
+    toast({ title: "CSV de auditoria baixado" });
+  };
+
+  const handleExportMissingPDF = () => {
+    const detectedAt = new Date().toLocaleString("pt-BR");
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Relatório de Auditoria — Matrículas Faltantes", 40, 40);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Coopaíba — EAD", 40, 58);
+    doc.text(`Gerado em: ${detectedAt}`, 40, 72);
+    doc.text(`Total de lacunas detectadas: ${filteredMissing.length}`, 40, 86);
+
+    autoTable(doc, {
+      startY: 105,
+      head: [
+        ["Matrícula faltante", "Possível dono", "Email", "Motivo provável", "Detectado em"],
+      ],
+      body: filteredMissing.map((m) => [
+        m.missing_enrollment_number,
+        m.possible_user_name || "—",
+        m.possible_user_email || "—",
+        inferMissingReason(m),
+        detectedAt,
+      ]),
+      styles: { fontSize: 8, cellPadding: 5, overflow: "linebreak" },
+      headStyles: { fillColor: [88, 28, 135], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 245, 252] },
+      columnStyles: {
+        0: { cellWidth: 90, font: "courier", fontStyle: "bold" },
+        1: { cellWidth: 150 },
+        2: { cellWidth: 170 },
+        3: { cellWidth: 230 },
+        4: { cellWidth: 110 },
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.height ?? pageSize.getHeight();
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          `Página ${data.pageNumber} de ${pageCount} — Documento de auditoria interna`,
+          40,
+          pageHeight - 20,
+        );
+      },
+    });
+
+    doc.save(`matriculas-faltantes-${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast({ title: "PDF de auditoria baixado" });
+  };
+
 
   const totalIssues =
     (diagnostics?.total_without_enrollment ?? 0) +
