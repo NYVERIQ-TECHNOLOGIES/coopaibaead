@@ -1,19 +1,53 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Shield, Camera, Loader2, IdCard } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Shield,
+  Camera,
+  Loader2,
+  IdCard,
+  Check,
+  X,
+} from "lucide-react";
 import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+type PasswordCheck = {
+  key: string;
+  label: string;
+  test: (pwd: string) => boolean;
+};
+
+const PASSWORD_CHECKS: PasswordCheck[] = [
+  { key: "length", label: "Mínimo de 8 caracteres", test: (p) => p.length >= 8 },
+  { key: "upper", label: "Pelo menos 1 letra maiúscula (A-Z)", test: (p) => /[A-Z]/.test(p) },
+  { key: "lower", label: "Pelo menos 1 letra minúscula (a-z)", test: (p) => /[a-z]/.test(p) },
+  { key: "numbers", label: "Pelo menos 2 números (0-9)", test: (p) => (p.match(/\d/g) || []).length >= 2 },
+  {
+    key: "special",
+    label: "Pelo menos 1 caractere especial (!@#$...)",
+    test: (p) => /[^A-Za-z0-9]/.test(p),
+  },
+];
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [userType, setUserType] = useState<"aluno" | "cooperado">("aluno");
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [cooperativa, setCooperativa] = useState("");
   const [cooperativasList, setCooperativasList] = useState<{ id: string; name: string }[]>([]);
   const [agreed, setAgreed] = useState(false);
@@ -74,32 +108,94 @@ export default function Register() {
     reader.readAsDataURL(file);
   };
 
+  // ====== Validação de senha em tempo real ======
+  const passwordResults = useMemo(
+    () => PASSWORD_CHECKS.map((c) => ({ ...c, ok: c.test(password) })),
+    [password]
+  );
+  const passedCount = passwordResults.filter((r) => r.ok).length;
+  const allPasswordOk = passedCount === PASSWORD_CHECKS.length;
+
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
+  const confirmHasError = confirmPassword.length > 0 && !passwordsMatch;
+
+  const strength: { level: 0 | 1 | 2 | 3; label: string; color: string; barColor: string } = useMemo(() => {
+    if (password.length === 0) return { level: 0, label: "", color: "", barColor: "" };
+    if (passedCount <= 2)
+      return {
+        level: 1,
+        label: "Fraca",
+        color: "text-destructive",
+        barColor: "bg-destructive",
+      };
+    if (passedCount <= 4)
+      return {
+        level: 2,
+        label: "Média",
+        color: "text-warning",
+        barColor: "bg-warning",
+      };
+    return { level: 3, label: "Forte", color: "text-success", barColor: "bg-success" };
+  }, [password, passedCount]);
+
+  const trimmedName = fullName.trim();
+  const nameOk = trimmedName.length > 0 && trimmedName.split(/\s+/).length >= 2;
+  const cpfOk = isValidCpf(cpf);
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const cooperativaOk = userType !== "cooperado" || !!cooperativa;
+
+  const formValid =
+    nameOk && cpfOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk;
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || fullName.trim().split(/\s+/).length < 2) {
-      toast({ title: "Nome completo obrigatório", description: "Informe seu nome completo (nome e sobrenome).", variant: "destructive" });
+    if (!nameOk) {
+      toast({
+        title: "Nome completo obrigatório",
+        description: "Informe seu nome completo (nome e sobrenome).",
+        variant: "destructive",
+      });
       return;
     }
     if (!cpf.trim()) {
       toast({ title: "CPF obrigatório", description: "Informe seu CPF para criar a conta.", variant: "destructive" });
       return;
     }
-    if (!isValidCpf(cpf)) {
+    if (!cpfOk) {
       toast({ title: "CPF inválido", description: "Digite um CPF válido para continuar.", variant: "destructive" });
+      return;
+    }
+    if (!emailOk) {
+      toast({ title: "E-mail inválido", description: "Digite um e-mail válido.", variant: "destructive" });
+      return;
+    }
+    if (!allPasswordOk) {
+      toast({
+        title: "Senha não atende aos requisitos",
+        description: "Verifique os critérios listados abaixo do campo de senha.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!passwordsMatch) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "Os campos 'Senha' e 'Confirmar senha' devem ser iguais.",
+        variant: "destructive",
+      });
       return;
     }
     if (!agreed) {
       toast({ title: "Aceite os termos", description: "Você precisa concordar com os Termos de Uso.", variant: "destructive" });
       return;
     }
-    if (userType === "cooperado" && !cooperativa) {
+    if (!cooperativaOk) {
       toast({ title: "Selecione a cooperativa", description: "Escolha uma cooperativa para continuar.", variant: "destructive" });
       return;
     }
     setLoading(true);
 
     const cleanCpf = cpf.replace(/\D/g, "");
-    const trimmedName = fullName.trim();
 
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
@@ -123,10 +219,8 @@ export default function Register() {
 
     const newUserId = signUpData.user?.id;
 
-    // Atualiza o profile com cooperativa (cooperado) e foto, e ajusta o role se necessário
     if (newUserId) {
       try {
-        // Aguarda o trigger handle_new_user criar o profile
         await new Promise((r) => setTimeout(r, 400));
 
         const updates: { cooperativa?: string; avatar_url?: string; cpf?: string; full_name?: string } = {
@@ -144,7 +238,9 @@ export default function Register() {
             .from("avatars")
             .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
           if (!upErr) {
-            const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+            const {
+              data: { publicUrl },
+            } = supabase.storage.from("avatars").getPublicUrl(path);
             updates.avatar_url = publicUrl;
           }
         }
@@ -152,8 +248,6 @@ export default function Register() {
         if (Object.keys(updates).length > 0) {
           await supabase.from("profiles").update(updates).eq("user_id", newUserId);
         }
-
-        // O role (aluno/cooperado) é definido pelo trigger handle_new_user via user_metadata.user_type
       } catch {
         // Não bloqueia o cadastro
       }
@@ -164,51 +258,85 @@ export default function Register() {
     setLoading(false);
   };
 
-  const initials = fullName
-    .trim()
-    .split(/\s+/)
-    .map((p) => p[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "U";
+  const initials =
+    fullName
+      .trim()
+      .split(/\s+/)
+      .map((p) => p[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase() || "U";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-lg">
-        <div className="flex items-center gap-3 mb-8 justify-center">
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-background">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-lg"
+      >
+        <div className="flex items-center gap-3 mb-6 sm:mb-8 justify-center">
           <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain" />
           <h1 className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</h1>
         </div>
 
-        <div className="bg-card rounded-2xl p-8 shadow-elevated border border-border">
+        <div className="bg-card rounded-2xl p-5 sm:p-8 shadow-elevated border border-border">
           <h2 className="text-2xl font-heading font-bold text-card-foreground text-center">Criar Conta</h2>
-          <p className="text-muted-foreground mt-1 mb-6 text-center text-sm">Junte-se à comunidade de aprendizagem cooperativista</p>
+          <p className="text-muted-foreground mt-1 mb-6 text-center text-sm">
+            Junte-se à comunidade de aprendizagem cooperativista
+          </p>
 
           {/* Type selector */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            <button type="button" onClick={() => setUserType("aluno")}
-              className={`p-4 rounded-xl border-2 transition-all text-center ${userType === "aluno" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"}`}>
-              <User className={`w-6 h-6 mx-auto mb-2 ${userType === "aluno" ? "text-primary" : "text-muted-foreground"}`} />
-              <p className={`text-sm font-semibold ${userType === "aluno" ? "text-primary" : "text-card-foreground"}`}>Aluno</p>
+            <button
+              type="button"
+              onClick={() => setUserType("aluno")}
+              className={`p-4 rounded-xl border-2 transition-all text-center ${
+                userType === "aluno" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground"
+              }`}
+            >
+              <User
+                className={`w-6 h-6 mx-auto mb-2 ${userType === "aluno" ? "text-primary" : "text-muted-foreground"}`}
+              />
+              <p
+                className={`text-sm font-semibold ${userType === "aluno" ? "text-primary" : "text-card-foreground"}`}
+              >
+                Aluno
+              </p>
               <p className="text-xs text-muted-foreground mt-1">Acesso aos cursos gerais</p>
             </button>
-            <button type="button" onClick={() => setUserType("cooperado")}
-              className={`p-4 rounded-xl border-2 transition-all text-center ${userType === "cooperado" ? "border-secondary bg-secondary/5" : "border-border hover:border-muted-foreground"}`}>
-              <Shield className={`w-6 h-6 mx-auto mb-2 ${userType === "cooperado" ? "text-secondary" : "text-muted-foreground"}`} />
-              <p className={`text-sm font-semibold ${userType === "cooperado" ? "text-secondary" : "text-card-foreground"}`}>Cooperado</p>
+            <button
+              type="button"
+              onClick={() => setUserType("cooperado")}
+              className={`p-4 rounded-xl border-2 transition-all text-center ${
+                userType === "cooperado"
+                  ? "border-secondary bg-secondary/5"
+                  : "border-border hover:border-muted-foreground"
+              }`}
+            >
+              <Shield
+                className={`w-6 h-6 mx-auto mb-2 ${
+                  userType === "cooperado" ? "text-secondary" : "text-muted-foreground"
+                }`}
+              />
+              <p
+                className={`text-sm font-semibold ${
+                  userType === "cooperado" ? "text-secondary" : "text-card-foreground"
+                }`}
+              >
+                Cooperado
+              </p>
               <p className="text-xs text-muted-foreground mt-1">Acesso completo + exclusivos</p>
             </button>
           </div>
 
-          <form className="space-y-4" onSubmit={handleRegister}>
+          <form className="space-y-4" onSubmit={handleRegister} noValidate>
             {/* Photo picker */}
             <div className="flex flex-col items-center gap-2 mb-2">
               <button
                 type="button"
                 onClick={() => photoRef.current?.click()}
-                className="relative w-20 h-20 rounded-full border-4 border-primary/20 bg-primary/10 flex items-center justify-center overflow-hidden group cursor-pointer"
+                className="relative w-20 h-20 rounded-full border-4 border-primary/20 bg-primary/10 flex items-center justify-center overflow-hidden group cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring"
                 aria-label="Adicionar foto de perfil"
               >
                 {photoPreview ? (
@@ -224,26 +352,38 @@ export default function Register() {
               <p className="text-xs text-muted-foreground">Foto de perfil (opcional)</p>
             </div>
 
+            {/* Nome */}
             <div>
-              <label className="text-sm font-medium text-card-foreground mb-1.5 block">Nome completo *</label>
+              <label htmlFor="fullName" className="text-sm font-medium text-card-foreground mb-1.5 block">
+                Nome completo *
+              </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
+                  id="fullName"
                   type="text"
                   placeholder="Seu nome completo"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
+                  autoComplete="name"
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
+              {fullName.length > 0 && !nameOk && (
+                <p className="text-xs text-destructive mt-1">Informe nome e sobrenome.</p>
+              )}
             </div>
 
+            {/* CPF */}
             <div>
-              <label className="text-sm font-medium text-card-foreground mb-1.5 block">CPF *</label>
+              <label htmlFor="cpf" className="text-sm font-medium text-card-foreground mb-1.5 block">
+                CPF *
+              </label>
               <div className="relative">
                 <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
+                  id="cpf"
                   type="text"
                   inputMode="numeric"
                   placeholder="000.000.000-00"
@@ -254,6 +394,9 @@ export default function Register() {
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
+              {cpf.length > 0 && !cpfOk && (
+                <p className="text-xs text-destructive mt-1">CPF inválido.</p>
+              )}
             </div>
 
             {userType === "cooperado" && (
@@ -265,48 +408,205 @@ export default function Register() {
                   </SelectTrigger>
                   <SelectContent>
                     {cooperativasList.map((c) => (
-                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                      <SelectItem key={c.id} value={c.name}>
+                        {c.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
 
+            {/* E-mail */}
             <div>
-              <label className="text-sm font-medium text-card-foreground mb-1.5 block">E-mail</label>
+              <label htmlFor="email" className="text-sm font-medium text-card-foreground mb-1.5 block">
+                E-mail *
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required
-                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
+              {email.length > 0 && !emailOk && (
+                <p className="text-xs text-destructive mt-1">E-mail inválido.</p>
+              )}
             </div>
 
+            {/* Senha */}
             <div>
-              <label className="text-sm font-medium text-card-foreground mb-1.5 block">Senha</label>
+              <label htmlFor="password" className="text-sm font-medium text-card-foreground mb-1.5 block">
+                Senha *
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={6}
-                  className="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Crie uma senha forte"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  aria-describedby="password-checklist password-strength"
+                  className="w-full pl-10 pr-10 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* Barra de força */}
+              {password.length > 0 && (
+                <div id="password-strength" className="mt-2">
+                  <div className="flex gap-1.5" aria-hidden="true">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "h-1.5 flex-1 rounded-full transition-colors",
+                          strength.level >= i ? strength.barColor : "bg-muted"
+                        )}
+                      />
+                    ))}
+                  </div>
+                  <p className={cn("text-xs mt-1 font-medium", strength.color)}>
+                    Força da senha: {strength.label}
+                  </p>
+                </div>
+              )}
+
+              {/* Checklist visual */}
+              <ul
+                id="password-checklist"
+                className="mt-3 space-y-1.5 bg-muted/40 rounded-lg p-3 border border-border"
+                aria-live="polite"
+              >
+                {passwordResults.map((r) => (
+                  <li key={r.key} className="flex items-center gap-2 text-xs">
+                    <span
+                      className={cn(
+                        "flex items-center justify-center w-4 h-4 rounded-full shrink-0",
+                        r.ok ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {r.ok ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                    </span>
+                    <span className={r.ok ? "text-foreground" : "text-muted-foreground"}>{r.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Confirmar senha */}
+            <div>
+              <label htmlFor="confirmPassword" className="text-sm font-medium text-card-foreground mb-1.5 block">
+                Confirmar senha *
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  id="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  placeholder="Digite a senha novamente"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  aria-invalid={confirmHasError}
+                  className={cn(
+                    "w-full pl-10 pr-10 py-2.5 bg-background border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring",
+                    confirmHasError ? "border-destructive" : "border-border"
+                  )}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  aria-label={showConfirm ? "Ocultar senha" : "Mostrar senha"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {confirmPassword.length > 0 && (
+                <p
+                  className={cn(
+                    "text-xs mt-1 flex items-center gap-1",
+                    passwordsMatch ? "text-success" : "text-destructive"
+                  )}
+                >
+                  {passwordsMatch ? (
+                    <>
+                      <Check className="w-3 h-3" /> As senhas coincidem
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-3 h-3" /> As senhas não coincidem
+                    </>
+                  )}
+                </p>
+              )}
             </div>
 
             <label className="flex items-start gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="rounded border-border mt-0.5" />
-              <span>Concordo com os <a href="#" className="text-primary underline">Termos de Uso</a> e a <a href="#" className="text-primary underline">Política de Privacidade</a> (LGPD)</span>
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="rounded border-border mt-0.5"
+              />
+              <span>
+                Concordo com os{" "}
+                <a href="#" className="text-primary underline">
+                  Termos de Uso
+                </a>{" "}
+                e a{" "}
+                <a href="#" className="text-primary underline">
+                  Política de Privacidade
+                </a>{" "}
+                (LGPD)
+              </span>
             </label>
 
-            <button type="submit" disabled={loading}
-              className="w-full gradient-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50">
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando conta...</> : <>Criar Conta <ArrowRight className="w-4 h-4" /></>}
+            <button
+              type="submit"
+              disabled={loading || !formValid}
+              className="w-full gradient-primary text-primary-foreground py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Criando conta...
+                </>
+              ) : (
+                <>
+                  Criar Conta <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
+            {!formValid && !loading && (
+              <p className="text-center text-xs text-muted-foreground">
+                Preencha todos os campos corretamente para habilitar o botão.
+              </p>
+            )}
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Já tem conta? <Link to="/login" className="text-primary font-medium hover:underline">Entrar</Link>
+            Já tem conta?{" "}
+            <Link to="/login" className="text-primary font-medium hover:underline">
+              Entrar
+            </Link>
           </p>
         </div>
       </motion.div>
