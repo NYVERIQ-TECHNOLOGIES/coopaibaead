@@ -1,0 +1,34 @@
+
+REVOKE EXECUTE ON FUNCTION public.get_question_answer(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.can_access_course(uuid, uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.log_admin_access(text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_public_profiles(uuid[]) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.list_public_profiles() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.submit_exam_answers(uuid, jsonb) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.assign_default_role_bulk() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.assign_default_role(uuid, public.app_role) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_users_without_role() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_duplicate_enrollments() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.link_enrollment_to_user(uuid, text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.reset_course_progress(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_users_with_invalid_enrollment() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_enrollment_diagnostics() FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.get_missing_enrollments_with_users() FROM PUBLIC, anon;
+
+GRANT EXECUTE ON FUNCTION public.get_question_answer(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.can_access_course(uuid, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.log_admin_access(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_public_profiles(uuid[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.list_public_profiles() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.submit_exam_answers(uuid, jsonb) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.assign_default_role_bulk() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.assign_default_role(uuid, public.app_role) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_users_without_role() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_duplicate_enrollments() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.link_enrollment_to_user(uuid, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.reset_course_progress(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_users_with_invalid_enrollment() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_enrollment_diagnostics() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_missing_enrollments_with_users() TO authenticated;
