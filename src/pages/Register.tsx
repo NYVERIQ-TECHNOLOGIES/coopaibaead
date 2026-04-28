@@ -166,7 +166,7 @@ export default function Register() {
       toast({ title: "CPF inválido", description: "Digite um CPF válido para continuar.", variant: "destructive" });
       return;
     }
-    if (!emailOk) {
+    if (emailRequired && !emailOk) {
       toast({ title: "E-mail inválido", description: "Digite um e-mail válido.", variant: "destructive" });
       return;
     }
