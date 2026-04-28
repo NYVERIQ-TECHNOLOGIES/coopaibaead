@@ -84,13 +84,17 @@ function downloadCSV(filename: string, rows: (string | number | null | undefined
 }
 
 function inferMissingReason(m: MissingEnrollment): string {
+  // Quando há sugestão de vínculo (existe um usuário sem matrícula que pode ocupar a lacuna),
+  // o motivo real é cadastro incompleto. Quando não há sugestão, a matrícula realmente
+  // sumiu do banco — só pode ter ocorrido por exclusão de conta ou edição manual,
+  // já que não existe registro histórico dessa matrícula.
   if (m.possible_user_id && m.possible_user_name) {
-    return "Usuário cadastrado sem matrícula — possível dono identificado";
+    return "Cadastro incompleto: usuário existe no sistema porém ficou sem matrícula — pronto para vincular a este número.";
   }
   if (m.possible_user_id) {
-    return "Cadastro incompleto sem nome — possível dono identificado";
+    return "Cadastro incompleto sem nome preenchido: o usuário iniciou o registro mas não finalizou o perfil.";
   }
-  return "Sem dono identificado — provável exclusão, alteração manual ou falha de importação";
+  return "Conta excluída ou matrícula apagada manualmente: o número existiu na sequência mas não há mais nenhum perfil correspondente no sistema.";
 }
 
 export default function UnlistedUsers() {
@@ -574,10 +578,11 @@ export default function UnlistedUsers() {
               animate={{ opacity: 1 }}
               className="bg-card rounded-xl shadow-card border border-border overflow-hidden"
             >
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
+              <div className="overflow-auto max-h-[calc(100vh-360px)]">
+                <table className="w-full min-w-[900px]">
+                  <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">
+                    <tr className="border-b border-border">
+
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Matrícula
                       </th>
@@ -751,10 +756,11 @@ export default function UnlistedUsers() {
             </div>
           ) : (
             <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
+              <div className="overflow-auto max-h-[calc(100vh-360px)]">
+                <table className="w-full min-w-[1000px]">
+                  <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">
+                    <tr className="border-b border-border">
+
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Matrícula faltante
                       </th>
@@ -866,10 +872,11 @@ export default function UnlistedUsers() {
             </div>
           ) : (
             <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
+              <div className="overflow-auto max-h-[calc(100vh-360px)]">
+                <table className="w-full min-w-[1000px]">
+                  <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">
+                    <tr className="border-b border-border">
+
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Nome
                       </th>
