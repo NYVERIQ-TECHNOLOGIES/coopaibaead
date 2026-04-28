@@ -578,10 +578,11 @@ export default function UnlistedUsers() {
               animate={{ opacity: 1 }}
               className="bg-card rounded-xl shadow-card border border-border overflow-hidden"
             >
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30">
+              <div className="overflow-auto max-h-[calc(100vh-360px)]">
+                <table className="w-full min-w-[900px]">
+                  <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">
+                    <tr className="border-b border-border">
+
                       <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                         Matrícula
                       </th>
