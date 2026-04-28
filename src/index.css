@@ -70,14 +70,49 @@
   * {
     @apply border-border;
   }
-  
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    /* Tipografia fluida — escala suave entre mobile e desktop */
+    font-size: clamp(0.9375rem, 0.9rem + 0.2vw, 1rem);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
+    line-height: 1.2;
+    overflow-wrap: break-word;
+  }
+
+  /* Evita overflow horizontal por imagens/mídia */
+  img, video, canvas, svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Quebra de palavras longas em mobile */
+  p, span, a, li, td, th, label {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  /* Touch targets mínimos em telas pequenas (acessibilidade WCAG) */
+  @media (max-width: 767px) {
+    button, a, [role="button"], input[type="button"], input[type="submit"] {
+      min-height: 44px;
+    }
+    input, select, textarea {
+      font-size: 16px; /* evita zoom no iOS */
+    }
   }
 }
 
