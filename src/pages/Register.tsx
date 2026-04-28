@@ -197,9 +197,10 @@ export default function Register() {
     setLoading(true);
 
     const cleanCpf = cpf.replace(/\D/g, "");
+    const signupEmail = userType === "cooperado" ? `cpf${cleanCpf}@cooperado.coopaiba.local` : email;
 
     const { data: signUpData, error } = await supabase.auth.signUp({
-      email,
+      email: signupEmail,
       password,
       options: {
         data: {
