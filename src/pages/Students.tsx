@@ -402,7 +402,7 @@ export default function Students() {
                       <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
                         {formatCpf((s as any).cpf) || "—"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground break-all">
+                      <td className="py-3 px-4 text-sm text-muted-foreground max-w-[240px] truncate" title={emailMap[s.user_id] || ""}>
                         {emailMap[s.user_id] || "—"}
                       </td>
                       <td className="py-3 px-4">
