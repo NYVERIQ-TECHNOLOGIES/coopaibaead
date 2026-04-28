@@ -50,7 +50,12 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // Detecta se é CPF (apenas dígitos, 11 caracteres após limpeza) ou e-mail
+    const digits = email.replace(/\D/g, "");
+    const isCpf = !email.includes("@") && digits.length === 11;
+    const loginEmail = isCpf ? `cpf${digits}@cooperado.coopaiba.local` : email;
+
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
 
     if (error) {
       toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
