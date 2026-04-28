@@ -53,7 +53,7 @@ export default function Login() {
     // Detecta se é CPF (apenas dígitos, 11 caracteres após limpeza) ou e-mail
     const digits = email.replace(/\D/g, "");
     const isCpf = !email.includes("@") && digits.length === 11;
-    const loginEmail = isCpf ? `cpf${digits}@cooperado.coopaiba.local` : email;
+    const loginEmail = isCpf ? `cpf${digits}@cooperado.coopaiba.com.br` : email;
 
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
 
