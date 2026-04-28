@@ -84,13 +84,17 @@ function downloadCSV(filename: string, rows: (string | number | null | undefined
 }
 
 function inferMissingReason(m: MissingEnrollment): string {
+  // Quando há sugestão de vínculo (existe um usuário sem matrícula que pode ocupar a lacuna),
+  // o motivo real é cadastro incompleto. Quando não há sugestão, a matrícula realmente
+  // sumiu do banco — só pode ter ocorrido por exclusão de conta ou edição manual,
+  // já que não existe registro histórico dessa matrícula.
   if (m.possible_user_id && m.possible_user_name) {
-    return "Usuário cadastrado sem matrícula — possível dono identificado";
+    return "Cadastro incompleto: usuário existe no sistema porém ficou sem matrícula — pronto para vincular a este número.";
   }
   if (m.possible_user_id) {
-    return "Cadastro incompleto sem nome — possível dono identificado";
+    return "Cadastro incompleto sem nome preenchido: o usuário iniciou o registro mas não finalizou o perfil.";
   }
-  return "Sem dono identificado — provável exclusão, alteração manual ou falha de importação";
+  return "Conta excluída ou matrícula apagada manualmente: o número existiu na sequência mas não há mais nenhum perfil correspondente no sistema.";
 }
 
 export default function UnlistedUsers() {
