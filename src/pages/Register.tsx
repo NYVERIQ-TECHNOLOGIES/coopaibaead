@@ -419,28 +419,30 @@ export default function Register() {
               </div>
             )}
 
-            {/* E-mail */}
-            <div>
-              <label htmlFor="email" className="text-sm font-medium text-card-foreground mb-1.5 block">
-                E-mail *
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                  className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
+            {/* E-mail (apenas para alunos) */}
+            {userType === "aluno" && (
+              <div>
+                <label htmlFor="email" className="text-sm font-medium text-card-foreground mb-1.5 block">
+                  E-mail *
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                {email.length > 0 && !emailOk && (
+                  <p className="text-xs text-destructive mt-1">E-mail inválido.</p>
+                )}
               </div>
-              {email.length > 0 && !emailOk && (
-                <p className="text-xs text-destructive mt-1">E-mail inválido.</p>
-              )}
-            </div>
+            )}
 
             {/* Senha */}
             <div>
