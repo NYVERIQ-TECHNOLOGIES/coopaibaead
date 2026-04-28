@@ -141,7 +141,8 @@ export default function Register() {
   const trimmedName = fullName.trim();
   const nameOk = trimmedName.length > 0 && trimmedName.split(/\s+/).length >= 2;
   const cpfOk = isValidCpf(cpf);
-  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const emailRequired = userType === "aluno";
+  const emailOk = !emailRequired || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const cooperativaOk = userType !== "cooperado" || !!cooperativa;
 
   const formValid =
