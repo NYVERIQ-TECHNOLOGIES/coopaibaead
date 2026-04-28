@@ -197,17 +197,70 @@ export default function Register() {
     setLoading(true);
 
     const cleanCpf = cpf.replace(/\D/g, "");
-    const signupEmail = userType === "cooperado" ? `cpf${cleanCpf}@cooperado.coopaiba.local` : email;
 
+    // ====== Fluxo COOPERADO: cria via edge function (e-mail sintético + auto-confirm) ======
+    if (userType === "cooperado") {
+      try {
+        let avatar_url: string | undefined;
+
+        // Upload da foto antes (opcional) usando bucket público "avatars"
+        // Como ainda não temos user_id, geramos um path temporário pelo CPF
+        if (photoFile) {
+          const ext = photoFile.name.split(".").pop();
+          const path = `cooperado-${cleanCpf}/${Date.now()}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("avatars")
+            .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
+          if (!upErr) {
+            const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+            avatar_url = publicUrl;
+          }
+        }
+
+        const { data, error: fnErr } = await supabase.functions.invoke("register-cooperado", {
+          body: {
+            cpf: cleanCpf,
+            password,
+            full_name: trimmedName,
+            cooperativa,
+            avatar_url,
+          },
+        });
+
+        if (fnErr || (data && (data as { error?: string }).error)) {
+          const msg = (data as { error?: string })?.error || fnErr?.message || "Falha ao criar conta";
+          toast({ title: "Erro ao criar conta", description: msg, variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Você já pode fazer login com seu CPF e senha.",
+        });
+        navigate("/login");
+        setLoading(false);
+        return;
+      } catch (err) {
+        toast({
+          title: "Erro ao criar conta",
+          description: err instanceof Error ? err.message : "Erro desconhecido",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+    }
+
+    // ====== Fluxo ALUNO: signup padrão com e-mail real ======
     const { data: signUpData, error } = await supabase.auth.signUp({
-      email: signupEmail,
+      email,
       password,
       options: {
         data: {
           full_name: trimmedName,
-          cooperativa: userType === "cooperado" ? cooperativa : null,
           cpf: cleanCpf,
-          user_type: userType,
+          user_type: "aluno",
         },
         emailRedirectTo: `${window.location.origin}/login`,
       },
@@ -225,13 +278,10 @@ export default function Register() {
       try {
         await new Promise((r) => setTimeout(r, 400));
 
-        const updates: { cooperativa?: string; avatar_url?: string; cpf?: string; full_name?: string } = {
+        const updates: { avatar_url?: string; cpf?: string; full_name?: string } = {
           cpf: cleanCpf,
           full_name: trimmedName,
         };
-        if (userType === "cooperado" && cooperativa) {
-          updates.cooperativa = cooperativa;
-        }
 
         if (photoFile) {
           const ext = photoFile.name.split(".").pop();
@@ -240,22 +290,18 @@ export default function Register() {
             .from("avatars")
             .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
           if (!upErr) {
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from("avatars").getPublicUrl(path);
+            const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
             updates.avatar_url = publicUrl;
           }
         }
 
-        if (Object.keys(updates).length > 0) {
-          await supabase.from("profiles").update(updates).eq("user_id", newUserId);
-        }
+        await supabase.from("profiles").update(updates).eq("user_id", newUserId);
       } catch {
         // Não bloqueia o cadastro
       }
     }
 
-    toast({ title: "Conta criada com sucesso!", description: "Você já pode fazer login." });
+    toast({ title: "Conta criada com sucesso!", description: "Verifique seu e-mail para confirmar a conta." });
     navigate("/login");
     setLoading(false);
   };
