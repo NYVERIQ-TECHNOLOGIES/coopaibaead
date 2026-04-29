@@ -188,6 +188,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-own-account");
+      if (error || (data && (data as { error?: string }).error)) {
+        const msg = error?.message || (data as { error?: string })?.error || "Erro ao excluir conta";
+        toast({ title: "Erro", description: msg, variant: "destructive" });
+        setDeleting(false);
+        return;
+      }
+      toast({ title: "Conta excluída", description: "Sua conta foi removida permanentemente." });
+      await supabase.auth.signOut();
+      navigate("/login", { replace: true });
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+      setDeleting(false);
+    }
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
       <div>
