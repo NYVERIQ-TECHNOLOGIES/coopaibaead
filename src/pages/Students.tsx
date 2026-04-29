@@ -24,7 +24,8 @@ export default function Students() {
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "name_asc" | "name_desc" | "enrollment_asc" | "enrollment_desc">("recent");
   const [generating, setGenerating] = useState(false);
   const [emailMap, setEmailMap] = useState<Record<string, string>>({});
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isModerator = role === "moderador";
   const { toast } = useToast();
   const qc = useQueryClient();
   const navigate = useNavigate();
