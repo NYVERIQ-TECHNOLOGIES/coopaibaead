@@ -11,19 +11,20 @@ import {
 
 // adminOnly: visível apenas para admin
 // studentOnly: visível apenas para aluno/cooperado
-// (sem flag): visível para ambos
+// moderatorAllowed: também visível para moderadores (quando combinado com adminOnly)
+// (sem flag): visível para alunos/cooperados/admins (não para moderadores, exceto se moderatorAllowed)
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/", adminOnly: true },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/", adminOnly: true, moderatorAllowed: true },
   { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
   { label: "Cursos", icon: BookOpen, path: "/courses" },
-  { label: "Alunos", icon: Users, path: "/students", adminOnly: true },
+  { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
   { label: "Não listados", icon: UserX, path: "/unlisted-users", adminOnly: true },
   { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
   { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
   { label: "Fórum", icon: MessageSquare, path: "/forum" },
-  { label: "Suporte", icon: Headphones, path: "/support" },
+  { label: "Suporte", icon: Headphones, path: "/support", moderatorAllowed: true },
   { label: "Mídias", icon: Upload, path: "/media", adminOnly: true },
   { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
   { label: "Logs de Acesso", icon: Activity, path: "/admin-logs", adminOnly: true },
@@ -37,8 +38,13 @@ export default function AppSidebar() {
   const navigate = useNavigate();
   const { profile, user, role, signOut } = useAuth();
   const isAdmin = role === "admin";
+  const isModerator = role === "moderador";
 
   const filteredNav = navItems.filter((item) => {
+    if (isModerator) {
+      // Moderador só vê itens marcados moderatorAllowed + Configurações
+      return item.moderatorAllowed || item.path === "/settings";
+    }
     if (item.adminOnly && !isAdmin) return false;
     if (item.studentOnly && isAdmin) return false;
     return true;
