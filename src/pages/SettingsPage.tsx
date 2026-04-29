@@ -318,6 +318,29 @@ export default function SettingsPage() {
               <TwoFactorSetup />
             </Section>
           </div>
+
+          <div className="mt-6">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Excluir Conta</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Remove permanentemente sua conta e todos os dados associados. Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => { setConfirmText(""); setDeleteOpen(true); }}
+                className="gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Excluir minha conta
+              </Button>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="notifications">
