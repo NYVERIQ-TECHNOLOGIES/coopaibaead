@@ -37,10 +37,9 @@ Deno.serve(async (req) => {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (!roleData) {
-      return new Response(JSON.stringify({ error: "Apenas administradores" }), {
+      .in("role", ["admin", "moderador"]);
+    if (!roleData || roleData.length === 0) {
+      return new Response(JSON.stringify({ error: "Apenas administradores ou moderadores" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
