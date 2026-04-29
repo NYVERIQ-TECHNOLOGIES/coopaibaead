@@ -334,19 +334,43 @@ export default function AdminManagement() {
         </div>
       </div>
 
-      {/* Create admin dialog */}
+      {/* Create admin/moderator dialog */}
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Criar Novo Administrador</DialogTitle>
+            <DialogTitle>
+              {createRole === "admin" ? "Criar Novo Administrador" : "Criar Novo Moderador"}
+            </DialogTitle>
           </DialogHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              createAdmin.mutate(form);
+              createAdmin.mutate({ ...form, role: createRole });
             }}
             className="space-y-4"
           >
+            <div>
+              <Label>Tipo de perfil</Label>
+              <Select
+                value={createRole}
+                onValueChange={(v) => setCreateRole(v as "admin" | "moderador")}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="moderador">Moderador</SelectItem>
+                  {isMasterAdmin && (
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {!isMasterAdmin && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Apenas o Administrador Master pode criar novos administradores.
+                </p>
+              )}
+            </div>
             <div>
               <Label>Nome completo</Label>
               <Input
@@ -375,7 +399,7 @@ export default function AdminManagement() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={createAdmin.isPending}>
-              {createAdmin.isPending ? "Criando..." : "Criar Administrador"}
+              {createAdmin.isPending ? "Criando..." : `Criar ${createRole === "admin" ? "Administrador" : "Moderador"}`}
             </Button>
           </form>
         </DialogContent>
