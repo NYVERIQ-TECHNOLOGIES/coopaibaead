@@ -155,11 +155,18 @@ export default function Students() {
 
   const fetchEmails = async (userIds: string[]): Promise<Record<string, string>> => {
     if (userIds.length === 0) return {};
-    const { data, error } = await supabase.functions.invoke("list-user-emails", {
-      body: { user_ids: userIds },
-    });
-    if (error) throw error;
-    return ((data as any)?.emails ?? {}) as Record<string, string>;
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) return {};
+    try {
+      const { data, error } = await supabase.functions.invoke("list-user-emails", {
+        body: { user_ids: userIds },
+        headers: { Authorization: `Bearer ${sess.session.access_token}` },
+      });
+      if (error) return {};
+      return ((data as any)?.emails ?? {}) as Record<string, string>;
+    } catch {
+      return {};
+    }
   };
 
   // Carrega e-mails de todos os alunos exibidos
