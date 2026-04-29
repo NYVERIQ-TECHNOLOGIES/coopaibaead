@@ -109,13 +109,6 @@ Deno.serve(async (req) => {
     }
 
     // If demoting an admin, ensure at least one admin remains
-    const { data: targetCurrentRoles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user_id);
-
-    const targetIsAdmin = (targetCurrentRoles ?? []).some((r) => r.role === "admin");
-
     if (targetIsAdmin && new_role !== "admin") {
       const { count: adminCount } = await supabaseAdmin
         .from("user_roles")
