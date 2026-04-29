@@ -48,7 +48,7 @@ export default function Dashboard() {
   const { data: recentProfiles } = useQuery({
     queryKey: ["dashboard-recent"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("full_name, created_at").order("created_at", { ascending: false }).limit(5);
+      const { data } = await supabase.from("profiles").select("full_name, avatar_url, created_at").order("created_at", { ascending: false }).limit(5);
       return data ?? [];
     },
   });
