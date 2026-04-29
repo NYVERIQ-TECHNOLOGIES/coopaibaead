@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard } from "lucide-react";
+import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard, Trash2, AlertTriangle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,12 @@ const isValidCpf = (value: string) => {
 
 export default function SettingsPage() {
   const { profile, user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [cooperativa, setCooperativa] = useState(profile?.cooperativa || "");
@@ -179,6 +185,25 @@ export default function SettingsPage() {
     } else {
       toast({ title: "Senha alterada com sucesso!" });
       setNewPassword("");
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-own-account");
+      if (error || (data && (data as { error?: string }).error)) {
+        const msg = error?.message || (data as { error?: string })?.error || "Erro ao excluir conta";
+        toast({ title: "Erro", description: msg, variant: "destructive" });
+        setDeleting(false);
+        return;
+      }
+      toast({ title: "Conta excluída", description: "Sua conta foi removida permanentemente." });
+      await supabase.auth.signOut();
+      navigate("/login", { replace: true });
+    } catch (e) {
+      toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
+      setDeleting(false);
     }
   };
 
@@ -293,6 +318,29 @@ export default function SettingsPage() {
               <TwoFactorSetup />
             </Section>
           </div>
+
+          <div className="mt-6">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Excluir Conta</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Remove permanentemente sua conta e todos os dados associados. Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => { setConfirmText(""); setDeleteOpen(true); }}
+                className="gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Excluir minha conta
+              </Button>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -360,6 +408,37 @@ export default function SettingsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmAndSaveCpf}>Confirmar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setConfirmText(""); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Excluir conta permanentemente?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação <strong className="text-foreground">não pode ser desfeita</strong>. Sua conta, perfil e dados de acesso serão removidos permanentemente.
+              <br /><br />
+              Para confirmar, digite <strong className="text-foreground">EXCLUIR</strong> abaixo:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder="EXCLUIR"
+            autoFocus
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={deleting || confirmText !== "EXCLUIR"}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Excluindo..." : "Excluir conta"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
