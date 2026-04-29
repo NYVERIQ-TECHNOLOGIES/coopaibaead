@@ -19,6 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function Students() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<"all" | "aluno" | "cooperado" | "admin">("all");
+  const [coopFilter, setCoopFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest" | "name_asc" | "name_desc" | "enrollment_asc" | "enrollment_desc">("recent");
   const [generating, setGenerating] = useState(false);
   const [emailMap, setEmailMap] = useState<Record<string, string>>({});
   const { user } = useAuth();
