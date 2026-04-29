@@ -6,7 +6,11 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type AppRole = "admin" | "aluno" | "cooperado";
+type AppRole = "admin" | "aluno" | "cooperado" | "moderador";
+
+const ALL_ROLES: AppRole[] = ["admin", "aluno", "cooperado", "moderador"];
+// Roles that require master admin privileges to assign or remove
+const PRIVILEGED_ROLES: AppRole[] = ["admin", "moderador"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -51,6 +55,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check if caller is master admin (used to gate privileged role changes)
+    const { data: masterCheck } = await supabaseAdmin.rpc("is_master_admin", {
+      _user_id: user.id,
+    });
+    const isMasterAdmin = masterCheck === true;
+
     const { user_id, new_role } = await req.json() as { user_id?: string; new_role?: AppRole };
 
     if (!user_id || !new_role) {
@@ -60,7 +70,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!["admin", "aluno", "cooperado"].includes(new_role)) {
+    if (!ALL_ROLES.includes(new_role)) {
       return new Response(
         JSON.stringify({ error: "Perfil inválido" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -75,14 +85,31 @@ Deno.serve(async (req) => {
       );
     }
 
-    // If demoting an admin, ensure at least one admin remains
+    // Get target's current roles
     const { data: targetCurrentRoles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", user_id);
 
     const targetIsAdmin = (targetCurrentRoles ?? []).some((r) => r.role === "admin");
+    const targetIsModerator = (targetCurrentRoles ?? []).some((r) => r.role === "moderador");
+    const isPromotingPrivileged = PRIVILEGED_ROLES.includes(new_role);
+    const isRemovingPrivileged =
+      (targetIsAdmin && new_role !== "admin") ||
+      (targetIsModerator && new_role !== "moderador");
 
+    // Only the master admin can grant or revoke privileged roles (admin/moderador)
+    if ((isPromotingPrivileged || isRemovingPrivileged) && !isMasterAdmin) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Apenas o administrador master pode promover ou rebaixar administradores e moderadores.",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // If demoting an admin, ensure at least one admin remains
     if (targetIsAdmin && new_role !== "admin") {
       const { count: adminCount } = await supabaseAdmin
         .from("user_roles")
