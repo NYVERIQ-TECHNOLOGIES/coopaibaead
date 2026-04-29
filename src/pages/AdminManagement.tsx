@@ -258,6 +258,78 @@ export default function AdminManagement() {
         )}
       </div>
 
+      {/* Moderators list */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Moderadores ({moderators.length})
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {moderators.map((mod) => (
+            <div
+              key={mod.user_id}
+              className="rounded-xl border border-border bg-card p-5 flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg font-bold text-amber-600">
+                  {mod.full_name
+                    ?.split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase() || "M"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground truncate">
+                  {mod.full_name || "Moderador"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {mod.cooperativa || "Sem cooperativa"}
+                </p>
+              </div>
+              {isMasterAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:bg-destructive/10"
+                      title="Remover moderador"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover moderador?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        <strong>{mod.full_name}</strong> deixará de ser moderador e voltará a ser aluno comum.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() =>
+                          changeRole.mutate({ user_id: mod.user_id, new_role: "aluno" })
+                        }
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+          ))}
+        </div>
+        {!loadingUsers && moderators.length === 0 && (
+          <div className="text-sm text-muted-foreground py-4">
+            Nenhum moderador cadastrado.
+          </div>
+        )}
+      </div>
+
       {/* Create admin dialog */}
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
         <DialogContent>
