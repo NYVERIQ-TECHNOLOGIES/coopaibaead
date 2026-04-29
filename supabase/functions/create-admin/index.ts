@@ -17,7 +17,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { email, password, full_name } = await req.json();
+    const { email, password, full_name, role } = await req.json();
+    const targetRole: "admin" | "moderador" = role === "moderador" ? "moderador" : "admin";
 
     if (!email || !password || !full_name) {
       return new Response(
@@ -26,8 +27,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Always require an authenticated admin caller. The bootstrap branch was
-    // removed because it could be exploited if admin rows are ever wiped.
+    // Always require an authenticated admin caller.
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -52,22 +52,51 @@ Deno.serve(async (req) => {
       .single();
     if (!roleData) {
       return new Response(
-        JSON.stringify({ error: "Apenas administradores podem criar outros administradores" }),
+        JSON.stringify({ error: "Apenas administradores podem criar novos perfis de equipe" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Create admin user
+    // Only the master admin (oldest admin row) can create new admins
+    if (targetRole === "admin") {
+      const { data: masterRow } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin")
+        .order("id", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (!masterRow || masterRow.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: "Apenas o Administrador Master pode criar novos administradores" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Create user
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name, role: "admin" },
+      user_metadata: { full_name, role: targetRole },
     });
 
     if (createError) {
       return new Response(
         JSON.stringify({ error: createError.message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Force the role in user_roles (handle_new_user defaults to aluno/cooperado)
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", userData.user.id);
+    const { error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: userData.user.id, role: targetRole });
+    if (roleErr) {
+      return new Response(
+        JSON.stringify({ error: roleErr.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
