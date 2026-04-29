@@ -466,13 +466,15 @@ export default function Support() {
                               <p className="text-[10px] opacity-60 mt-1">
                                 {format(new Date(m.created_at), "dd/MM HH:mm", { locale: ptBR })}
                               </p>
-                              <button
-                                onClick={() => deleteMessage(m.id)}
-                                className="absolute -top-2 -right-2 hidden group-hover:flex bg-background border rounded-full w-6 h-6 items-center justify-center text-muted-foreground hover:text-destructive"
-                                title="Remover mensagem"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                              {isRealAdmin && (
+                                <button
+                                  onClick={() => deleteMessage(m.id)}
+                                  className="absolute -top-2 -right-2 hidden group-hover:flex bg-background border rounded-full w-6 h-6 items-center justify-center text-muted-foreground hover:text-destructive"
+                                  title="Remover mensagem"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
                             </div>
                           </motion.div>
                         );
