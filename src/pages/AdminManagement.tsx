@@ -143,18 +143,26 @@ export default function AdminManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground flex items-center gap-2">
-            <Shield className="w-7 h-7 text-primary" /> Administradores
+            <Shield className="w-7 h-7 text-primary" /> Administradores e Moderadores
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie administradores, promova alunos a cooperado ou administrador
+            {isMasterAdmin
+              ? "Você é o Administrador Master. Pode criar novos admins e moderadores."
+              : "Promova alunos a moderador. Apenas o Administrador Master pode gerenciar admins."}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setOpenPromote(true)} className="gap-2">
             <ArrowUpCircle className="w-4 h-4" /> Promover usuário
           </Button>
-          <Button onClick={() => setOpenCreate(true)} className="gap-2">
-            <UserPlus className="w-4 h-4" /> Novo Admin
+          <Button
+            onClick={() => {
+              setCreateRole(isMasterAdmin ? "admin" : "moderador");
+              setOpenCreate(true);
+            }}
+            className="gap-2"
+          >
+            <UserPlus className="w-4 h-4" /> {isMasterAdmin ? "Novo Admin/Moderador" : "Novo Moderador"}
           </Button>
         </div>
       </div>
@@ -171,6 +179,7 @@ export default function AdminManagement() {
               ))
             : admins.map((admin) => {
                 const isSelf = admin.user_id === user?.id;
+                const isMaster = admin.user_id === masterAdminId;
                 return (
                   <div
                     key={admin.user_id}
@@ -187,17 +196,20 @@ export default function AdminManagement() {
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate flex items-center gap-2">
+                      <p className="font-semibold text-foreground truncate flex items-center gap-2 flex-wrap">
                         {admin.full_name || "Admin"}
                         {isSelf && (
                           <Badge variant="outline" className="text-[10px]">Você</Badge>
+                        )}
+                        {isMaster && (
+                          <Badge className="text-[10px] bg-primary text-primary-foreground">Master</Badge>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Desde {new Date(admin.created_at).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
-                    {!isSelf && (
+                    {!isSelf && !isMaster && isMasterAdmin && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -245,6 +257,81 @@ export default function AdminManagement() {
             <p>Nenhum administrador encontrado</p>
           </div>
         )}
+      </div>
+
+      {/* Moderators list */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Moderadores ({moderators.length})
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {loadingUsers ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />
+            ))
+          ) : moderators.length === 0 ? (
+            <div className="col-span-full text-center py-8 text-muted-foreground text-sm">
+              Nenhum moderador cadastrado
+            </div>
+          ) : (
+            moderators.map((mod) => (
+              <div
+                key={mod.user_id}
+                className="rounded-xl border border-border bg-card p-5 flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg font-bold text-amber-600">
+                    {mod.full_name
+                      ?.split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase() || "M"}
+                  </span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground truncate">
+                    {mod.full_name || "Moderador"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Desde {new Date(mod.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:bg-destructive/10"
+                      title="Remover moderador"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover moderador?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        <strong>{mod.full_name}</strong> deixará de ser moderador e voltará a ser aluno comum.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() =>
+                          changeRole.mutate({ user_id: mod.user_id, new_role: "aluno" })
+                        }
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Create admin dialog */}
