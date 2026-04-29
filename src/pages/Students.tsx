@@ -519,9 +519,9 @@ export default function Students() {
                         {emailMap[s.user_id] || "—"}
                       </td>
                       <td className="py-3 px-4">
-                        {isSelf || isAdmin ? (
-                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                            {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
+                        {isSelf || isAdmin || isModerator ? (
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : s.role === "moderador" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
+                            {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : s.role === "moderador" ? "Moderador" : "Aluno"}
                           </span>
                         ) : (
                           <Select
