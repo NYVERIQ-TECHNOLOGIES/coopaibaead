@@ -19,6 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function Students() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
+  const [roleFilter, setRoleFilter] = useState<"all" | "aluno" | "cooperado" | "admin">("all");
+  const [coopFilter, setCoopFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"recent" | "oldest" | "name_asc" | "name_desc" | "enrollment_asc" | "enrollment_desc">("recent");
   const [generating, setGenerating] = useState(false);
   const [emailMap, setEmailMap] = useState<Record<string, string>>({});
   const { user } = useAuth();
@@ -133,13 +136,49 @@ export default function Students() {
     }
   };
 
-  const filtered = students.filter((s) => {
-    const matchesSearch =
-      (s.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (s.enrollment_number || "").toLowerCase().includes(search.toLowerCase());
-    const matchesActive = showInactive ? true : s.is_active !== false;
-    return matchesSearch && matchesActive;
-  });
+  const cooperativas = Array.from(
+    new Set(
+      students
+        .map((s: any) => (s.cooperativa || "").trim())
+        .filter((c: string) => c.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  const filtered = students
+    .filter((s) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        (s.full_name || "").toLowerCase().includes(q) ||
+        (s.enrollment_number || "").toLowerCase().includes(q) ||
+        (s.cpf || "").replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
+        (emailMap[s.user_id] || "").toLowerCase().includes(q);
+      const matchesActive = showInactive ? true : s.is_active !== false;
+      const matchesRole = roleFilter === "all" ? true : s.role === roleFilter;
+      const matchesCoop =
+        coopFilter === "all"
+          ? true
+          : coopFilter === "__none__"
+          ? !((s.cooperativa || "").trim())
+          : (s.cooperativa || "").trim() === coopFilter;
+      return matchesSearch && matchesActive && matchesRole && matchesCoop;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "name_asc":
+          return (a.full_name || "").localeCompare(b.full_name || "", "pt-BR");
+        case "name_desc":
+          return (b.full_name || "").localeCompare(a.full_name || "", "pt-BR");
+        case "enrollment_asc":
+          return (a.enrollment_number || "").localeCompare(b.enrollment_number || "", "pt-BR");
+        case "enrollment_desc":
+          return (b.enrollment_number || "").localeCompare(a.enrollment_number || "", "pt-BR");
+        case "recent":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
 
   const totalAlunos = students.filter((s) => s.role === "aluno" && s.is_active !== false).length;
   const totalCooperados = students.filter((s) => s.role === "cooperado" && s.is_active !== false).length;
@@ -352,17 +391,51 @@ export default function Students() {
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-        <div className="relative flex-1 max-w-md">
+      <div className="flex flex-col lg:flex-row gap-3 lg:items-center flex-wrap">
+        <div className="relative flex-1 min-w-[240px] max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Buscar por nome ou matrícula..."
+            placeholder="Buscar por nome, matrícula, CPF ou e-mail..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
+
+        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as any)}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            <SelectItem value="aluno">Aluno</SelectItem>
+            <SelectItem value="cooperado">Cooperado</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={coopFilter} onValueChange={setCoopFilter}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Cooperativa" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as cooperativas</SelectItem>
+            <SelectItem value="__none__">Sem cooperativa</SelectItem>
+            {cooperativas.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="recent">Cadastro mais recente</SelectItem>
+            <SelectItem value="oldest">Cadastro mais antigo</SelectItem>
+            <SelectItem value="name_asc">Nome (A-Z)</SelectItem>
+            <SelectItem value="name_desc">Nome (Z-A)</SelectItem>
+            <SelectItem value="enrollment_asc">Matrícula (crescente)</SelectItem>
+            <SelectItem value="enrollment_desc">Matrícula (decrescente)</SelectItem>
+          </SelectContent>
+        </Select>
+
         <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
           <input
             type="checkbox"
@@ -372,6 +445,25 @@ export default function Students() {
           />
           Mostrar inativos
         </label>
+
+        {(roleFilter !== "all" || coopFilter !== "all" || search || sortBy !== "recent") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearch("");
+              setRoleFilter("all");
+              setCoopFilter("all");
+              setSortBy("recent");
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
+
+        <div className="text-sm text-muted-foreground lg:ml-auto">
+          {filtered.length} {filtered.length === 1 ? "resultado" : "resultados"}
+        </div>
       </div>
 
       {isLoading ? (
