@@ -31,13 +31,33 @@ export default function Students() {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
     queryFn: async () => {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf")
-        .order("created_at", { ascending: false });
-      if (!profiles) return [];
-      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-      const roleMap = new Map((roles ?? []).map((r) => [r.user_id, r.role]));
+      const PAGE = 1000;
+      // Pagina profiles para ultrapassar o limite default de 1000 linhas do Supabase
+      const profiles: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        profiles.push(...data);
+        if (data.length < PAGE) break;
+      }
+      // Pagina user_roles também
+      const roles: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        roles.push(...data);
+        if (data.length < PAGE) break;
+      }
+      const roleMap = new Map(roles.map((r) => [r.user_id, r.role]));
       return profiles.map((p) => ({ ...p, role: roleMap.get(p.user_id) ?? "aluno" }));
     },
   });
