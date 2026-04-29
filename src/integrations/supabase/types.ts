@@ -1058,7 +1058,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_master_admin: { Args: { _user_id: string }; Returns: boolean }
       link_enrollment_to_user: {
         Args: { _enrollment_number: string; _user_id: string }
         Returns: undefined
@@ -1082,7 +1081,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "aluno" | "cooperado" | "moderador"
+      app_role: "admin" | "aluno" | "cooperado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1210,7 +1209,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "aluno", "cooperado", "moderador"],
+      app_role: ["admin", "aluno", "cooperado"],
     },
   },
 } as const

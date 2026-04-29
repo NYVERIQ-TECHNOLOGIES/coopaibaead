@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type AppRole = "admin" | "moderador" | "aluno" | "cooperado";
+type AppRole = "admin" | "aluno" | "cooperado";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -60,43 +60,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!["admin", "moderador", "aluno", "cooperado"].includes(new_role)) {
+    if (!["admin", "aluno", "cooperado"].includes(new_role)) {
       return new Response(
         JSON.stringify({ error: "Perfil inválido" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Identify master admin (oldest admin row)
-    const { data: masterRow } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin")
-      .order("id", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    const isMaster = !!masterRow && masterRow.user_id === user.id;
-
-    // Determine target's current admin status early (used for several checks)
-    const { data: targetCurrentRoles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user_id);
-    const targetIsAdmin = (targetCurrentRoles ?? []).some((r) => r.role === "admin");
-
-    // The master admin cannot be touched
-    if (masterRow && masterRow.user_id === user_id) {
-      return new Response(
-        JSON.stringify({ error: "Não é possível alterar o perfil do Administrador Master" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Promoting to admin OR demoting an existing admin requires master
-    if ((new_role === "admin" || targetIsAdmin) && !isMaster) {
-      return new Response(
-        JSON.stringify({ error: "Apenas o Administrador Master pode gerenciar administradores" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -109,6 +76,13 @@ Deno.serve(async (req) => {
     }
 
     // If demoting an admin, ensure at least one admin remains
+    const { data: targetCurrentRoles } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user_id);
+
+    const targetIsAdmin = (targetCurrentRoles ?? []).some((r) => r.role === "admin");
+
     if (targetIsAdmin && new_role !== "admin") {
       const { count: adminCount } = await supabaseAdmin
         .from("user_roles")
