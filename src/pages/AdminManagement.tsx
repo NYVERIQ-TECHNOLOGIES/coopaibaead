@@ -43,6 +43,16 @@ export default function AdminManagement() {
   const [selectedNewRole, setSelectedNewRole] = useState<AppRole>("admin");
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
 
+  // Master admin check (only the master admin can manage admins/moderators)
+  const { data: isMasterAdmin = false } = useQuery({
+    queryKey: ["is-master-admin", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("is_master_admin", { _user_id: user!.id });
+      return data === true;
+    },
+  });
+
   // All users with roles
   const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
     queryKey: ["all-users-with-roles"],
