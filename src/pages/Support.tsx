@@ -202,7 +202,7 @@ export default function Support() {
   };
 
   const deleteMessage = async (id: string) => {
-    if (!isAdmin) return;
+    if (!isRealAdmin) return;
     const { error } = await supabase.from("support_messages").delete().eq("id", id);
     if (error) toast.error("Erro ao remover");
   };
