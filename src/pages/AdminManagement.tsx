@@ -16,16 +16,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
-type AppRole = "admin" | "aluno" | "cooperado";
+type AppRole = "admin" | "aluno" | "cooperado" | "moderador";
 
 const roleLabel: Record<AppRole, string> = {
   admin: "Administrador",
+  moderador: "Moderador",
   cooperado: "Cooperado",
   aluno: "Aluno",
 };
 
 const roleBadgeClass: Record<AppRole, string> = {
   admin: "bg-primary/10 text-primary border-primary/30",
+  moderador: "bg-amber-500/10 text-amber-600 border-amber-500/30",
   cooperado: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
   aluno: "bg-muted text-muted-foreground border-border",
 };
