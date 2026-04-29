@@ -12,30 +12,46 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { rows, password, admin_token } = await req.json() as {
-      rows: Row[]; password: string; admin_token: string;
-    };
-
-    // Simple shared-secret guard so this endpoint can't be abused.
-    const expected = Deno.env.get("BULK_IMPORT_TOKEN");
-    if (!expected || admin_token !== expected) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), {
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    if (!token) {
+      return new Response(JSON.stringify({ error: "missing auth" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    // Identify caller and confirm admin role.
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "invalid auth" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const admin = createClient(supabaseUrl, serviceKey);
+    const { data: roleRow } = await admin
+      .from("user_roles").select("role")
+      .eq("user_id", userData.user.id).eq("role", "admin").maybeSingle();
+    if (!roleRow) {
+      return new Response(JSON.stringify({ error: "forbidden: admin only" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { rows, password } = await req.json() as { rows: Row[]; password: string; };
     if (!Array.isArray(rows) || !password) {
       return new Response(JSON.stringify({ error: "invalid payload" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
     const results: Array<{ cpf: string; status: string; error?: string }> = [];
-
     for (const r of rows) {
       const cpf = String(r.cpf || "").replace(/\D/g, "");
       const name = String(r.full_name || "").trim();
@@ -43,25 +59,19 @@ Deno.serve(async (req) => {
         results.push({ cpf, status: "skipped", error: "invalid row" });
         continue;
       }
-
       const { data: existing } = await admin
         .from("profiles").select("user_id").eq("cpf", cpf).maybeSingle();
-      if (existing) {
-        results.push({ cpf, status: "exists" });
-        continue;
-      }
+      if (existing) { results.push({ cpf, status: "exists" }); continue; }
 
       const email = `cpf${cpf}@cooperado.coopaiba.com.br`;
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
         email, password, email_confirm: true,
         user_metadata: { full_name: name, cpf, user_type: "cooperado" },
       });
-
       if (createErr || !created?.user) {
         results.push({ cpf, status: "error", error: createErr?.message || "create failed" });
         continue;
       }
-
       await admin.from("profiles").update({ full_name: name, cpf }).eq("user_id", created.user.id);
       results.push({ cpf, status: "created" });
     }
