@@ -28,10 +28,9 @@ export default function Dashboard() {
   const { data: counts } = useQuery({
     queryKey: ["dashboard-counts"],
     queryFn: async () => {
-      const [courses, profiles, alunos, cooperados, certificates, enrollments] = await Promise.all([
+      const [courses, profiles, cooperados, certificates, enrollments] = await Promise.all([
         supabase.from("courses").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "aluno"),
         supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "cooperado"),
         supabase.from("certificates").select("id", { count: "exact", head: true }).eq("status", "emitido"),
         supabase.from("enrollments").select("id", { count: "exact", head: true }),
@@ -39,7 +38,6 @@ export default function Dashboard() {
       return {
         courses: courses.count ?? 0,
         students: profiles.count ?? 0,
-        alunos: alunos.count ?? 0,
         cooperados: cooperados.count ?? 0,
         certificates: certificates.count ?? 0,
         enrollments: enrollments.count ?? 0,
@@ -57,7 +55,7 @@ export default function Dashboard() {
 
   const courseDistribution = [
     { name: "Cursos", value: counts?.courses ?? 0 },
-    { name: "Alunos", value: counts?.alunos ?? 0 },
+    { name: "Alunos", value: (counts?.students ?? 0) - (counts?.cooperados ?? 0) },
     { name: "Cooperados", value: counts?.cooperados ?? 0 },
     { name: "Certificados", value: counts?.certificates ?? 0 },
   ];
@@ -83,7 +81,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total de Alunos" value={String(counts?.alunos ?? 0)} icon={Users} gradient="primary" />
+        <StatCard title="Total de Alunos" value={String(counts?.students ?? 0)} icon={Users} gradient="primary" />
         <StatCard title="Cooperados" value={String(counts?.cooperados ?? 0)} icon={UserCheck} gradient="secondary" />
         <StatCard title="Cursos Ativos" value={String(counts?.courses ?? 0)} icon={BookOpen} gradient="accent" />
         <StatCard title="Certificados" value={String(counts?.certificates ?? 0)} icon={Award} gradient="primary" />

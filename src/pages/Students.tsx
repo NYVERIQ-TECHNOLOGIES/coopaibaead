@@ -31,31 +31,13 @@ export default function Students() {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
     queryFn: async () => {
-      // Pagina profiles (limite default do PostgREST = 1000)
-      const fetchAll = async <T,>(table: "profiles" | "user_roles", select: string): Promise<T[]> => {
-        const pageSize = 1000;
-        let from = 0;
-        const all: T[] = [];
-        while (true) {
-          const { data, error } = await supabase
-            .from(table)
-            .select(select)
-            .range(from, from + pageSize - 1);
-          if (error) throw error;
-          const rows = (data ?? []) as T[];
-          all.push(...rows);
-          if (rows.length < pageSize) break;
-          from += pageSize;
-        }
-        return all;
-      };
-      const profiles = await fetchAll<any>(
-        "profiles",
-        "user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf",
-      );
-      profiles.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
-      const roles = await fetchAll<any>("user_roles", "user_id, role");
-      const roleMap = new Map(roles.map((r) => [r.user_id, r.role]));
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf")
+        .order("created_at", { ascending: false });
+      if (!profiles) return [];
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
+      const roleMap = new Map((roles ?? []).map((r) => [r.user_id, r.role]));
       return profiles.map((p) => ({ ...p, role: roleMap.get(p.user_id) ?? "aluno" }));
     },
   });
@@ -139,7 +121,7 @@ export default function Students() {
     return matchesSearch && matchesActive;
   });
 
-  const totalAlunos = students.filter((s) => s.role === "aluno" && s.is_active !== false).length;
+  const totalAlunos = students.filter((s) => s.role !== "admin" && s.is_active !== false).length;
   const totalCooperados = students.filter((s) => s.role === "cooperado" && s.is_active !== false).length;
   const totalAdmins = students.filter((s) => s.role === "admin").length;
   const totalInativos = students.filter((s) => s.is_active === false).length;
