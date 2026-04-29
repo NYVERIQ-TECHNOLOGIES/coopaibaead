@@ -77,7 +77,12 @@ const isValidCpf = (value: string) => {
 
 export default function SettingsPage() {
   const { profile, user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
 
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [cooperativa, setCooperativa] = useState(profile?.cooperativa || "");
