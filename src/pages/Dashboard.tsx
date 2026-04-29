@@ -83,7 +83,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total de Alunos" value={String(counts?.students ?? 0)} icon={Users} gradient="primary" />
+        <StatCard title="Total de Alunos" value={String(counts?.alunos ?? 0)} icon={Users} gradient="primary" />
         <StatCard title="Cooperados" value={String(counts?.cooperados ?? 0)} icon={UserCheck} gradient="secondary" />
         <StatCard title="Cursos Ativos" value={String(counts?.courses ?? 0)} icon={BookOpen} gradient="accent" />
         <StatCard title="Certificados" value={String(counts?.certificates ?? 0)} icon={Award} gradient="primary" />
