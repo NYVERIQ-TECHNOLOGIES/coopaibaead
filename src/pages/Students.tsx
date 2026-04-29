@@ -563,7 +563,7 @@ export default function Students() {
                               <MessageCircle className="w-4 h-4" />
                             </Button>
                           )}
-                          {!isSelf && !isAdmin && (
+                          {!isSelf && !isAdmin && !isModerator && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="sm" variant="ghost" title="Mais ações">
