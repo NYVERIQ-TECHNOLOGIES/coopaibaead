@@ -90,7 +90,7 @@ export default function AdminManagement() {
   }, [nonAdmins, promoteSearch]);
 
   const createAdmin = useMutation({
-    mutationFn: async (data: typeof form) => {
+    mutationFn: async (data: typeof form & { role: "admin" | "moderador" }) => {
       const res = await supabase.functions.invoke("create-admin", { body: data });
       if (res.error) throw new Error(res.error.message);
       if (res.data?.error) throw new Error(res.data.error);
