@@ -31,14 +31,43 @@ export default function Students() {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
     queryFn: async () => {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf")
-        .order("created_at", { ascending: false });
-      if (!profiles) return [];
-      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-      const roleMap = new Map((roles ?? []).map((r) => [r.user_id, r.role]));
-      return profiles.map((p) => ({ ...p, role: roleMap.get(p.user_id) ?? "aluno" }));
+      // Paginar para superar o limite default de 1000 linhas do PostgREST
+      const PAGE = 1000;
+      const allProfiles: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf")
+          .order("created_at", { ascending: false })
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allProfiles.push(...data);
+        if (data.length < PAGE) break;
+      }
+
+      const allRoles: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .range(from, from + PAGE - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allRoles.push(...data);
+        if (data.length < PAGE) break;
+      }
+
+      // Um usuário pode ter mais de um role; admin > cooperado > aluno
+      const priority: Record<string, number> = { admin: 3, cooperado: 2, aluno: 1 };
+      const roleMap = new Map<string, string>();
+      for (const r of allRoles) {
+        const cur = roleMap.get(r.user_id);
+        if (!cur || (priority[r.role] ?? 0) > (priority[cur] ?? 0)) {
+          roleMap.set(r.user_id, r.role);
+        }
+      }
+      return allProfiles.map((p) => ({ ...p, role: roleMap.get(p.user_id) ?? "aluno" }));
     },
   });
 
