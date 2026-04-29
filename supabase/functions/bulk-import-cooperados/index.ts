@@ -41,6 +41,9 @@ Deno.serve(async (req) => {
         continue;
       }
       await admin.from("profiles").update({ full_name: name, cpf }).eq("user_id", created.user.id);
+      // Garante papel 'cooperado' (sobrescreve qualquer papel padrão criado pelo trigger)
+      await admin.from("user_roles").delete().eq("user_id", created.user.id);
+      await admin.from("user_roles").insert({ user_id: created.user.id, role: "cooperado" });
       results.push({ cpf, status: "created" });
     }
     const summary = results.reduce<Record<string, number>>((acc, r) => {
