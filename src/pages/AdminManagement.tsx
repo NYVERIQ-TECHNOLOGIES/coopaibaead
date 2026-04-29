@@ -16,16 +16,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
-type AppRole = "admin" | "aluno" | "cooperado";
+type AppRole = "admin" | "moderador" | "aluno" | "cooperado";
 
 const roleLabel: Record<AppRole, string> = {
   admin: "Administrador",
+  moderador: "Moderador",
   cooperado: "Cooperado",
   aluno: "Aluno",
 };
 
 const roleBadgeClass: Record<AppRole, string> = {
   admin: "bg-primary/10 text-primary border-primary/30",
+  moderador: "bg-amber-500/10 text-amber-600 border-amber-500/30",
   cooperado: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
   aluno: "bg-muted text-muted-foreground border-border",
 };
@@ -38,7 +40,8 @@ export default function AdminManagement() {
   const [openPromote, setOpenPromote] = useState(false);
   const [promoteSearch, setPromoteSearch] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const [selectedNewRole, setSelectedNewRole] = useState<AppRole>("admin");
+  const [selectedNewRole, setSelectedNewRole] = useState<AppRole>("moderador");
+  const [createRole, setCreateRole] = useState<"admin" | "moderador">("moderador");
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
 
   // All users with roles
@@ -56,9 +59,27 @@ export default function AdminManagement() {
     },
   });
 
+  // Identify master admin (oldest admin row)
+  const { data: masterAdminId } = useQuery({
+    queryKey: ["master-admin-id"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("user_id, id")
+        .eq("role", "admin")
+        .order("id", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      return data?.user_id ?? null;
+    },
+  });
+
+  const isMasterAdmin = !!user && masterAdminId === user.id;
+
   const admins = useMemo(() => allUsers.filter((u) => u.role === "admin"), [allUsers]);
+  const moderators = useMemo(() => allUsers.filter((u) => u.role === "moderador"), [allUsers]);
   const nonAdmins = useMemo(
-    () => allUsers.filter((u) => u.role !== "admin" && u.is_active !== false),
+    () => allUsers.filter((u) => u.role !== "admin" && u.role !== "moderador" && u.is_active !== false),
     [allUsers]
   );
 
