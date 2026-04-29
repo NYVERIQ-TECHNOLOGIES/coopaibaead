@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type AppRole = "admin" | "aluno" | "cooperado";
+type AppRole = "admin" | "moderador" | "aluno" | "cooperado";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
