@@ -139,7 +139,7 @@ export default function Students() {
     return matchesSearch && matchesActive;
   });
 
-  const totalAlunos = students.filter((s) => s.role !== "admin" && s.is_active !== false).length;
+  const totalAlunos = students.filter((s) => s.role === "aluno" && s.is_active !== false).length;
   const totalCooperados = students.filter((s) => s.role === "cooperado" && s.is_active !== false).length;
   const totalAdmins = students.filter((s) => s.role === "admin").length;
   const totalInativos = students.filter((s) => s.is_active === false).length;
