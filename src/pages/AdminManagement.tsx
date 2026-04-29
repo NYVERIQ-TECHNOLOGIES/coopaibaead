@@ -138,17 +138,33 @@ export default function AdminManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground flex items-center gap-2">
-            <Shield className="w-7 h-7 text-primary" /> Administradores
+            <Shield className="w-7 h-7 text-primary" /> Administradores e Moderadores
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie administradores, promova alunos a cooperado ou administrador
+            Gerencie administradores e moderadores, promova alunos a cooperado, moderador ou administrador
           </p>
+          {!isMasterAdmin && (
+            <p className="text-xs text-amber-600 mt-2">
+              Apenas o administrador master pode promover ou rebaixar administradores e moderadores.
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setOpenPromote(true)} className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setOpenPromote(true)}
+            className="gap-2"
+            disabled={!isMasterAdmin}
+            title={!isMasterAdmin ? "Apenas o administrador master" : undefined}
+          >
             <ArrowUpCircle className="w-4 h-4" /> Promover usuário
           </Button>
-          <Button onClick={() => setOpenCreate(true)} className="gap-2">
+          <Button
+            onClick={() => setOpenCreate(true)}
+            className="gap-2"
+            disabled={!isMasterAdmin}
+            title={!isMasterAdmin ? "Apenas o administrador master" : undefined}
+          >
             <UserPlus className="w-4 h-4" /> Novo Admin
           </Button>
         </div>
