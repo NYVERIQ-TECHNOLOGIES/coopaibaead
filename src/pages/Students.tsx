@@ -19,12 +19,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function Students() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<"all" | "aluno" | "cooperado" | "admin">("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "aluno" | "cooperado" | "admin" | "moderador">("all");
   const [coopFilter, setCoopFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "name_asc" | "name_desc" | "enrollment_asc" | "enrollment_desc">("recent");
   const [generating, setGenerating] = useState(false);
   const [emailMap, setEmailMap] = useState<Record<string, string>>({});
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isModerator = role === "moderador";
   const { toast } = useToast();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -183,6 +184,7 @@ export default function Students() {
   const totalAlunos = students.filter((s) => s.role === "aluno" && s.is_active !== false).length;
   const totalCooperados = students.filter((s) => s.role === "cooperado" && s.is_active !== false).length;
   const totalAdmins = students.filter((s) => s.role === "admin" && s.is_active !== false).length;
+  const totalModeradores = students.filter((s) => s.role === "moderador" && s.is_active !== false).length;
   const totalInativos = students.filter((s) => s.is_active === false).length;
 
   const formatCpf = (v?: string | null) => {
@@ -371,11 +373,12 @@ export default function Students() {
       </div>
 
       {/* Report cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "Total", value: students.length, color: "bg-primary/10 text-primary" },
           { label: "Alunos", value: totalAlunos, color: "bg-secondary/10 text-secondary" },
           { label: "Cooperados", value: totalCooperados, color: "bg-accent/10 text-accent" },
+          { label: "Moderadores", value: totalModeradores, color: "bg-amber-500/10 text-amber-600" },
           { label: "Admins", value: totalAdmins, color: "bg-destructive/10 text-destructive" },
           { label: "Inativos", value: totalInativos, color: "bg-muted text-muted-foreground" },
         ].map((s) => (
@@ -409,6 +412,7 @@ export default function Students() {
             <SelectItem value="all">Todos os tipos</SelectItem>
             <SelectItem value="aluno">Aluno</SelectItem>
             <SelectItem value="cooperado">Cooperado</SelectItem>
+            <SelectItem value="moderador">Moderador</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
           </SelectContent>
         </Select>
@@ -518,9 +522,9 @@ export default function Students() {
                         {emailMap[s.user_id] || "—"}
                       </td>
                       <td className="py-3 px-4">
-                        {isSelf || isAdmin ? (
-                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}>
-                            {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : "Aluno"}
+                        {isSelf || isAdmin || isModerator ? (
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : s.role === "moderador" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
+                            {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : s.role === "moderador" ? "Moderador" : "Aluno"}
                           </span>
                         ) : (
                           <Select
@@ -562,7 +566,7 @@ export default function Students() {
                               <MessageCircle className="w-4 h-4" />
                             </Button>
                           )}
-                          {!isSelf && !isAdmin && (
+                          {!isSelf && !isAdmin && !isModerator && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="sm" variant="ghost" title="Mais ações">

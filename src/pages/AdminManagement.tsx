@@ -16,16 +16,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
-type AppRole = "admin" | "aluno" | "cooperado";
+type AppRole = "admin" | "aluno" | "cooperado" | "moderador";
 
 const roleLabel: Record<AppRole, string> = {
   admin: "Administrador",
+  moderador: "Moderador",
   cooperado: "Cooperado",
   aluno: "Aluno",
 };
 
 const roleBadgeClass: Record<AppRole, string> = {
   admin: "bg-primary/10 text-primary border-primary/30",
+  moderador: "bg-amber-500/10 text-amber-600 border-amber-500/30",
   cooperado: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
   aluno: "bg-muted text-muted-foreground border-border",
 };
@@ -40,6 +42,16 @@ export default function AdminManagement() {
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [selectedNewRole, setSelectedNewRole] = useState<AppRole>("admin");
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+
+  // Master admin check (only the master admin can manage admins/moderators)
+  const { data: isMasterAdmin = false } = useQuery({
+    queryKey: ["is-master-admin", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("is_master_admin", { _user_id: user!.id });
+      return data === true;
+    },
+  });
 
   // All users with roles
   const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
@@ -57,6 +69,10 @@ export default function AdminManagement() {
   });
 
   const admins = useMemo(() => allUsers.filter((u) => u.role === "admin"), [allUsers]);
+  const moderators = useMemo(
+    () => allUsers.filter((u) => u.role === "moderador" && u.is_active !== false),
+    [allUsers]
+  );
   const nonAdmins = useMemo(
     () => allUsers.filter((u) => u.role !== "admin" && u.is_active !== false),
     [allUsers]
@@ -122,17 +138,33 @@ export default function AdminManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground flex items-center gap-2">
-            <Shield className="w-7 h-7 text-primary" /> Administradores
+            <Shield className="w-7 h-7 text-primary" /> Administradores e Moderadores
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie administradores, promova alunos a cooperado ou administrador
+            Gerencie administradores e moderadores, promova alunos a cooperado, moderador ou administrador
           </p>
+          {!isMasterAdmin && (
+            <p className="text-xs text-amber-600 mt-2">
+              Apenas o administrador master pode promover ou rebaixar administradores e moderadores.
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setOpenPromote(true)} className="gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setOpenPromote(true)}
+            className="gap-2"
+            disabled={!isMasterAdmin}
+            title={!isMasterAdmin ? "Apenas o administrador master" : undefined}
+          >
             <ArrowUpCircle className="w-4 h-4" /> Promover usuário
           </Button>
-          <Button onClick={() => setOpenCreate(true)} className="gap-2">
+          <Button
+            onClick={() => setOpenCreate(true)}
+            className="gap-2"
+            disabled={!isMasterAdmin}
+            title={!isMasterAdmin ? "Apenas o administrador master" : undefined}
+          >
             <UserPlus className="w-4 h-4" /> Novo Admin
           </Button>
         </div>
@@ -222,6 +254,78 @@ export default function AdminManagement() {
           <div className="text-center py-12 text-muted-foreground">
             <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p>Nenhum administrador encontrado</p>
+          </div>
+        )}
+      </div>
+
+      {/* Moderators list */}
+      <div>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+          Moderadores ({moderators.length})
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {moderators.map((mod) => (
+            <div
+              key={mod.user_id}
+              className="rounded-xl border border-border bg-card p-5 flex items-center gap-4"
+            >
+              <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                <span className="text-lg font-bold text-amber-600">
+                  {mod.full_name
+                    ?.split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase() || "M"}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-foreground truncate">
+                  {mod.full_name || "Moderador"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {mod.cooperativa || "Sem cooperativa"}
+                </p>
+              </div>
+              {isMasterAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:bg-destructive/10"
+                      title="Remover moderador"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remover moderador?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        <strong>{mod.full_name}</strong> deixará de ser moderador e voltará a ser aluno comum.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() =>
+                          changeRole.mutate({ user_id: mod.user_id, new_role: "aluno" })
+                        }
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remover
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
+          ))}
+        </div>
+        {!loadingUsers && moderators.length === 0 && (
+          <div className="text-sm text-muted-foreground py-4">
+            Nenhum moderador cadastrado.
           </div>
         )}
       </div>
@@ -344,6 +448,7 @@ export default function AdminManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="moderador">Moderador</SelectItem>
                   <SelectItem value="cooperado">Cooperado</SelectItem>
                   <SelectItem value="aluno">Aluno (rebaixar)</SelectItem>
                 </SelectContent>

@@ -45,7 +45,8 @@ interface ProfileLite {
 
 export default function Support() {
   const { user, role, profile } = useAuth();
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "moderador";
+  const isRealAdmin = role === "admin";
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -201,7 +202,7 @@ export default function Support() {
   };
 
   const deleteMessage = async (id: string) => {
-    if (!isAdmin) return;
+    if (!isRealAdmin) return;
     const { error } = await supabase.from("support_messages").delete().eq("id", id);
     if (error) toast.error("Erro ao remover");
   };
@@ -465,13 +466,15 @@ export default function Support() {
                               <p className="text-[10px] opacity-60 mt-1">
                                 {format(new Date(m.created_at), "dd/MM HH:mm", { locale: ptBR })}
                               </p>
-                              <button
-                                onClick={() => deleteMessage(m.id)}
-                                className="absolute -top-2 -right-2 hidden group-hover:flex bg-background border rounded-full w-6 h-6 items-center justify-center text-muted-foreground hover:text-destructive"
-                                title="Remover mensagem"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                              {isRealAdmin && (
+                                <button
+                                  onClick={() => deleteMessage(m.id)}
+                                  className="absolute -top-2 -right-2 hidden group-hover:flex bg-background border rounded-full w-6 h-6 items-center justify-center text-muted-foreground hover:text-destructive"
+                                  title="Remover mensagem"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
                             </div>
                           </motion.div>
                         );
