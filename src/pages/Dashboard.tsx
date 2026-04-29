@@ -116,9 +116,18 @@ export default function Dashboard() {
             <div className="space-y-3">
               {recentProfiles.map((p, i) => (
                 <div key={i} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
-                  <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
-                    <span className="text-xs font-bold text-primary-foreground">{p.full_name?.charAt(0) || "U"}</span>
-                  </div>
+                  {(p as any).avatar_url ? (
+                    <img
+                      src={(p as any).avatar_url}
+                      alt={p.full_name || "Avatar"}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-border"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-bold text-primary-foreground">{p.full_name?.charAt(0) || "U"}</span>
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-card-foreground">{p.full_name || "Usuário"}</p>
                     <p className="text-xs text-muted-foreground">Cadastrado em {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
