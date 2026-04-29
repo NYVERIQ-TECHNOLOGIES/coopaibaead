@@ -45,7 +45,7 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<ProtectedRoute allowedRoles={["admin"]}><Dashboard /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Dashboard /></ProtectedRoute>} />
               <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
 
               {/* Acessível a alunos, cooperados e admins */}
@@ -53,7 +53,7 @@ const App = () => (
               <Route path="/courses/:id" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><CourseDetail /></ProtectedRoute>} />
               <Route path="/library" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><LibraryPage /></ProtectedRoute>} />
               <Route path="/forum" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Forum /></ProtectedRoute>} />
-              <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
+              <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
 
               {/* Disponível a todos autenticados */}
               <Route path="/settings" element={<SettingsPage />} />
@@ -62,8 +62,8 @@ const App = () => (
               {/* Certificados: alunos veem apenas os próprios; admins gerenciam tudo */}
               <Route path="/certificates" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Certificates /></ProtectedRoute>} />
 
-              {/* Restrito a admins */}
-              <Route path="/students" element={<ProtectedRoute allowedRoles={["admin"]}><Students /></ProtectedRoute>} />
+              {/* Acessível a admins e moderadores (somente leitura/visualização) */}
+              <Route path="/students" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Students /></ProtectedRoute>} />
               <Route path="/unlisted-users" element={<ProtectedRoute allowedRoles={["admin"]}><UnlistedUsers /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin"]}><Attendance /></ProtectedRoute>} />
               <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin"]}><SupplementaryMaterials /></ProtectedRoute>} />
