@@ -57,7 +57,7 @@ export default function Dashboard() {
 
   const courseDistribution = [
     { name: "Cursos", value: counts?.courses ?? 0 },
-    { name: "Alunos", value: (counts?.students ?? 0) - (counts?.cooperados ?? 0) },
+    { name: "Alunos", value: counts?.alunos ?? 0 },
     { name: "Cooperados", value: counts?.cooperados ?? 0 },
     { name: "Certificados", value: counts?.certificates ?? 0 },
   ];
