@@ -69,6 +69,10 @@ export default function AdminManagement() {
   });
 
   const admins = useMemo(() => allUsers.filter((u) => u.role === "admin"), [allUsers]);
+  const moderators = useMemo(
+    () => allUsers.filter((u) => u.role === "moderador" && u.is_active !== false),
+    [allUsers]
+  );
   const nonAdmins = useMemo(
     () => allUsers.filter((u) => u.role !== "admin" && u.is_active !== false),
     [allUsers]
