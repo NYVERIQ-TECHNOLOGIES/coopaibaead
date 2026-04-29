@@ -412,6 +412,7 @@ export default function Students() {
             <SelectItem value="all">Todos os tipos</SelectItem>
             <SelectItem value="aluno">Aluno</SelectItem>
             <SelectItem value="cooperado">Cooperado</SelectItem>
+            <SelectItem value="moderador">Moderador</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
           </SelectContent>
         </Select>
