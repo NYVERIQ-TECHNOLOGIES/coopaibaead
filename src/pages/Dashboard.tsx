@@ -28,9 +28,10 @@ export default function Dashboard() {
   const { data: counts } = useQuery({
     queryKey: ["dashboard-counts"],
     queryFn: async () => {
-      const [courses, profiles, cooperados, certificates, enrollments] = await Promise.all([
+      const [courses, profiles, alunos, cooperados, certificates, enrollments] = await Promise.all([
         supabase.from("courses").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "aluno"),
         supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "cooperado"),
         supabase.from("certificates").select("id", { count: "exact", head: true }).eq("status", "emitido"),
         supabase.from("enrollments").select("id", { count: "exact", head: true }),
@@ -38,6 +39,7 @@ export default function Dashboard() {
       return {
         courses: courses.count ?? 0,
         students: profiles.count ?? 0,
+        alunos: alunos.count ?? 0,
         cooperados: cooperados.count ?? 0,
         certificates: certificates.count ?? 0,
         enrollments: enrollments.count ?? 0,
