@@ -505,16 +505,25 @@ export default function Students() {
                       <td className="py-3 px-4 text-xs font-mono text-muted-foreground">
                         {s.enrollment_number || "—"}
                       </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-primary-foreground">
-                              {s.full_name?.charAt(0) || "U"}
-                            </span>
-                          </div>
-                          <p className="text-sm font-medium text-card-foreground">{s.full_name || "Sem nome"}</p>
-                        </div>
-                      </td>
+                       <td className="py-3 px-4">
+                         <div className="flex items-center gap-3">
+                           {(s as any).avatar_url ? (
+                             <img
+                               src={(s as any).avatar_url}
+                               alt={s.full_name || "Avatar"}
+                               className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-border"
+                               loading="lazy"
+                             />
+                           ) : (
+                             <div className="w-8 h-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                               <span className="text-xs font-bold text-primary-foreground">
+                                 {s.full_name?.charAt(0) || "U"}
+                               </span>
+                             </div>
+                           )}
+                           <p className="text-sm font-medium text-card-foreground">{s.full_name || "Sem nome"}</p>
+                         </div>
+                       </td>
                       <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
                         {formatCpf((s as any).cpf) || "—"}
                       </td>
