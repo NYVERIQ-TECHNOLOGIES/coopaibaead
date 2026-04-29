@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function Students() {
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<"all" | "aluno" | "cooperado" | "admin">("all");
+  const [roleFilter, setRoleFilter] = useState<"all" | "aluno" | "cooperado" | "admin" | "moderador">("all");
   const [coopFilter, setCoopFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"recent" | "oldest" | "name_asc" | "name_desc" | "enrollment_asc" | "enrollment_desc">("recent");
   const [generating, setGenerating] = useState(false);
