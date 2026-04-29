@@ -45,7 +45,7 @@ interface ProfileLite {
 
 export default function Support() {
   const { user, role, profile } = useAuth();
-  const isAdmin = role === "admin";
+  const isAdmin = role === "admin" || role === "moderador";
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
