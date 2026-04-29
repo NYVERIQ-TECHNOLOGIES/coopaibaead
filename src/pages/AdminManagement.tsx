@@ -448,6 +448,7 @@ export default function AdminManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="moderador">Moderador</SelectItem>
                   <SelectItem value="cooperado">Cooperado</SelectItem>
                   <SelectItem value="aluno">Aluno (rebaixar)</SelectItem>
                 </SelectContent>
