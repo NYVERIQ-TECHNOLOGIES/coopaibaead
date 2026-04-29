@@ -184,6 +184,7 @@ export default function Students() {
   const totalAlunos = students.filter((s) => s.role === "aluno" && s.is_active !== false).length;
   const totalCooperados = students.filter((s) => s.role === "cooperado" && s.is_active !== false).length;
   const totalAdmins = students.filter((s) => s.role === "admin" && s.is_active !== false).length;
+  const totalModeradores = students.filter((s) => s.role === "moderador" && s.is_active !== false).length;
   const totalInativos = students.filter((s) => s.is_active === false).length;
 
   const formatCpf = (v?: string | null) => {
