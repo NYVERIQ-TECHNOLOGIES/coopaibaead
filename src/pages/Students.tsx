@@ -136,13 +136,49 @@ export default function Students() {
     }
   };
 
-  const filtered = students.filter((s) => {
-    const matchesSearch =
-      (s.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (s.enrollment_number || "").toLowerCase().includes(search.toLowerCase());
-    const matchesActive = showInactive ? true : s.is_active !== false;
-    return matchesSearch && matchesActive;
-  });
+  const cooperativas = Array.from(
+    new Set(
+      students
+        .map((s: any) => (s.cooperativa || "").trim())
+        .filter((c: string) => c.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  const filtered = students
+    .filter((s) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        (s.full_name || "").toLowerCase().includes(q) ||
+        (s.enrollment_number || "").toLowerCase().includes(q) ||
+        (s.cpf || "").replace(/\D/g, "").includes(q.replace(/\D/g, "")) ||
+        (emailMap[s.user_id] || "").toLowerCase().includes(q);
+      const matchesActive = showInactive ? true : s.is_active !== false;
+      const matchesRole = roleFilter === "all" ? true : s.role === roleFilter;
+      const matchesCoop =
+        coopFilter === "all"
+          ? true
+          : coopFilter === "__none__"
+          ? !((s.cooperativa || "").trim())
+          : (s.cooperativa || "").trim() === coopFilter;
+      return matchesSearch && matchesActive && matchesRole && matchesCoop;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "name_asc":
+          return (a.full_name || "").localeCompare(b.full_name || "", "pt-BR");
+        case "name_desc":
+          return (b.full_name || "").localeCompare(a.full_name || "", "pt-BR");
+        case "enrollment_asc":
+          return (a.enrollment_number || "").localeCompare(b.enrollment_number || "", "pt-BR");
+        case "enrollment_desc":
+          return (b.enrollment_number || "").localeCompare(a.enrollment_number || "", "pt-BR");
+        case "recent":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
 
   const totalAlunos = students.filter((s) => s.role === "aluno" && s.is_active !== false).length;
   const totalCooperados = students.filter((s) => s.role === "cooperado" && s.is_active !== false).length;
