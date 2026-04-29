@@ -373,11 +373,12 @@ export default function Students() {
       </div>
 
       {/* Report cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
           { label: "Total", value: students.length, color: "bg-primary/10 text-primary" },
           { label: "Alunos", value: totalAlunos, color: "bg-secondary/10 text-secondary" },
           { label: "Cooperados", value: totalCooperados, color: "bg-accent/10 text-accent" },
+          { label: "Moderadores", value: totalModeradores, color: "bg-amber-500/10 text-amber-600" },
           { label: "Admins", value: totalAdmins, color: "bg-destructive/10 text-destructive" },
           { label: "Inativos", value: totalInativos, color: "bg-muted text-muted-foreground" },
         ].map((s) => (
