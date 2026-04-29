@@ -31,14 +31,34 @@ export default function Students() {
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
     queryFn: async () => {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf")
-        .order("created_at", { ascending: false });
-      if (!profiles) return [];
-      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-      const roleMap = new Map((roles ?? []).map((r) => [r.user_id, r.role]));
-      return profiles.map((p) => ({ ...p, role: roleMap.get(p.user_id) ?? "aluno" }));
+      // Paginate to bypass default 1000-row Supabase limit
+      const PAGE = 1000;
+      const fetchAll = async <T,>(table: "profiles" | "user_roles", columns: string): Promise<T[]> => {
+        const all: T[] = [];
+        let from = 0;
+        while (true) {
+          const { data, error } = await supabase
+            .from(table)
+            .select(columns)
+            .range(from, from + PAGE - 1);
+          if (error) throw error;
+          const batch = (data ?? []) as unknown as T[];
+          all.push(...batch);
+          if (batch.length < PAGE) break;
+          from += PAGE;
+        }
+        return all;
+      };
+
+      const profiles = await fetchAll<any>(
+        "profiles",
+        "user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf"
+      );
+      const roles = await fetchAll<{ user_id: string; role: string }>("user_roles", "user_id, role");
+      const roleMap = new Map(roles.map((r) => [r.user_id, r.role]));
+      return profiles
+        .map((p) => ({ ...p, role: roleMap.get(p.user_id) ?? "aluno" }))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     },
   });
 
