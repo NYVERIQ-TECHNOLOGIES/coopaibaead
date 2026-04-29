@@ -475,7 +475,10 @@ export default function AdminManagement() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="admin">Administrador</SelectItem>
+                  {isMasterAdmin && (
+                    <SelectItem value="admin">Administrador</SelectItem>
+                  )}
+                  <SelectItem value="moderador">Moderador</SelectItem>
                   <SelectItem value="cooperado">Cooperado</SelectItem>
                   <SelectItem value="aluno">Aluno (rebaixar)</SelectItem>
                 </SelectContent>
