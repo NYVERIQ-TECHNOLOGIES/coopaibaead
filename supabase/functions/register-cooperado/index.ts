@@ -6,13 +6,112 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Public endpoint: creates a PENDING cooperado registration.
+// Account is NOT created in auth.users until an admin approves it.
+// This prevents anyone with a valid-format CPF from getting cooperado privileges.
+const RATE_LIMIT_MAX = 3;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+async function enforceRateLimit(
+  admin: ReturnType<typeof createClient>,
+  identifier: string,
+): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const now = Date.now();
+  const { data: existing } = await admin
+    .from("edge_function_rate_limits")
+    .select("id, request_count, window_started_at")
+    .eq("function_name", "register-cooperado")
+    .eq("identifier", identifier)
+    .maybeSingle();
+  if (!existing) {
+    await admin.from("edge_function_rate_limits").insert({
+      function_name: "register-cooperado",
+      identifier,
+      request_count: 1,
+      window_started_at: new Date(now).toISOString(),
+    });
+    return { allowed: true };
+  }
+  const windowStarted = new Date(existing.window_started_at as string).getTime();
+  if (now - windowStarted > RATE_LIMIT_WINDOW_MS) {
+    await admin
+      .from("edge_function_rate_limits")
+      .update({
+        request_count: 1,
+        window_started_at: new Date(now).toISOString(),
+        updated_at: new Date(now).toISOString(),
+      })
+      .eq("id", existing.id as string);
+    return { allowed: true };
+  }
+  if ((existing.request_count as number) >= RATE_LIMIT_MAX) {
+    return {
+      allowed: false,
+      retryAfter: Math.ceil((RATE_LIMIT_WINDOW_MS - (now - windowStarted)) / 1000),
+    };
+  }
+  await admin
+    .from("edge_function_rate_limits")
+    .update({
+      request_count: (existing.request_count as number) + 1,
+      updated_at: new Date(now).toISOString(),
+    })
+    .eq("id", existing.id as string);
+  return { allowed: true };
+}
+
+// Lightweight password hash (bcrypt-like via Web Crypto). Stored only until approval, then discarded.
+async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt, iterations: 120_000, hash: "SHA-256" },
+    keyMaterial,
+    256,
+  );
+  const saltB64 = btoa(String.fromCharCode(...salt));
+  const hashB64 = btoa(String.fromCharCode(...new Uint8Array(bits)));
+  return `pbkdf2$120000$${saltB64}$${hashB64}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { cpf, password, full_name, cooperativa, avatar_url } = await req.json();
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      "unknown";
+    const rl = await enforceRateLimit(admin, ip);
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ error: "Muitas tentativas. Tente novamente em instantes." }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(rl.retryAfter ?? 60),
+          },
+        },
+      );
+    }
+
+    const { cpf, password, full_name, cooperativa, email } = await req.json();
 
     const cleanCpf = String(cpf || "").replace(/\D/g, "");
     if (cleanCpf.length !== 11) {
@@ -27,73 +126,68 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (!full_name || String(full_name).trim().length < 3) {
+    const name = String(full_name || "").trim();
+    if (name.length < 3 || name.length > 120) {
       return new Response(JSON.stringify({ error: "Nome inválido" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const admin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const syntheticEmail = `cpf${cleanCpf}@cooperado.coopaiba.com.br`;
-
-    // Verifica se já existe profile com esse CPF
+    // CPF cannot already exist as approved profile or pending registration
     const { data: existingProfile } = await admin
-      .from("profiles")
-      .select("user_id")
-      .eq("cpf", cleanCpf)
-      .maybeSingle();
-
+      .from("profiles").select("user_id").eq("cpf", cleanCpf).maybeSingle();
     if (existingProfile) {
       return new Response(JSON.stringify({ error: "CPF já cadastrado" }), {
         status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email: syntheticEmail,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: String(full_name).trim(),
-        cpf: cleanCpf,
-        cooperativa: cooperativa || null,
-        user_type: "cooperado",
-      },
-    });
-
-    if (createErr || !created.user) {
+    const { data: existingPending } = await admin
+      .from("cooperado_pending_registrations")
+      .select("id, status")
+      .eq("cpf", cleanCpf)
+      .maybeSingle();
+    if (existingPending) {
       return new Response(
-        JSON.stringify({ error: createErr?.message || "Falha ao criar conta" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: "Já existe uma solicitação para este CPF. Aguarde a análise do administrador.",
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    const userId = created.user.id;
+    const passwordHash = await hashPassword(String(password));
 
-    // Garante que o profile reflete os dados (o trigger handle_new_user já cria, mas atualizamos extras)
-    const updates: Record<string, unknown> = {
-      full_name: String(full_name).trim(),
+    const { error: insErr } = await admin.from("cooperado_pending_registrations").insert({
+      full_name: name,
       cpf: cleanCpf,
-    };
-    if (cooperativa) updates.cooperativa = cooperativa;
-    if (avatar_url) updates.avatar_url = avatar_url;
-
-    await admin.from("profiles").update(updates).eq("user_id", userId);
+      email: email ? String(email).trim().toLowerCase() : null,
+      cooperativa: cooperativa || null,
+      password_hash: passwordHash,
+      status: "pending",
+    });
+    if (insErr) {
+      return new Response(JSON.stringify({ error: insErr.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(
-      JSON.stringify({ success: true, email: syntheticEmail, user_id: userId }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({
+        success: true,
+        pending: true,
+        message:
+          "Solicitação enviada. Seu cadastro será analisado pela equipe administrativa antes de ser ativado.",
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e) {
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    console.error("register-cooperado error:", e);
+    return new Response(JSON.stringify({ error: "Erro interno" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
