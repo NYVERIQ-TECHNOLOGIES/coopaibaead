@@ -235,8 +235,9 @@ export default function Register() {
         }
 
         toast({
-          title: "Conta criada com sucesso!",
-          description: "Você já pode fazer login com seu CPF e senha.",
+          title: "Solicitação enviada para análise",
+          description:
+            "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
         });
         navigate("/login");
         setLoading(false);

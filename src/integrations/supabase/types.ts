@@ -76,6 +76,39 @@ export type Database = {
           },
         ]
       }
+      bulk_import_audit: {
+        Row: {
+          created_at: string
+          created_count: number
+          error_count: number
+          id: string
+          performed_by: string
+          skipped_count: number
+          summary: Json | null
+          total_rows: number
+        }
+        Insert: {
+          created_at?: string
+          created_count?: number
+          error_count?: number
+          id?: string
+          performed_by: string
+          skipped_count?: number
+          summary?: Json | null
+          total_rows?: number
+        }
+        Update: {
+          created_at?: string
+          created_count?: number
+          error_count?: number
+          id?: string
+          performed_by?: string
+          skipped_count?: number
+          summary?: Json | null
+          total_rows?: number
+        }
+        Relationships: []
+      }
       certificate_templates: {
         Row: {
           active: boolean
@@ -146,6 +179,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      cooperado_pending_registrations: {
+        Row: {
+          cooperativa: string | null
+          cpf: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          password_hash: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cooperativa?: string | null
+          cpf: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          password_hash: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cooperativa?: string | null
+          cpf?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          password_hash?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       cooperativas: {
         Row: {
@@ -398,6 +476,33 @@ export type Database = {
           image?: string | null
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      edge_function_rate_limits: {
+        Row: {
+          function_name: string
+          id: string
+          identifier: string
+          request_count: number
+          updated_at: string
+          window_started_at: string
+        }
+        Insert: {
+          function_name: string
+          id?: string
+          identifier: string
+          request_count?: number
+          updated_at?: string
+          window_started_at?: string
+        }
+        Update: {
+          function_name?: string
+          id?: string
+          identifier?: string
+          request_count?: number
+          updated_at?: string
+          window_started_at?: string
         }
         Relationships: []
       }
