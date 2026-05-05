@@ -87,8 +87,8 @@ export default function ForgotPassword() {
               </div>
               <h2 className="text-2xl font-heading font-bold text-foreground">Verifique seu e-mail</h2>
               <p className="text-muted-foreground mt-2 mb-8">
-                Enviamos um link de recuperação para <strong className="text-foreground">{email}</strong>. O link
-                expira em até 1 hora.
+                Se <strong className="text-foreground">{email}</strong> estiver cadastrado, você receberá um link de
+                recuperação em instantes. O link expira em até 1 hora.
               </p>
               <Link
                 to="/login"
