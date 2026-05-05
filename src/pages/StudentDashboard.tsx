@@ -118,6 +118,7 @@ export default function StudentDashboard() {
         </motion.div>
       )}
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Cursos Matriculados" value={String(enrollments.length)} icon={BookOpen} gradient="primary" />
         <StatCard title="Cursos Disponíveis" value={String(allCourses.length)} icon={Clock} gradient="secondary" />
         <StatCard title="Certificados" value={String(certCount)} icon={Award} gradient="accent" />
