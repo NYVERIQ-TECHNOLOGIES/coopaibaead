@@ -480,9 +480,27 @@ export default function CourseDetail() {
     },
     onSuccess: async (_, vars) => {
       await qc.invalidateQueries({ queryKey: ["my_lesson_completions", courseId, user?.id] });
+      // If student just marked the lesson as completed, auto-open the attached quiz (if any & published)
+      if (!vars.completed) {
+        const quiz = lessonQuizMap.get(vars.lessonId);
+        if (quiz && quiz.status === "publicada") {
+          startExam(quiz);
+        }
+      }
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
+
+  // ---- Mark last accessed lesson (continue where you left off) ----
+  const markLessonAccess = async (lessonId: string) => {
+    if (!user || isAdmin || !courseId) return;
+    try {
+      await supabase.rpc("mark_lesson_access", { _course_id: courseId, _lesson_id: lessonId });
+      qc.invalidateQueries({ queryKey: ["my-enrollments", user.id] });
+    } catch {
+      // silent — not critical
+    }
+  };
 
   // ---- Generate certificate (student self-issue at 100%) ----
   const handleGenerateCertificate = async () => {
