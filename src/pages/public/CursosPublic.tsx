@@ -8,7 +8,7 @@ interface PublicCourse {
   id: string;
   title: string;
   description: string | null;
-  cover_url: string | null;
+  image: string | null;
   duration: string | null;
   cooperado_only: boolean | null;
 }
@@ -21,7 +21,7 @@ export default function CursosPublic() {
     (async () => {
       const { data } = await supabase
         .from("courses")
-        .select("id, title, description, cover_url, duration, cooperado_only")
+        .select("id, title, description, image, duration, cooperado_only")
         .order("created_at", { ascending: false })
         .limit(24);
       setCourses((data as PublicCourse[]) || []);
@@ -72,8 +72,8 @@ export default function CursosPublic() {
                 className="bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-shadow"
               >
                 <div className="aspect-video bg-muted relative overflow-hidden">
-                  {c.cover_url ? (
-                    <img src={c.cover_url} alt={c.title} loading="lazy" className="w-full h-full object-cover" />
+                  {c.image ? (
+                    <img src={c.image} alt={c.title} loading="lazy" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center gradient-primary opacity-20">
                       <BookOpen className="w-12 h-12 text-primary" />
