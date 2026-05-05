@@ -159,6 +159,10 @@ Deno.serve(async (req) => {
     // We'll create a PDF that overlays text on the template image
     const templateUrl = template?.file_url || null;
 
+    // Reserve cert code BEFORE building the PDF so we can embed the QR
+    const certCode = `CERT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const verifyUrl = `https://coopaiba.com.br/validar-certificado/${certCode}`;
+
     // Build a simple but elegant PDF certificate
     // Using raw PDF generation for Deno compatibility
     const pdfBytes = await buildCertificatePdf({
@@ -167,10 +171,11 @@ Deno.serve(async (req) => {
       courseDuration,
       dateStr,
       templateUrl,
+      certCode,
+      verifyUrl,
     });
 
     // Upload to storage
-    const certCode = `CERT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const filePath = `certificates/${certCode}.pdf`;
 
     const { error: uploadError } = await supabaseAdmin.storage
@@ -215,6 +220,8 @@ interface CertData {
   courseDuration: string;
   dateStr: string;
   templateUrl: string | null;
+  certCode: string;
+  verifyUrl: string;
 }
 
 async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
@@ -222,6 +229,7 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   const { PDFDocument, rgb, StandardFonts } = await import(
     "https://esm.sh/pdf-lib@1.17.1"
   );
+  const QRCode = (await import("https://esm.sh/qrcode@1.5.4")).default;
 
   const pdfDoc = await PDFDocument.create();
 
@@ -387,6 +395,53 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
     size: 10,
     font: fontItalic,
     color: rgb(0.5, 0.5, 0.5),
+  });
+
+  // QR code (verification) — bottom right
+  try {
+    const qrDataUrl = await QRCode.toDataURL(data.verifyUrl, {
+      margin: 1,
+      width: 256,
+      color: { dark: "#000000", light: "#ffffff" },
+    });
+    const qrBytes = Uint8Array.from(
+      atob(qrDataUrl.split(",")[1]),
+      (c) => c.charCodeAt(0),
+    );
+    const qrImage = await pdfDoc.embedPng(qrBytes);
+    const qrSize = 80;
+    const qrX = pageWidth - qrSize - 40;
+    const qrY = 50;
+    page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+
+    const qrLabel = "Verifique a autenticidade";
+    const qrLabelW = fontRegular.widthOfTextAtSize(qrLabel, 8);
+    page.drawText(qrLabel, {
+      x: qrX + qrSize / 2 - qrLabelW / 2,
+      y: qrY - 12,
+      size: 8,
+      font: fontRegular,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+  } catch (e) {
+    console.error("QR code generation failed:", e);
+  }
+
+  // Certificate code — bottom left
+  const codeLabel = "Código de validação:";
+  page.drawText(codeLabel, {
+    x: 50,
+    y: 70,
+    size: 9,
+    font: fontRegular,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  page.drawText(data.certCode, {
+    x: 50,
+    y: 55,
+    size: 11,
+    font: fontBold,
+    color: textColor,
   });
 
   const pdfBytesArray = await pdfDoc.save();

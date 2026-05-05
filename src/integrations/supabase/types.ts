@@ -1185,6 +1185,17 @@ export type Database = {
         Args: { _answers: Json; _evaluation_id: string }
         Returns: Json
       }
+      validate_certificate: {
+        Args: { _code: string }
+        Returns: {
+          code: string
+          course_duration: string
+          course_title: string
+          issued_at: string
+          status: string
+          student_name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "aluno" | "cooperado" | "moderador"
