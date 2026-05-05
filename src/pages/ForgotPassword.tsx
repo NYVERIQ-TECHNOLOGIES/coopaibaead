@@ -29,38 +29,25 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      // 1) Verificar se o e-mail existe na base
-      const { data, error } = await supabase.functions.invoke("check-email-exists", {
-        body: { email: value },
-      });
-      if (error) throw error;
-
-      if (!data?.exists) {
-        toast({
-          title: "E-mail não encontrado",
-          description: "Este e-mail não está cadastrado na plataforma.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // 2) Enviar link oficial do Supabase Auth
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(value, {
+      // Sempre dispara o reset; o Supabase silenciosamente ignora e-mails desconhecidos.
+      // NUNCA revele se o e-mail existe (prevenção de enumeração de contas).
+      await supabase.auth.resetPasswordForEmail(value, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      if (resetErr) throw resetErr;
 
+      // Resposta uniforme, independentemente da existência do e-mail.
       setSent(true);
       toast({
-        title: "Link enviado",
-        description: "Enviamos um link de recuperação para seu e-mail.",
+        title: "Verifique seu e-mail",
+        description: "Se este e-mail estiver cadastrado, você receberá um link de recuperação.",
       });
-    } catch (err: any) {
+    } catch {
+      // Mesmo em caso de erro interno, exibimos a mesma mensagem neutra
+      // para evitar canais laterais de enumeração.
+      setSent(true);
       toast({
-        title: "Erro ao processar",
-        description: err?.message ?? "Tente novamente em instantes.",
-        variant: "destructive",
+        title: "Verifique seu e-mail",
+        description: "Se este e-mail estiver cadastrado, você receberá um link de recuperação.",
       });
     } finally {
       setLoading(false);
@@ -100,8 +87,8 @@ export default function ForgotPassword() {
               </div>
               <h2 className="text-2xl font-heading font-bold text-foreground">Verifique seu e-mail</h2>
               <p className="text-muted-foreground mt-2 mb-8">
-                Enviamos um link de recuperação para <strong className="text-foreground">{email}</strong>. O link
-                expira em até 1 hora.
+                Se <strong className="text-foreground">{email}</strong> estiver cadastrado, você receberá um link de
+                recuperação em instantes. O link expira em até 1 hora.
               </p>
               <Link
                 to="/login"
