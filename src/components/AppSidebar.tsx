@@ -54,7 +54,7 @@ export default function AppSidebar() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/login");
+    navigate("/");
   };
 
   const sidebarContent = (
