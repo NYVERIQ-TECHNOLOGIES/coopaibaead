@@ -200,7 +200,7 @@ export default function SettingsPage() {
       }
       toast({ title: "Conta excluída", description: "Sua conta foi removida permanentemente." });
       await supabase.auth.signOut();
-      navigate("/login", { replace: true });
+      navigate("/", { replace: true });
     } catch (e) {
       toast({ title: "Erro", description: (e as Error).message, variant: "destructive" });
       setDeleting(false);
