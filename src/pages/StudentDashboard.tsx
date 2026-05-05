@@ -30,8 +30,24 @@ export default function StudentDashboard() {
       const { data } = await supabase
         .from("enrollments")
         .select("*, courses(id, title, description, image, duration)")
-        .eq("user_id", user!.id);
+        .eq("user_id", user!.id)
+        .order("last_accessed_at", { ascending: false, nullsFirst: false });
       return data ?? [];
+    },
+  });
+
+  const continueEnrollment = enrollments.find((e: any) => e.last_accessed_lesson_id && (e.progress ?? 0) < 100) ?? null;
+
+  const { data: continueLesson } = useQuery({
+    queryKey: ["continue-lesson", continueEnrollment?.last_accessed_lesson_id],
+    enabled: !!continueEnrollment?.last_accessed_lesson_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("course_lessons")
+        .select("id, title")
+        .eq("id", continueEnrollment!.last_accessed_lesson_id)
+        .maybeSingle();
+      return data;
     },
   });
 
@@ -73,6 +89,34 @@ export default function StudentDashboard() {
           </div>
         )}
       </div>
+
+      {continueEnrollment && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Link
+            to={`/courses/${continueEnrollment.course_id}`}
+            className="block rounded-2xl p-5 gradient-primary text-primary-foreground shadow-elevated hover:opacity-95 transition-opacity"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary-foreground/15 flex items-center justify-center flex-shrink-0">
+                <Play className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] uppercase tracking-wide opacity-80 font-medium">Continuar de onde parou</p>
+                <p className="font-heading font-semibold truncate">{continueEnrollment.courses?.title}</p>
+                {continueLesson && (
+                  <p className="text-sm opacity-90 truncate">Última aula: {continueLesson.title}</p>
+                )}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-32 h-1.5 bg-primary-foreground/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary-foreground rounded-full" style={{ width: `${continueEnrollment.progress || 0}%` }} />
+                  </div>
+                  <span className="text-xs opacity-90">{continueEnrollment.progress || 0}%</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Cursos Matriculados" value={String(enrollments.length)} icon={BookOpen} gradient="primary" />

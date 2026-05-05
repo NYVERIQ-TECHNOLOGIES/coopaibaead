@@ -192,6 +192,7 @@ export default function CourseDetail() {
   const [evalType, setEvalType] = useState("prova");
   const [evalDuration, setEvalDuration] = useState(60);
   const [evalQuestions, setEvalQuestions] = useState(10);
+  const [evalLessonId, setEvalLessonId] = useState<string>("none");
 
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
   const [editBookId, setEditBookId] = useState<string | null>(null);
@@ -310,11 +311,12 @@ export default function CourseDetail() {
   // ---- Evaluation mutations ----
   const saveEvalMut = useMutation({
     mutationFn: async () => {
+      const lessonIdValue = evalLessonId && evalLessonId !== "none" ? evalLessonId : null;
       if (editEvalId) {
-        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions }).eq("id", editEvalId);
+        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue }).eq("id", editEvalId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions });
+        const { error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue });
         if (error) throw error;
       }
     },
@@ -411,8 +413,8 @@ export default function CourseDetail() {
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
   const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonDialogOpen(true); };
   const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonDialogOpen(true); };
-  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalDialogOpen(true); };
-  const openEditEval = (ev: any) => { setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions); setEvalDialogOpen(true); };
+  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonId("none"); setEvalDialogOpen(true); };
+  const openEditEval = (ev: any) => { setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions); setEvalLessonId(ev.lesson_id || "none"); setEvalDialogOpen(true); };
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
@@ -447,6 +449,12 @@ export default function CourseDetail() {
   };
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
+  const allLessons = modules.flatMap((m: any) => (m.lessons || []).map((l: any) => ({ ...l, module_title: m.title })));
+  // Map of lesson_id -> evaluation attached to that lesson (first one if multiple)
+  const lessonQuizMap = new Map<string, any>();
+  for (const ev of evaluations as any[]) {
+    if (ev.lesson_id && !lessonQuizMap.has(ev.lesson_id)) lessonQuizMap.set(ev.lesson_id, ev);
+  }
   const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
   const totalUnits = totalLessons + publishedEvals.length;
   const completedLessonsCount = isAdmin
@@ -472,9 +480,27 @@ export default function CourseDetail() {
     },
     onSuccess: async (_, vars) => {
       await qc.invalidateQueries({ queryKey: ["my_lesson_completions", courseId, user?.id] });
+      // If student just marked the lesson as completed, auto-open the attached quiz (if any & published)
+      if (!vars.completed) {
+        const quiz = lessonQuizMap.get(vars.lessonId);
+        if (quiz && quiz.status === "publicada") {
+          startExam(quiz);
+        }
+      }
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
+
+  // ---- Mark last accessed lesson (continue where you left off) ----
+  const markLessonAccess = async (lessonId: string) => {
+    if (!user || isAdmin || !courseId) return;
+    try {
+      await supabase.rpc("mark_lesson_access", { _course_id: courseId, _lesson_id: lessonId });
+      qc.invalidateQueries({ queryKey: ["my-enrollments", user.id] });
+    } catch {
+      // silent — not critical
+    }
+  };
 
   // ---- Generate certificate (student self-issue at 100%) ----
   const handleGenerateCertificate = async () => {
@@ -632,36 +658,64 @@ export default function CourseDetail() {
                     {(mod.lessons || []).map((lesson: any) => {
                       const Icon = typeIcons[lesson.type] || FileText;
                       const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
+                      const attachedQuiz = lessonQuizMap.get(lesson.id);
+                      const quizPassed = attachedQuiz ? passedEvalIds.has(attachedQuiz.id) : false;
                       return (
-                        <div key={lesson.id}
-                          className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
-                          onClick={() => lesson.content_url && openContent(lesson.content_url, lesson.type)}>
-                          {!isAdmin ? (
-                            <button
-                              type="button"
-                              title={userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
-                              onClick={(e) => { e.stopPropagation(); toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
-                              className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
-                            >
-                              {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
-                            </button>
-                          ) : (
-                            <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${userCompleted ? "bg-success/10" : "bg-muted"}`}>
-                              {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                        <div key={lesson.id}>
+                          <div
+                            className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
+                            onClick={() => {
+                              if (lesson.content_url) {
+                                openContent(lesson.content_url, lesson.type);
+                                markLessonAccess(lesson.id);
+                              }
+                            }}>
+                            {!isAdmin ? (
+                              <button
+                                type="button"
+                                title={userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                                onClick={(e) => { e.stopPropagation(); toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
+                              >
+                                {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                              </button>
+                            ) : (
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${userCompleted ? "bg-success/10" : "bg-muted"}`}>
+                                {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
+                            {lesson.content_url && (
+                              <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                            )}
+                            <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
+                            <span className="text-xs text-muted-foreground flex-shrink-0">{lesson.duration}</span>
+                            {isAdmin && (
+                              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" /></Button>
+                                <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                              </div>
+                            )}
                           </div>
-                          {lesson.content_url && (
-                            <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                          )}
-                          <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
-                          <span className="text-xs text-muted-foreground flex-shrink-0">{lesson.duration}</span>
-                          {isAdmin && (
-                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" /></Button>
-                              <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                          {/* Inline lesson quiz CTA */}
+                          {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && (
+                            <div className="flex items-center justify-between gap-3 px-4 py-2 pl-16 bg-accent/5 border-t border-border/30">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <ListChecks className="w-3.5 h-3.5 text-accent flex-shrink-0" />
+                                <span className="text-xs text-card-foreground truncate">
+                                  Quiz: <strong>{attachedQuiz.title}</strong>
+                                </span>
+                                {quizPassed && (
+                                  <Badge variant="outline" className="text-[10px] bg-success/10 text-success border-success/20">Aprovado</Badge>
+                                )}
+                              </div>
+                              <Button size="sm" variant={quizPassed ? "outline" : "default"}
+                                className={quizPassed ? "h-7 text-xs" : "h-7 text-xs gradient-primary text-primary-foreground"}
+                                onClick={(e) => { e.stopPropagation(); startExam(attachedQuiz); }}>
+                                {quizPassed ? "Refazer" : "Iniciar Quiz"}
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -973,6 +1027,23 @@ export default function CourseDetail() {
                 <Label>Questões</Label>
                 <Input type="number" value={evalQuestions} onChange={(e) => setEvalQuestions(Number(e.target.value))} />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Vincular a uma aula (opcional)</Label>
+              <Select value={evalLessonId} onValueChange={setEvalLessonId}>
+                <SelectTrigger><SelectValue placeholder="Quiz de curso (não atrelado)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Nenhuma (avaliação geral do curso) —</SelectItem>
+                  {allLessons.map((l: any) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.module_title} → {l.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Se vinculada, o quiz aparece sob a aula e abre automaticamente quando o aluno marca a aula como concluída.
+              </p>
             </div>
           </div>
           <DialogFooter>

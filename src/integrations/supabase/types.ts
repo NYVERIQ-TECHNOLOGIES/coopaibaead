@@ -320,6 +320,7 @@ export type Database = {
           created_at: string
           duration: number
           id: string
+          lesson_id: string | null
           questions: number
           status: string
           title: string
@@ -331,6 +332,7 @@ export type Database = {
           created_at?: string
           duration?: number
           id?: string
+          lesson_id?: string | null
           questions?: number
           status?: string
           title: string
@@ -342,6 +344,7 @@ export type Database = {
           created_at?: string
           duration?: number
           id?: string
+          lesson_id?: string | null
           questions?: number
           status?: string
           title?: string
@@ -511,6 +514,8 @@ export type Database = {
           course_id: string
           enrolled_at: string
           id: string
+          last_accessed_at: string | null
+          last_accessed_lesson_id: string | null
           progress: number
           status: string
           updated_at: string
@@ -520,6 +525,8 @@ export type Database = {
           course_id: string
           enrolled_at?: string
           id?: string
+          last_accessed_at?: string | null
+          last_accessed_lesson_id?: string | null
           progress?: number
           status?: string
           updated_at?: string
@@ -529,6 +536,8 @@ export type Database = {
           course_id?: string
           enrolled_at?: string
           id?: string
+          last_accessed_at?: string | null
+          last_accessed_lesson_id?: string | null
           progress?: number
           status?: string
           updated_at?: string
@@ -1177,6 +1186,10 @@ export type Database = {
         }[]
       }
       log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }
+      mark_lesson_access: {
+        Args: { _course_id: string; _lesson_id: string }
+        Returns: undefined
+      }
       reset_course_progress: {
         Args: { _course_id: string }
         Returns: undefined
