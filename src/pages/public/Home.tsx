@@ -1,9 +1,15 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, Award, Users, ShieldCheck, GraduationCap, Sparkles } from "lucide-react";
 import SEO from "@/components/SEO";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
+  const { session, role, loading } = useAuth();
+  if (!loading && session && role) {
+    const dest = role === "admin" || role === "moderador" ? "/app" : "/student";
+    return <Navigate to={dest} replace />;
+  }
   return (
     <>
       <SEO
