@@ -90,7 +90,34 @@ export default function StudentDashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {continueEnrollment && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <Link
+            to={`/courses/${continueEnrollment.course_id}`}
+            className="block rounded-2xl p-5 gradient-primary text-primary-foreground shadow-elevated hover:opacity-95 transition-opacity"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-primary-foreground/15 flex items-center justify-center flex-shrink-0">
+                <Play className="w-6 h-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] uppercase tracking-wide opacity-80 font-medium">Continuar de onde parou</p>
+                <p className="font-heading font-semibold truncate">{continueEnrollment.courses?.title}</p>
+                {continueLesson && (
+                  <p className="text-sm opacity-90 truncate">Última aula: {continueLesson.title}</p>
+                )}
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-32 h-1.5 bg-primary-foreground/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary-foreground rounded-full" style={{ width: `${continueEnrollment.progress || 0}%` }} />
+                  </div>
+                  <span className="text-xs opacity-90">{continueEnrollment.progress || 0}%</span>
+                </div>
+              </div>
+            </div>
+          </Link>
+        </motion.div>
+      )}
+
         <StatCard title="Cursos Matriculados" value={String(enrollments.length)} icon={BookOpen} gradient="primary" />
         <StatCard title="Cursos Disponíveis" value={String(allCourses.length)} icon={Clock} gradient="secondary" />
         <StatCard title="Certificados" value={String(certCount)} icon={Award} gradient="accent" />
