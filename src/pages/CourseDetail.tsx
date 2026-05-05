@@ -1028,6 +1028,23 @@ export default function CourseDetail() {
                 <Input type="number" value={evalQuestions} onChange={(e) => setEvalQuestions(Number(e.target.value))} />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Vincular a uma aula (opcional)</Label>
+              <Select value={evalLessonId} onValueChange={setEvalLessonId}>
+                <SelectTrigger><SelectValue placeholder="Quiz de curso (não atrelado)" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Nenhuma (avaliação geral do curso) —</SelectItem>
+                  {allLessons.map((l: any) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.module_title} → {l.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Se vinculada, o quiz aparece sob a aula e abre automaticamente quando o aluno marca a aula como concluída.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEvalDialogOpen(false)}>Cancelar</Button>
