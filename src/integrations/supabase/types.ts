@@ -1103,6 +1103,7 @@ export type Database = {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
+      get_admin_reports: { Args: never; Returns: Json }
       get_duplicate_enrollments: {
         Args: never
         Returns: {
