@@ -192,6 +192,7 @@ export default function CourseDetail() {
   const [evalType, setEvalType] = useState("prova");
   const [evalDuration, setEvalDuration] = useState(60);
   const [evalQuestions, setEvalQuestions] = useState(10);
+  const [evalLessonId, setEvalLessonId] = useState<string>("none");
 
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
   const [editBookId, setEditBookId] = useState<string | null>(null);
@@ -310,11 +311,12 @@ export default function CourseDetail() {
   // ---- Evaluation mutations ----
   const saveEvalMut = useMutation({
     mutationFn: async () => {
+      const lessonIdValue = evalLessonId && evalLessonId !== "none" ? evalLessonId : null;
       if (editEvalId) {
-        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions }).eq("id", editEvalId);
+        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue }).eq("id", editEvalId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions });
+        const { error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue });
         if (error) throw error;
       }
     },
@@ -411,8 +413,8 @@ export default function CourseDetail() {
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
   const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonDialogOpen(true); };
   const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonDialogOpen(true); };
-  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalDialogOpen(true); };
-  const openEditEval = (ev: any) => { setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions); setEvalDialogOpen(true); };
+  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonId("none"); setEvalDialogOpen(true); };
+  const openEditEval = (ev: any) => { setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions); setEvalLessonId(ev.lesson_id || "none"); setEvalDialogOpen(true); };
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
