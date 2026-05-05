@@ -27,6 +27,7 @@ const navItems = [
   { label: "Suporte", icon: Headphones, path: "/support", moderatorAllowed: true },
   { label: "Mídias", icon: Upload, path: "/media", adminOnly: true },
   { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
+  { label: "Relatórios", icon: BarChart3, path: "/reports", adminOnly: true },
   { label: "Logs de Acesso", icon: Activity, path: "/admin-logs", adminOnly: true },
   { label: "Configurações", icon: Settings, path: "/settings", moderatorAllowed: true },
 ];
