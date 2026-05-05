@@ -1,14 +1,10 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Disallow: /app
+Disallow: /student
+Disallow: /admins
+Disallow: /admin-logs
+Disallow: /settings
+Disallow: /profile
+
+Sitemap: https://coopaiba.com.br/sitemap.xml

@@ -42,7 +42,7 @@ export default function Login() {
 
     const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
     const role = roleData?.role;
-    if (role === "admin" || role === "moderador") navigate("/", { replace: true });
+    if (role === "admin" || role === "moderador") navigate("/app", { replace: true });
     else navigate("/student", { replace: true });
   };
 

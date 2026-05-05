@@ -620,13 +620,13 @@ export default function Register() {
               />
               <span>
                 Concordo com os{" "}
-                <a href="#" className="text-primary underline">
+                <Link to="/termos" target="_blank" className="text-primary underline">
                   Termos de Uso
-                </a>{" "}
+                </Link>{" "}
                 e a{" "}
-                <a href="#" className="text-primary underline">
+                <Link to="/privacidade" target="_blank" className="text-primary underline">
                   Política de Privacidade
-                </a>{" "}
+                </Link>{" "}
                 (LGPD)
               </span>
             </label>
