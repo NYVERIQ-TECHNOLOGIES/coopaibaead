@@ -30,8 +30,24 @@ export default function StudentDashboard() {
       const { data } = await supabase
         .from("enrollments")
         .select("*, courses(id, title, description, image, duration)")
-        .eq("user_id", user!.id);
+        .eq("user_id", user!.id)
+        .order("last_accessed_at", { ascending: false, nullsFirst: false });
       return data ?? [];
+    },
+  });
+
+  const continueEnrollment = enrollments.find((e: any) => e.last_accessed_lesson_id && (e.progress ?? 0) < 100) ?? null;
+
+  const { data: continueLesson } = useQuery({
+    queryKey: ["continue-lesson", continueEnrollment?.last_accessed_lesson_id],
+    enabled: !!continueEnrollment?.last_accessed_lesson_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("course_lessons")
+        .select("id, title")
+        .eq("id", continueEnrollment!.last_accessed_lesson_id)
+        .maybeSingle();
+      return data;
     },
   });
 
