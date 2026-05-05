@@ -29,6 +29,12 @@ import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import ValidateCertificate from "@/pages/ValidateCertificate";
+import PublicLayout from "@/components/PublicLayout";
+import Home from "@/pages/public/Home";
+import Sobre from "@/pages/public/Sobre";
+import CursosPublic from "@/pages/public/CursosPublic";
+import Termos from "@/pages/public/Termos";
+import Privacidade from "@/pages/public/Privacidade";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,10 +51,20 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/validar-certificado" element={<ValidateCertificate />} />
-            <Route path="/validar-certificado/:code" element={<ValidateCertificate />} />
+
+            {/* Páginas públicas (institucional) */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/sobre" element={<Sobre />} />
+              <Route path="/cursos" element={<CursosPublic />} />
+              <Route path="/termos" element={<Termos />} />
+              <Route path="/privacidade" element={<Privacidade />} />
+              <Route path="/validar-certificado" element={<ValidateCertificate />} />
+              <Route path="/validar-certificado/:code" element={<ValidateCertificate />} />
+            </Route>
+
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Dashboard /></ProtectedRoute>} />
+              <Route path="/app" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Dashboard /></ProtectedRoute>} />
               <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
 
               {/* Acessível a alunos, cooperados e admins */}
