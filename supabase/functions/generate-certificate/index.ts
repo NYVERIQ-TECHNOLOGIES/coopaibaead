@@ -159,6 +159,10 @@ Deno.serve(async (req) => {
     // We'll create a PDF that overlays text on the template image
     const templateUrl = template?.file_url || null;
 
+    // Reserve cert code BEFORE building the PDF so we can embed the QR
+    const certCode = `CERT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const verifyUrl = `https://coopaiba.com.br/validar-certificado/${certCode}`;
+
     // Build a simple but elegant PDF certificate
     // Using raw PDF generation for Deno compatibility
     const pdfBytes = await buildCertificatePdf({
@@ -167,10 +171,11 @@ Deno.serve(async (req) => {
       courseDuration,
       dateStr,
       templateUrl,
+      certCode,
+      verifyUrl,
     });
 
     // Upload to storage
-    const certCode = `CERT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const filePath = `certificates/${certCode}.pdf`;
 
     const { error: uploadError } = await supabaseAdmin.storage
@@ -215,6 +220,8 @@ interface CertData {
   courseDuration: string;
   dateStr: string;
   templateUrl: string | null;
+  certCode: string;
+  verifyUrl: string;
 }
 
 async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
@@ -222,6 +229,7 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   const { PDFDocument, rgb, StandardFonts } = await import(
     "https://esm.sh/pdf-lib@1.17.1"
   );
+  const QRCode = (await import("https://esm.sh/qrcode@1.5.4")).default;
 
   const pdfDoc = await PDFDocument.create();
 
