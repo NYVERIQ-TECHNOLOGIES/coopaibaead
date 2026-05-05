@@ -14,7 +14,7 @@ import {
 // moderatorAllowed: também visível para o moderador (subset do adminOnly)
 // (sem flag): visível para alunos/cooperados/admin (não moderador, salvo flag)
 const navItems = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/", adminOnly: true, moderatorAllowed: true },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/app", adminOnly: true, moderatorAllowed: true },
   { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
   { label: "Cursos", icon: BookOpen, path: "/courses" },
   { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
