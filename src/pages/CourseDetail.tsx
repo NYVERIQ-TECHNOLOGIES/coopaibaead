@@ -449,6 +449,12 @@ export default function CourseDetail() {
   };
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
+  const allLessons = modules.flatMap((m: any) => (m.lessons || []).map((l: any) => ({ ...l, module_title: m.title })));
+  // Map of lesson_id -> evaluation attached to that lesson (first one if multiple)
+  const lessonQuizMap = new Map<string, any>();
+  for (const ev of evaluations as any[]) {
+    if (ev.lesson_id && !lessonQuizMap.has(ev.lesson_id)) lessonQuizMap.set(ev.lesson_id, ev);
+  }
   const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
   const totalUnits = totalLessons + publishedEvals.length;
   const completedLessonsCount = isAdmin
