@@ -3,12 +3,13 @@ import { useSearchParams, Link } from "react-router-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CheckoutReturn() {
   const [params] = useSearchParams();
   const sessionId = params.get("session_id");
-  const { user } = useAuth();
+  const { session } = useAuth();
+  const user = session?.user;
   const [loading, setLoading] = useState(true);
 
   // Poll briefly for webhook to land
