@@ -25,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
 import CourseChat from "@/components/CourseChat";
+import LessonNotes from "@/components/LessonNotes";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
@@ -185,6 +186,7 @@ export default function CourseDetail() {
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
   const [contentType, setContentType] = useState("");
+  const [contentLessonId, setContentLessonId] = useState<string | null>(null);
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
   const [editEvalId, setEditEvalId] = useState<string | null>(null);
@@ -418,7 +420,12 @@ export default function CourseDetail() {
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
-  const openContent = (url: string, type: string) => { setContentUrl(url); setContentType(type); setContentDialogOpen(true); };
+  const openContent = (url: string, type: string, lessonId?: string) => {
+    setContentUrl(url);
+    setContentType(type);
+    setContentLessonId(lessonId ?? null);
+    setContentDialogOpen(true);
+  };
 
   const openQuestions = (ev: any) => {
     setQuestionsEvalId(ev.id);
@@ -666,7 +673,7 @@ export default function CourseDetail() {
                             className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
                             onClick={() => {
                               if (lesson.content_url) {
-                                openContent(lesson.content_url, lesson.type);
+                                openContent(lesson.content_url, lesson.type, lesson.id);
                                 markLessonAccess(lesson.id);
                               }
                             }}>
