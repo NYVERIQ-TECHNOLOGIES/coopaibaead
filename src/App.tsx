@@ -35,6 +35,7 @@ import Home from "@/pages/public/Home";
 import Sobre from "@/pages/public/Sobre";
 import CursosPublic from "@/pages/public/CursosPublic";
 import Planos from "@/pages/public/Planos";
+import CheckoutReturn from "@/pages/CheckoutReturn";
 import Contato from "@/pages/public/Contato";
 import Termos from "@/pages/public/Termos";
 import Privacidade from "@/pages/public/Privacidade";
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/checkout/return" element={<CheckoutReturn />} />
 
             {/* Páginas públicas (institucional) */}
             <Route element={<PublicLayout />}>
