@@ -2,12 +2,15 @@ import { Link, NavLink, Outlet } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import logoImg from "@/assets/logo-coopaiba.png";
+import CookieConsent from "@/components/CookieConsent";
 
 const navItems = [
   { to: "/", label: "Início" },
   { to: "/sobre", label: "Sobre" },
   { to: "/cursos", label: "Cursos" },
-  { to: "/validar-certificado", label: "Validar Certificado" },
+  { to: "/planos", label: "Planos" },
+  { to: "/contato", label: "Contato" },
+  { to: "/validar-certificado", label: "Validar" },
 ];
 
 export default function PublicLayout() {
