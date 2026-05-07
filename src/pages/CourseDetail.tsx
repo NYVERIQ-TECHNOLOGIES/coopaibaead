@@ -25,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
 import CourseChat from "@/components/CourseChat";
+import LessonNotes from "@/components/LessonNotes";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
@@ -185,6 +186,7 @@ export default function CourseDetail() {
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
   const [contentType, setContentType] = useState("");
+  const [contentLessonId, setContentLessonId] = useState<string | null>(null);
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
   const [editEvalId, setEditEvalId] = useState<string | null>(null);
@@ -418,7 +420,12 @@ export default function CourseDetail() {
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
-  const openContent = (url: string, type: string) => { setContentUrl(url); setContentType(type); setContentDialogOpen(true); };
+  const openContent = (url: string, type: string, lessonId?: string) => {
+    setContentUrl(url);
+    setContentType(type);
+    setContentLessonId(lessonId ?? null);
+    setContentDialogOpen(true);
+  };
 
   const openQuestions = (ev: any) => {
     setQuestionsEvalId(ev.id);
@@ -666,7 +673,7 @@ export default function CourseDetail() {
                             className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
                             onClick={() => {
                               if (lesson.content_url) {
-                                openContent(lesson.content_url, lesson.type);
+                                openContent(lesson.content_url, lesson.type, lesson.id);
                                 markLessonAccess(lesson.id);
                               }
                             }}>
@@ -1126,25 +1133,32 @@ export default function CourseDetail() {
       </Dialog>
 
       {/* Content Viewer Dialog */}
-      <Dialog open={contentDialogOpen} onOpenChange={setContentDialogOpen}>
-        <DialogContent className="max-w-4xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <Dialog open={contentDialogOpen} onOpenChange={(o) => { if (!o) setContentLessonId(null); setContentDialogOpen(o); }}>
+        <DialogContent className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">Visualizar Conteúdo</DialogTitle>
           </DialogHeader>
-          {contentUrl && (
-            contentType === "pdf" || contentUrl.endsWith(".pdf") ? (
-              <iframe src={contentUrl} className="w-full h-[60vh] sm:h-[70vh] rounded-lg" />
-            ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg)/i) ? (
-              <video src={contentUrl} controls className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh]" />
-            ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg)/i) ? (
-              <audio src={contentUrl} controls className="w-full mt-8" />
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">Conteúdo externo</p>
-                <Button asChild><a href={contentUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><ExternalLink className="w-4 h-4" /> Abrir em nova aba</a></Button>
-              </div>
-            )
-          )}
+          <div className={`grid gap-4 ${contentLessonId && !isAdmin ? "lg:grid-cols-[1fr_320px]" : ""}`}>
+            <div>
+              {contentUrl && (
+                contentType === "pdf" || contentUrl.endsWith(".pdf") ? (
+                  <iframe src={contentUrl} className="w-full h-[60vh] sm:h-[70vh] rounded-lg" />
+                ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg)/i) ? (
+                  <video src={contentUrl} controls className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh]" />
+                ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg)/i) ? (
+                  <audio src={contentUrl} controls className="w-full mt-8" />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">Conteúdo externo</p>
+                    <Button asChild><a href={contentUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><ExternalLink className="w-4 h-4" /> Abrir em nova aba</a></Button>
+                  </div>
+                )
+              )}
+            </div>
+            {contentLessonId && !isAdmin && courseId && (
+              <LessonNotes lessonId={contentLessonId} courseId={courseId} />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 
