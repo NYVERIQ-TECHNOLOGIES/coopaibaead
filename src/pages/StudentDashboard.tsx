@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import SignedImage from "@/components/SignedImage";
+import ContinueWatching from "@/components/ContinueWatching";
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth();
@@ -117,6 +118,8 @@ export default function StudentDashboard() {
           </Link>
         </motion.div>
       )}
+
+      <ContinueWatching />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Cursos Matriculados" value={String(enrollments.length)} icon={BookOpen} gradient="primary" />
