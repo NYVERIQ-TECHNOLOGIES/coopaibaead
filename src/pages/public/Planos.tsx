@@ -7,6 +7,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { isPaymentsConfigured } from "@/lib/stripe";
+
 interface Plan {
   id: string;
   name: string;
@@ -16,6 +25,7 @@ interface Plan {
   interval: string;
   features: string[];
   sort_order: number;
+  stripe_price_id: string | null;
 }
 
 export default function Planos() {
@@ -24,12 +34,13 @@ export default function Planos() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePlanId, setActivePlanId] = useState<string | null>(null);
+  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("subscription_plans")
-        .select("id, name, slug, description, price, interval, features, sort_order")
+        .select("id, name, slug, description, price, interval, features, sort_order, stripe_price_id")
         .eq("is_active", true)
         .order("sort_order");
       setPlans(
@@ -69,10 +80,16 @@ export default function Planos() {
       });
       return;
     }
-    toast({
-      title: "Pagamentos em breve",
-      description: "A cobrança será ativada na próxima etapa. Em seguida você poderá assinar o plano.",
-    });
+    if (plan.price <= 0) return;
+    if (!plan.stripe_price_id || !isPaymentsConfigured()) {
+      toast({
+        title: "Pagamentos indisponíveis",
+        description: "Tente novamente em instantes.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setCheckoutPriceId(plan.stripe_price_id);
   };
 
   return (
