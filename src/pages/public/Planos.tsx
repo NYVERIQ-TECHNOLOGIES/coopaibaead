@@ -208,6 +208,17 @@ export default function Planos() {
 
         {loading && <Loader2 className="hidden" />}
       </section>
+
+      <Dialog open={!!checkoutPriceId} onOpenChange={(o) => !o && setCheckoutPriceId(null)}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Finalizar assinatura</DialogTitle>
+          </DialogHeader>
+          <div className="p-2 max-h-[80vh] overflow-y-auto">
+            {checkoutPriceId && <StripeEmbeddedCheckout priceId={checkoutPriceId} />}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
