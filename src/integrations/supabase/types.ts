@@ -844,11 +844,13 @@ export type Database = {
           course_id: string
           created_at: string
           currency: string
+          environment: string
           id: string
           paid_at: string | null
           provider: string | null
           provider_payment_id: string | null
           status: string
+          stripe_session_id: string | null
           updated_at: string
           user_id: string
         }
@@ -857,11 +859,13 @@ export type Database = {
           course_id: string
           created_at?: string
           currency?: string
+          environment?: string
           id?: string
           paid_at?: string | null
           provider?: string | null
           provider_payment_id?: string | null
           status?: string
+          stripe_session_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -870,11 +874,13 @@ export type Database = {
           course_id?: string
           created_at?: string
           currency?: string
+          environment?: string
           id?: string
           paid_at?: string | null
           provider?: string | null
           provider_payment_id?: string | null
           status?: string
+          stripe_session_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -892,6 +898,7 @@ export type Database = {
           price: number
           slug: string
           sort_order: number
+          stripe_price_id: string | null
           updated_at: string
         }
         Insert: {
@@ -905,6 +912,7 @@ export type Database = {
           price?: number
           slug: string
           sort_order?: number
+          stripe_price_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -918,6 +926,7 @@ export type Database = {
           price?: number
           slug?: string
           sort_order?: number
+          stripe_price_id?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -1046,41 +1055,62 @@ export type Database = {
       }
       user_subscriptions: {
         Row: {
+          cancel_at_period_end: boolean
           canceled_at: string | null
           created_at: string
           current_period_end: string | null
+          current_period_start: string | null
+          environment: string
           id: string
           plan_id: string
+          price_id: string | null
+          product_id: string | null
           provider: string | null
           provider_subscription_id: string | null
           started_at: string | null
           status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           id?: string
           plan_id: string
+          price_id?: string | null
+          product_id?: string | null
           provider?: string | null
           provider_subscription_id?: string | null
           started_at?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean
           canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           id?: string
           plan_id?: string
+          price_id?: string | null
+          product_id?: string | null
           provider?: string | null
           provider_subscription_id?: string | null
           started_at?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
         }

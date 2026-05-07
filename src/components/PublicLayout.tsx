@@ -3,6 +3,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import logoImg from "@/assets/logo-coopaiba.png";
 import CookieConsent from "@/components/CookieConsent";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 const navItems = [
   { to: "/", label: "Início" },
@@ -18,6 +19,7 @@ export default function PublicLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <PaymentTestModeBanner />
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
