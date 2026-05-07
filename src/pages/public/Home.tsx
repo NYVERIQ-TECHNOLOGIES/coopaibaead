@@ -110,6 +110,88 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Depoimentos */}
+      <section className="py-16 md:py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
+              Quem aprende com a gente
+            </h2>
+            <p className="mt-3 text-muted-foreground">Histórias reais de cooperados e alunos.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                name: "Maria S.",
+                role: "Cooperada",
+                quote: "Os cursos me ajudaram a entender melhor o cooperativismo e participar mais ativamente.",
+              },
+              {
+                name: "João P.",
+                role: "Jovem aprendiz",
+                quote: "Plataforma simples, com aulas objetivas e certificado que vale de verdade.",
+              },
+              {
+                name: "Ana L.",
+                role: "Educadora",
+                quote: "Conteúdo cuidadoso e acessível. Recomendo para qualquer cooperativa.",
+              },
+            ].map((t) => (
+              <figure key={t.name} className="bg-card border border-border rounded-xl p-6 shadow-card">
+                <blockquote className="text-foreground text-sm leading-relaxed">"{t.quote}"</blockquote>
+                <figcaption className="mt-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold">
+                    {t.name[0]}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.role}</p>
+                  </div>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Prévia de planos */}
+      <section className="py-16 md:py-20 bg-muted/30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <h2 className="font-heading text-3xl md:text-4xl font-bold text-foreground">
+              Planos para todo perfil
+            </h2>
+            <p className="mt-3 text-muted-foreground">Comece grátis. Evolua quando quiser.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-5">
+            {[
+              { name: "Gratuito", price: "R$ 0", desc: "Cursos públicos e fórum." },
+              { name: "Premium", price: "R$ 29/mês", desc: "Todos os cursos pagos e trilhas.", highlight: true },
+              { name: "Cooperado", price: "Exclusivo", desc: "Conteúdos da cooperativa." },
+            ].map((p) => (
+              <div
+                key={p.name}
+                className={`rounded-xl p-6 border ${
+                  p.highlight ? "border-primary bg-card shadow-elevated" : "border-border bg-card shadow-card"
+                }`}
+              >
+                <p className="font-heading font-semibold text-foreground">{p.name}</p>
+                <p className="font-heading text-2xl font-bold text-foreground mt-1">{p.price}</p>
+                <p className="text-sm text-muted-foreground mt-2">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link
+              to="/planos"
+              className="inline-flex items-center gap-2 px-5 py-2.5 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Comparar planos <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-16 md:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
