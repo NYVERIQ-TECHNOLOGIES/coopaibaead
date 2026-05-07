@@ -98,11 +98,20 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
     { onConflict: "stripe_session_id" },
   );
 
-  // Auto-enroll
-  await getSupabase().from("enrollments").upsert(
-    { user_id: userId, course_id: courseId, status: "ativo" },
-    { onConflict: "user_id,course_id" } as any,
-  );
+  // Auto-enroll (skip if already enrolled)
+  const { data: existing } = await getSupabase()
+    .from("enrollments")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("course_id", courseId)
+    .maybeSingle();
+  if (!existing) {
+    await getSupabase().from("enrollments").insert({
+      user_id: userId,
+      course_id: courseId,
+      status: "ativo",
+    });
+  }
 }
 
 async function handleWebhook(req: Request, env: StripeEnv) {
