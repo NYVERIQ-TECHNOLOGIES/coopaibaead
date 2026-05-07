@@ -455,6 +455,9 @@ export type Database = {
           duration: string | null
           id: string
           image: string | null
+          is_paid: boolean
+          price: number | null
+          promotional_price: number | null
           title: string
           updated_at: string
         }
@@ -466,6 +469,9 @@ export type Database = {
           duration?: string | null
           id?: string
           image?: string | null
+          is_paid?: boolean
+          price?: number | null
+          promotional_price?: number | null
           title: string
           updated_at?: string
         }
@@ -477,6 +483,9 @@ export type Database = {
           duration?: string | null
           id?: string
           image?: string | null
+          is_paid?: boolean
+          price?: number | null
+          promotional_price?: number | null
           title?: string
           updated_at?: string
         }
@@ -829,6 +838,90 @@ export type Database = {
         }
         Relationships: []
       }
+      purchases: {
+        Row: {
+          amount: number
+          course_id: string
+          created_at: string
+          currency: string
+          id: string
+          paid_at: string | null
+          provider: string | null
+          provider_payment_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          course_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          course_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          paid_at?: string | null
+          provider?: string | null
+          provider_payment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          features: Json
+          id: string
+          interval: string
+          is_active: boolean
+          name: string
+          price: number
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          interval?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          interval?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       support_conversations: {
         Row: {
           created_at: string
@@ -950,6 +1043,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          id: string
+          plan_id: string
+          provider: string | null
+          provider_subscription_id: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan_id: string
+          provider?: string | null
+          provider_subscription_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          plan_id?: string
+          provider?: string | null
+          provider_subscription_id?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1165,6 +1308,11 @@ export type Database = {
           is_active: boolean
           user_id: string
         }[]
+      }
+      has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
+      has_purchased_course: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
       }
       has_role: {
         Args: {
