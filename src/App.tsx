@@ -34,6 +34,8 @@ import PublicLayout from "@/components/PublicLayout";
 import Home from "@/pages/public/Home";
 import Sobre from "@/pages/public/Sobre";
 import CursosPublic from "@/pages/public/CursosPublic";
+import Planos from "@/pages/public/Planos";
+import Contato from "@/pages/public/Contato";
 import Termos from "@/pages/public/Termos";
 import Privacidade from "@/pages/public/Privacidade";
 import NotFound from "@/pages/NotFound";

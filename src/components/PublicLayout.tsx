@@ -145,6 +145,7 @@ export default function PublicLayout() {
           </div>
         </div>
       </footer>
+      <CookieConsent />
     </div>
   );
 }
