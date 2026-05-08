@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
 import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -151,6 +151,12 @@ export default function Login() {
       {/* Right panel - form */}
       <div className="flex-1 flex items-center justify-center p-6 bg-background">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" /> Voltar ao início
+          </Link>
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain" />
             <h1 className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</h1>
