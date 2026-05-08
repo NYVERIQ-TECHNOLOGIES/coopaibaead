@@ -607,6 +607,15 @@ export default function CourseDetail() {
         </div>
       </motion.div>
 
+      {needsPurchase && (
+        <CoursePurchasePanel
+          courseId={courseId!}
+          title={course.title}
+          price={Number(course.price ?? 0)}
+          promotionalPrice={course.promotional_price != null ? Number(course.promotional_price) : null}
+        />
+      )}
+
       {/* Progress */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="bg-card rounded-xl p-5 shadow-card border border-border">
