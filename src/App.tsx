@@ -21,6 +21,7 @@ import MediaManager from "@/pages/MediaManager";
 import AdminManagement from "@/pages/AdminManagement";
 import AdminLogs from "@/pages/AdminLogs";
 import Reports from "@/pages/Reports";
+import AdminSubscriptions from "@/pages/AdminSubscriptions";
 import SettingsPage from "@/pages/SettingsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import Forum from "@/pages/Forum";
