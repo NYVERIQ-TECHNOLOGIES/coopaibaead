@@ -195,6 +195,11 @@ export default function Planos() {
                       : "Criar conta grátis"}
                     {!isActive && <ArrowRight className="w-4 h-4" />}
                   </button>
+                  {isActive && p.price > 0 && (
+                    <div className="mt-3">
+                      <ManageSubscriptionButton variant="outline" size="sm" className="w-full" />
+                    </div>
+                  )}
                 </div>
               );
             })}
