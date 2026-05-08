@@ -26,6 +26,7 @@ import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
 import CourseChat from "@/components/CourseChat";
 import LessonNotes from "@/components/LessonNotes";
+import CoursePurchasePanel from "@/components/CoursePurchasePanel";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
@@ -168,6 +169,29 @@ export default function CourseDetail() {
     },
     enabled: !!user && !!courseId,
   });
+
+  // ---- Paid course access check ----
+  const { data: paidAccess } = useQuery({
+    enabled: !!user && !!course && !!courseId && !!course?.is_paid && !isAdmin,
+    queryKey: ["paid-access", courseId, user?.id],
+    queryFn: async () => {
+      const [purchased, subscribed] = await Promise.all([
+        supabase.rpc("has_purchased_course", { _user_id: user!.id, _course_id: courseId! }),
+        supabase.rpc("has_active_subscription", { _user_id: user!.id }),
+      ]);
+      return {
+        purchased: !!purchased.data,
+        subscribed: !!subscribed.data,
+      };
+    },
+  });
+  const needsPurchase =
+    !!course?.is_paid &&
+    !isAdmin &&
+    !!user &&
+    paidAccess !== undefined &&
+    !paidAccess.purchased &&
+    !paidAccess.subscribed;
 
   // ---- Dialog state ----
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
@@ -582,6 +606,15 @@ export default function CourseDetail() {
           </div>
         </div>
       </motion.div>
+
+      {needsPurchase && (
+        <CoursePurchasePanel
+          courseId={courseId!}
+          title={course.title}
+          price={Number(course.price ?? 0)}
+          promotionalPrice={course.promotional_price != null ? Number(course.promotional_price) : null}
+        />
+      )}
 
       {/* Progress */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}

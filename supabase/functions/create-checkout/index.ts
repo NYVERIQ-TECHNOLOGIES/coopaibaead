@@ -14,9 +14,10 @@ Deno.serve(async (req) => {
 
   try {
     const { priceId, environment, returnUrl, courseId } = await req.json();
-    if (!priceId || !/^[a-zA-Z0-9_-]+$/.test(priceId)) throw new Error("Invalid priceId");
     if (environment !== "sandbox" && environment !== "live") throw new Error("Invalid environment");
     if (!returnUrl) throw new Error("Missing returnUrl");
+    if (!priceId && !courseId) throw new Error("Missing priceId or courseId");
+    if (priceId && !/^[a-zA-Z0-9_-]+$/.test(priceId)) throw new Error("Invalid priceId");
 
     const env: StripeEnv = environment;
 
@@ -36,27 +37,67 @@ Deno.serve(async (req) => {
     }
 
     const stripe = createStripeClient(env);
-    const prices = await stripe.prices.list({ lookup_keys: [priceId] });
-    if (!prices.data.length) throw new Error("Price not found");
-    const stripePrice = prices.data[0];
-    const isRecurring = stripePrice.type === "recurring";
-
     const metadata: Record<string, string> = {};
     if (userId) metadata.userId = userId;
     if (courseId) metadata.courseId = String(courseId);
 
-    const session = await stripe.checkout.sessions.create({
-      line_items: [{ price: stripePrice.id, quantity: 1 }],
-      mode: isRecurring ? "subscription" : "payment",
-      ui_mode: "embedded_page",
-      return_url: returnUrl,
-      automatic_tax: { enabled: true },
-      ...(userEmail && { customer_email: userEmail }),
-      ...(Object.keys(metadata).length > 0 && {
+    // Course one-time purchase via dynamic price_data (no priceId required)
+    let session;
+    if (courseId && !priceId) {
+      const admin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      const { data: course, error: cErr } = await admin
+        .from("courses")
+        .select("id, title, description, is_paid, price, promotional_price")
+        .eq("id", courseId)
+        .single();
+      if (cErr || !course) throw new Error("Curso não encontrado");
+      if (!course.is_paid) throw new Error("Curso gratuito não requer compra");
+      const amountReais = Number(course.promotional_price ?? course.price ?? 0);
+      const amount = Math.round(amountReais * 100);
+      if (!amount || amount < 50) throw new Error("Preço do curso inválido");
+
+      session = await stripe.checkout.sessions.create({
+        line_items: [{
+          price_data: {
+            currency: "brl",
+            product_data: {
+              name: course.title,
+              description: course.description ?? undefined,
+              tax_code: "txcd_10000000", // general digital goods
+            },
+            unit_amount: amount,
+          },
+          quantity: 1,
+        }],
+        mode: "payment",
+        ui_mode: "embedded_page",
+        return_url: returnUrl,
+        automatic_tax: { enabled: true },
+        ...(userEmail && { customer_email: userEmail }),
         metadata,
-        ...(isRecurring && { subscription_data: { metadata } }),
-      }),
-    });
+      });
+    } else {
+      const prices = await stripe.prices.list({ lookup_keys: [priceId] });
+      if (!prices.data.length) throw new Error("Price not found");
+      const stripePrice = prices.data[0];
+      const isRecurring = stripePrice.type === "recurring";
+
+      session = await stripe.checkout.sessions.create({
+        line_items: [{ price: stripePrice.id, quantity: 1 }],
+        mode: isRecurring ? "subscription" : "payment",
+        ui_mode: "embedded_page",
+        return_url: returnUrl,
+        automatic_tax: { enabled: true },
+        ...(userEmail && { customer_email: userEmail }),
+        ...(Object.keys(metadata).length > 0 && {
+          metadata,
+          ...(isRecurring && { subscription_data: { metadata } }),
+        }),
+      });
+    }
 
     return new Response(JSON.stringify({ clientSecret: session.client_secret }), {
       status: 200,

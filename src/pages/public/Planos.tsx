@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { isPaymentsConfigured } from "@/lib/stripe";
+import { ManageSubscriptionButton } from "@/components/ManageSubscriptionButton";
+import { useNavigate } from "react-router-dom";
 
 interface Plan {
   id: string;
@@ -30,6 +32,7 @@ interface Plan {
 
 export default function Planos() {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +83,11 @@ export default function Planos() {
       });
       return;
     }
-    if (plan.price <= 0) return;
+    if (plan.price <= 0) {
+      // Free plan: just send the user to their dashboard
+      navigate("/student");
+      return;
+    }
     if (!plan.stripe_price_id || !isPaymentsConfigured()) {
       toast({
         title: "Pagamentos indisponíveis",
@@ -188,6 +195,11 @@ export default function Planos() {
                       : "Criar conta grátis"}
                     {!isActive && <ArrowRight className="w-4 h-4" />}
                   </button>
+                  {isActive && p.price > 0 && (
+                    <div className="mt-3">
+                      <ManageSubscriptionButton variant="outline" size="sm" className="w-full" />
+                    </div>
+                  )}
                 </div>
               );
             })}

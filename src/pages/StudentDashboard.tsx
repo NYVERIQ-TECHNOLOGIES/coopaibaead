@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import SignedImage from "@/components/SignedImage";
 import ContinueWatching from "@/components/ContinueWatching";
+import SubscriptionStatusCard from "@/components/SubscriptionStatusCard";
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth();
@@ -120,6 +121,8 @@ export default function StudentDashboard() {
       )}
 
       <ContinueWatching />
+
+      <SubscriptionStatusCard />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Cursos Matriculados" value={String(enrollments.length)} icon={BookOpen} gradient="primary" />
