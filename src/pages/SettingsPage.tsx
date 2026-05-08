@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard, Trash2, AlertTriangle } from "lucide-react";
+import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard, Trash2, AlertTriangle, CreditCard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import TwoFactorSetup from "@/components/TwoFactorSetup";
+import SubscriptionStatusCard from "@/components/SubscriptionStatusCard";
 
 // IMPORTANT: Section is defined OUTSIDE the SettingsPage component to prevent
 // React from unmounting/remounting it on every parent re-render, which was
@@ -220,6 +221,7 @@ export default function SettingsPage() {
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="profile" className="gap-2"><User className="w-4 h-4" /> Perfil</TabsTrigger>
           <TabsTrigger value="security" className="gap-2"><Lock className="w-4 h-4" /> Segurança</TabsTrigger>
+          <TabsTrigger value="subscription" className="gap-2"><CreditCard className="w-4 h-4" /> Assinatura</TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2"><Bell className="w-4 h-4" /> Notificações</TabsTrigger>
           <TabsTrigger value="platform" className="gap-2"><Globe className="w-4 h-4" /> Plataforma</TabsTrigger>
         </TabsList>
@@ -341,6 +343,12 @@ export default function SettingsPage() {
               </Button>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="subscription" className="space-y-4">
+          <Section title="Plano atual" desc="Veja o status, gerencie cobrança ou faça upgrade" icon={CreditCard}>
+            <SubscriptionStatusCard />
+          </Section>
         </TabsContent>
 
         <TabsContent value="notifications">
