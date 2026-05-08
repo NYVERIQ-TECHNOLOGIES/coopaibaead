@@ -61,7 +61,7 @@ export default function CoursePurchasePanel({ courseId, title, price, promotiona
             <DialogTitle>Comprar: {title}</DialogTitle>
           </DialogHeader>
           <div className="p-2 max-h-[80vh] overflow-y-auto">
-            {open && <StripeEmbeddedCheckout priceId="" courseId={courseId} />}
+            {open && <StripeEmbeddedCheckout courseId={courseId} />}
           </div>
         </DialogContent>
       </Dialog>
