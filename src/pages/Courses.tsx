@@ -81,11 +81,21 @@ export default function Courses() {
 
   const saveMutation = useMutation({
     mutationFn: async (values: typeof emptyForm) => {
+      const payload = {
+        title: values.title,
+        description: values.description,
+        image: values.image,
+        duration: values.duration,
+        cooperado_only: values.cooperado_only,
+        is_paid: values.is_paid,
+        price: values.is_paid && values.price ? Number(values.price) : null,
+        promotional_price: values.is_paid && values.promotional_price ? Number(values.promotional_price) : null,
+      };
       if (editingCourse) {
-        const { error } = await supabase.from("courses").update(values).eq("id", editingCourse.id);
+        const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("courses").insert(values);
+        const { error } = await supabase.from("courses").insert(payload);
         if (error) throw error;
       }
     },
