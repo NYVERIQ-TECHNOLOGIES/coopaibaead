@@ -358,7 +358,11 @@ export default function Courses() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate(form)} disabled={!form.title || saveMutation.isPending} className="gradient-primary text-primary-foreground">
+            <Button
+              onClick={() => saveMutation.mutate(form)}
+              disabled={!form.title || (form.is_paid && !form.price) || saveMutation.isPending}
+              className="gradient-primary text-primary-foreground"
+            >
               {saveMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
