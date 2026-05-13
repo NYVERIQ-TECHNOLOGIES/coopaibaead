@@ -362,7 +362,156 @@ export default function AdminSubscriptions() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="plans">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Planos de Assinatura
+                {!isMasterAdmin && (
+                  <Badge variant="outline" className="gap-1 ml-2">
+                    <Lock className="w-3 h-3" /> Somente leitura
+                  </Badge>
+                )}
+              </CardTitle>
+              {!isMasterAdmin && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Apenas o administrador master pode alterar preços e configurações dos planos.
+                </p>
+              )}
+            </CardHeader>
+            <CardContent>
+              {plans.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Nenhum plano cadastrado.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Preço</TableHead>
+                      <TableHead>Intervalo</TableHead>
+                      <TableHead>Stripe Price ID</TableHead>
+                      <TableHead>Ativo</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {plans.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-medium">{p.name}</TableCell>
+                        <TableCell>{fmtBRL(Number(p.price))}</TableCell>
+                        <TableCell>{p.interval === "year" ? "Anual" : "Mensal"}</TableCell>
+                        <TableCell className="font-mono text-xs">{p.stripe_price_id ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant={p.is_active ? "default" : "outline"}>
+                            {p.is_active ? "Sim" : "Não"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!isMasterAdmin}
+                            onClick={() => setEditPlan(p)}
+                          >
+                            {isMasterAdmin ? "Editar" : <><Lock className="w-3 h-3 mr-1" />Bloqueado</>}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
+
+      <Dialog open={!!editPlan} onOpenChange={(o) => !o && setEditPlan(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar plano: {editPlan?.name}</DialogTitle>
+          </DialogHeader>
+          {editPlan && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="plan-name">Nome</Label>
+                <Input
+                  id="plan-name"
+                  value={editPlan.name}
+                  onChange={(e) => setEditPlan({ ...editPlan, name: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="plan-price">Preço (R$)</Label>
+                  <Input
+                    id="plan-price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editPlan.price}
+                    onChange={(e) => setEditPlan({ ...editPlan, price: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="plan-interval">Intervalo</Label>
+                  <select
+                    id="plan-interval"
+                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    value={editPlan.interval}
+                    onChange={(e) => setEditPlan({ ...editPlan, interval: e.target.value })}
+                  >
+                    <option value="month">Mensal</option>
+                    <option value="year">Anual</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="plan-stripe">Stripe Price ID</Label>
+                <Input
+                  id="plan-stripe"
+                  value={editPlan.stripe_price_id ?? ""}
+                  onChange={(e) => setEditPlan({ ...editPlan, stripe_price_id: e.target.value })}
+                  placeholder="premium_monthly"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Atenção: alterar o preço afeta apenas novas assinaturas. Assinaturas existentes mantêm o valor original cobrado pelo Stripe.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditPlan(null)}>Cancelar</Button>
+            <Button
+              disabled={savingPlan || !editPlan}
+              onClick={async () => {
+                if (!editPlan) return;
+                setSavingPlan(true);
+                const { error } = await supabase
+                  .from("subscription_plans")
+                  .update({
+                    name: editPlan.name,
+                    price: editPlan.price,
+                    interval: editPlan.interval,
+                    stripe_price_id: editPlan.stripe_price_id || null,
+                  })
+                  .eq("id", editPlan.id);
+                setSavingPlan(false);
+                if (error) {
+                  toast.error("Erro ao salvar: " + error.message);
+                  return;
+                }
+                toast.success("Plano atualizado");
+                setPlans((prev) => prev.map((x) => (x.id === editPlan.id ? { ...x, ...editPlan } : x)));
+                setEditPlan(null);
+              }}
+            >
+              {savingPlan ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
