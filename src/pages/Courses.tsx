@@ -315,6 +315,46 @@ export default function Courses() {
               <Switch checked={form.cooperado_only} onCheckedChange={(v) => setForm({ ...form, cooperado_only: v })} />
               <Label>Exclusivo para cooperados</Label>
             </div>
+            <div className="space-y-3 rounded-lg border border-border p-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.is_paid}
+                  onCheckedChange={(v) => setForm({ ...form, is_paid: v, price: v ? form.price : "", promotional_price: v ? form.promotional_price : "" })}
+                />
+                <Label>Curso pago</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {form.is_paid
+                  ? "Defina o valor que o aluno pagará para acessar este curso."
+                  : "Curso gratuito — qualquer aluno matriculado pode acessar."}
+              </p>
+              {form.is_paid && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Preço (R$) *</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.price}
+                      onChange={(e) => setForm({ ...form, price: e.target.value })}
+                      placeholder="Ex: 29.90"
+                    />
+                  </div>
+                  <div>
+                    <Label>Preço promocional (R$)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.promotional_price}
+                      onChange={(e) => setForm({ ...form, promotional_price: e.target.value })}
+                      placeholder="Opcional"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
