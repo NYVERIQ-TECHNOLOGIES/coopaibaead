@@ -44,7 +44,7 @@ type Purchase = {
   environment: string;
 };
 
-type Plan = { id: string; name: string; price: number; interval: string };
+type Plan = { id: string; name: string; price: number; interval: string; description?: string | null; stripe_price_id?: string | null; is_active?: boolean; sort_order?: number };
 type Profile = { user_id: string; full_name: string; cooperativa: string | null };
 type Course = { id: string; title: string };
 
