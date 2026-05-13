@@ -61,6 +61,7 @@ const statusVariant = (s: string): "default" | "secondary" | "destructive" | "ou
 };
 
 export default function AdminSubscriptions() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -68,6 +69,16 @@ export default function AdminSubscriptions() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [courses, setCourses] = useState<Record<string, Course>>({});
   const [search, setSearch] = useState("");
+  const [isMasterAdmin, setIsMasterAdmin] = useState(false);
+  const [editPlan, setEditPlan] = useState<Plan | null>(null);
+  const [savingPlan, setSavingPlan] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_master_admin", { _user_id: user.id }).then(({ data }) => {
+      setIsMasterAdmin(data === true);
+    });
+  }, [user]);
 
   useEffect(() => {
     (async () => {
