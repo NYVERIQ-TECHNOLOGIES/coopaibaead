@@ -211,7 +211,27 @@ export default function Courses() {
                   <h3 className="font-heading font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">{course.title}</h3>
                 </Link>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description || "Sem descrição"}</p>
-                {course.duration && <p className="text-xs text-muted-foreground mt-2">⏱ {course.duration}</p>}
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {course.duration && <span className="text-xs text-muted-foreground">⏱ {course.duration}</span>}
+                  {course.is_paid ? (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {course.promotional_price != null ? (
+                        <>
+                          <span className="line-through opacity-60 mr-1">
+                            R$ {Number(course.price).toFixed(2)}
+                          </span>
+                          R$ {Number(course.promotional_price).toFixed(2)}
+                        </>
+                      ) : (
+                        <>R$ {Number(course.price ?? 0).toFixed(2)}</>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      Gratuito
+                    </span>
+                  )}
+                </div>
                 {isAdmin && (
                   <div className="flex gap-2 mt-3 pt-3 border-t border-border">
                     <Button size="sm" variant="outline" onClick={() => openEdit(course)}>
