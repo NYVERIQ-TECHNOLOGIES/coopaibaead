@@ -27,10 +27,22 @@ interface Course {
   image: string | null;
   duration: string | null;
   cooperado_only: boolean;
+  is_paid: boolean;
+  price: number | null;
+  promotional_price: number | null;
   created_at: string;
 }
 
-const emptyForm = { title: "", description: "", image: "", duration: "", cooperado_only: false };
+const emptyForm = {
+  title: "",
+  description: "",
+  image: "",
+  duration: "",
+  cooperado_only: false,
+  is_paid: false,
+  price: "" as string,
+  promotional_price: "" as string,
+};
 
 export default function Courses() {
   const [search, setSearch] = useState("");
