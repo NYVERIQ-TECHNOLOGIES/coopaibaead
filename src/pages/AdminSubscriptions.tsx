@@ -86,7 +86,7 @@ export default function AdminSubscriptions() {
       const [subsRes, purchRes, plansRes] = await Promise.all([
         supabase.from("user_subscriptions").select("*").order("created_at", { ascending: false }),
         supabase.from("purchases").select("*").order("created_at", { ascending: false }),
-        supabase.from("subscription_plans").select("id, name, price, interval"),
+        supabase.from("subscription_plans").select("*").order("sort_order", { ascending: true }),
       ]);
       const subsData = (subsRes.data ?? []) as Sub[];
       const purchData = (purchRes.data ?? []) as Purchase[];
