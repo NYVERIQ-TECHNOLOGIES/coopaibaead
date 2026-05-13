@@ -123,7 +123,16 @@ export default function Courses() {
   const openNew = () => { setEditingCourse(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (c: Course) => {
     setEditingCourse(c);
-    setForm({ title: c.title, description: c.description || "", image: c.image || "", duration: c.duration || "", cooperado_only: c.cooperado_only });
+    setForm({
+      title: c.title,
+      description: c.description || "",
+      image: c.image || "",
+      duration: c.duration || "",
+      cooperado_only: c.cooperado_only,
+      is_paid: c.is_paid ?? false,
+      price: c.price != null ? String(c.price) : "",
+      promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
+    });
     setDialogOpen(true);
   };
 
