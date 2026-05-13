@@ -27,10 +27,22 @@ interface Course {
   image: string | null;
   duration: string | null;
   cooperado_only: boolean;
+  is_paid: boolean;
+  price: number | null;
+  promotional_price: number | null;
   created_at: string;
 }
 
-const emptyForm = { title: "", description: "", image: "", duration: "", cooperado_only: false };
+const emptyForm = {
+  title: "",
+  description: "",
+  image: "",
+  duration: "",
+  cooperado_only: false,
+  is_paid: false,
+  price: "" as string,
+  promotional_price: "" as string,
+};
 
 export default function Courses() {
   const [search, setSearch] = useState("");
@@ -69,11 +81,21 @@ export default function Courses() {
 
   const saveMutation = useMutation({
     mutationFn: async (values: typeof emptyForm) => {
+      const payload = {
+        title: values.title,
+        description: values.description,
+        image: values.image,
+        duration: values.duration,
+        cooperado_only: values.cooperado_only,
+        is_paid: values.is_paid,
+        price: values.is_paid && values.price ? Number(values.price) : null,
+        promotional_price: values.is_paid && values.promotional_price ? Number(values.promotional_price) : null,
+      };
       if (editingCourse) {
-        const { error } = await supabase.from("courses").update(values).eq("id", editingCourse.id);
+        const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("courses").insert(values);
+        const { error } = await supabase.from("courses").insert(payload);
         if (error) throw error;
       }
     },
@@ -101,7 +123,16 @@ export default function Courses() {
   const openNew = () => { setEditingCourse(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (c: Course) => {
     setEditingCourse(c);
-    setForm({ title: c.title, description: c.description || "", image: c.image || "", duration: c.duration || "", cooperado_only: c.cooperado_only });
+    setForm({
+      title: c.title,
+      description: c.description || "",
+      image: c.image || "",
+      duration: c.duration || "",
+      cooperado_only: c.cooperado_only,
+      is_paid: c.is_paid ?? false,
+      price: c.price != null ? String(c.price) : "",
+      promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
+    });
     setDialogOpen(true);
   };
 
@@ -180,7 +211,27 @@ export default function Courses() {
                   <h3 className="font-heading font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">{course.title}</h3>
                 </Link>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description || "Sem descrição"}</p>
-                {course.duration && <p className="text-xs text-muted-foreground mt-2">⏱ {course.duration}</p>}
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  {course.duration && <span className="text-xs text-muted-foreground">⏱ {course.duration}</span>}
+                  {course.is_paid ? (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {course.promotional_price != null ? (
+                        <>
+                          <span className="line-through opacity-60 mr-1">
+                            R$ {Number(course.price).toFixed(2)}
+                          </span>
+                          R$ {Number(course.promotional_price).toFixed(2)}
+                        </>
+                      ) : (
+                        <>R$ {Number(course.price ?? 0).toFixed(2)}</>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      Gratuito
+                    </span>
+                  )}
+                </div>
                 {isAdmin && (
                   <div className="flex gap-2 mt-3 pt-3 border-t border-border">
                     <Button size="sm" variant="outline" onClick={() => openEdit(course)}>
@@ -284,10 +335,54 @@ export default function Courses() {
               <Switch checked={form.cooperado_only} onCheckedChange={(v) => setForm({ ...form, cooperado_only: v })} />
               <Label>Exclusivo para cooperados</Label>
             </div>
+            <div className="space-y-3 rounded-lg border border-border p-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={form.is_paid}
+                  onCheckedChange={(v) => setForm({ ...form, is_paid: v, price: v ? form.price : "", promotional_price: v ? form.promotional_price : "" })}
+                />
+                <Label>Curso pago</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {form.is_paid
+                  ? "Defina o valor que o aluno pagará para acessar este curso."
+                  : "Curso gratuito — qualquer aluno matriculado pode acessar."}
+              </p>
+              {form.is_paid && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label>Preço (R$) *</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.price}
+                      onChange={(e) => setForm({ ...form, price: e.target.value })}
+                      placeholder="Ex: 29.90"
+                    />
+                  </div>
+                  <div>
+                    <Label>Preço promocional (R$)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.promotional_price}
+                      onChange={(e) => setForm({ ...form, promotional_price: e.target.value })}
+                      placeholder="Opcional"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveMutation.mutate(form)} disabled={!form.title || saveMutation.isPending} className="gradient-primary text-primary-foreground">
+            <Button
+              onClick={() => saveMutation.mutate(form)}
+              disabled={!form.title || (form.is_paid && !form.price) || saveMutation.isPending}
+              className="gradient-primary text-primary-foreground"
+            >
               {saveMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </DialogFooter>
