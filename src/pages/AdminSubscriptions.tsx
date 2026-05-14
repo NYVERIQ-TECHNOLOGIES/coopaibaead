@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Users, Building2, DollarSign, TrendingUp, Search } from "lucide-react";
+import { CreditCard, Users, Building2, DollarSign, TrendingUp, Search, Lock, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Sub = {
   id: string;
@@ -53,6 +56,8 @@ const statusVariant = (s: string): "default" | "secondary" | "destructive" | "ou
 };
 
 export default function AdminSubscriptions() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -60,6 +65,52 @@ export default function AdminSubscriptions() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [courses, setCourses] = useState<Record<string, Course>>({});
   const [search, setSearch] = useState("");
+  const [isMaster, setIsMaster] = useState(false);
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_master_admin", { _user_id: user.id }).then(({ data }) => {
+      setIsMaster(!!data);
+    });
+  }, [user]);
+
+  const reloadPlans = async () => {
+    const { data } = await supabase
+      .from("subscription_plans")
+      .select("id, name, price, interval")
+      .order("sort_order", { ascending: true });
+    setPlans((data ?? []) as Plan[]);
+  };
+
+  const savePlanPrice = async (planId: string) => {
+    const raw = priceDrafts[planId];
+    if (raw === undefined) return;
+    const normalized = Number(String(raw).replace(",", "."));
+    if (!Number.isFinite(normalized) || normalized < 0) {
+      toast({ title: "Valor inválido", variant: "destructive" });
+      return;
+    }
+    setSavingId(planId);
+    const { error } = await supabase
+      .from("subscription_plans")
+      .update({ price: normalized })
+      .eq("id", planId);
+    setSavingId(null);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Preço atualizado" });
+    setPriceDrafts((d) => {
+      const n = { ...d };
+      delete n[planId];
+      return n;
+    });
+    reloadPlans();
+  };
+
 
   useEffect(() => {
     (async () => {
@@ -215,6 +266,9 @@ export default function AdminSubscriptions() {
           <TabsTrigger value="subscriptions">Assinaturas ({filteredSubs.length})</TabsTrigger>
           <TabsTrigger value="purchases">Pagamentos ({filteredPurchases.length})</TabsTrigger>
           <TabsTrigger value="cooperativas">Cooperativas ({coopBreakdown.length})</TabsTrigger>
+          <TabsTrigger value="plans" className="gap-1.5">
+            Planos {!isMaster && <Lock className="w-3 h-3" />}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscriptions">
@@ -339,6 +393,83 @@ export default function AdminSubscriptions() {
                   </TableBody>
                 </Table>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="plans">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Preços dos planos
+                {!isMaster && (
+                  <Badge variant="outline" className="gap-1 text-xs font-normal">
+                    <Lock className="w-3 h-3" /> Somente Admin Master
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!isMaster && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Apenas o administrador master (Gustavo) pode alterar os preços das assinaturas. Você pode visualizar, mas não editar.
+                </p>
+              )}
+              {plans.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Nenhum plano cadastrado.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Plano</TableHead>
+                      <TableHead>Intervalo</TableHead>
+                      <TableHead>Preço atual</TableHead>
+                      <TableHead>Novo preço (R$)</TableHead>
+                      <TableHead className="text-right">Ação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {plans.map((p) => {
+                      const draft = priceDrafts[p.id];
+                      const dirty = draft !== undefined && draft !== "" && Number(String(draft).replace(",", ".")) !== Number(p.price);
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.name}</TableCell>
+                          <TableCell>{p.interval === "year" ? "Anual" : "Mensal"}</TableCell>
+                          <TableCell>{fmtBRL(Number(p.price))}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              disabled={!isMaster}
+                              value={draft ?? String(p.price ?? "")}
+                              onChange={(e) =>
+                                setPriceDrafts((d) => ({ ...d, [p.id]: e.target.value }))
+                              }
+                              className="max-w-[140px]"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              disabled={!isMaster || !dirty || savingId === p.id}
+                              onClick={() => savePlanPrice(p.id)}
+                              className="gap-1.5"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              {savingId === p.id ? "Salvando..." : "Salvar"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+              <p className="text-xs text-muted-foreground mt-4">
+                Observação: este preço é o exibido na plataforma e usado no resumo financeiro. Para que o valor cobrado pelo Stripe mude, o preço também precisa ser atualizado no produto/preço do gateway.
+              </p>
             </CardContent>
           </Card>
         </TabsContent>
