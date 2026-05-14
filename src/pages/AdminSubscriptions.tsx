@@ -56,6 +56,8 @@ const statusVariant = (s: string): "default" | "secondary" | "destructive" | "ou
 };
 
 export default function AdminSubscriptions() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -63,6 +65,52 @@ export default function AdminSubscriptions() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [courses, setCourses] = useState<Record<string, Course>>({});
   const [search, setSearch] = useState("");
+  const [isMaster, setIsMaster] = useState(false);
+  const [priceDrafts, setPriceDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("is_master_admin", { _user_id: user.id }).then(({ data }) => {
+      setIsMaster(!!data);
+    });
+  }, [user]);
+
+  const reloadPlans = async () => {
+    const { data } = await supabase
+      .from("subscription_plans")
+      .select("id, name, price, interval")
+      .order("sort_order", { ascending: true });
+    setPlans((data ?? []) as Plan[]);
+  };
+
+  const savePlanPrice = async (planId: string) => {
+    const raw = priceDrafts[planId];
+    if (raw === undefined) return;
+    const normalized = Number(String(raw).replace(",", "."));
+    if (!Number.isFinite(normalized) || normalized < 0) {
+      toast({ title: "Valor inválido", variant: "destructive" });
+      return;
+    }
+    setSavingId(planId);
+    const { error } = await supabase
+      .from("subscription_plans")
+      .update({ price: normalized })
+      .eq("id", planId);
+    setSavingId(null);
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Preço atualizado" });
+    setPriceDrafts((d) => {
+      const n = { ...d };
+      delete n[planId];
+      return n;
+    });
+    reloadPlans();
+  };
+
 
   useEffect(() => {
     (async () => {
