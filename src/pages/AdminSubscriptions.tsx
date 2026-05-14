@@ -396,6 +396,83 @@ export default function AdminSubscriptions() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="plans">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Preços dos planos
+                {!isMaster && (
+                  <Badge variant="outline" className="gap-1 text-xs font-normal">
+                    <Lock className="w-3 h-3" /> Somente Admin Master
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!isMaster && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Apenas o administrador master (Gustavo) pode alterar os preços das assinaturas. Você pode visualizar, mas não editar.
+                </p>
+              )}
+              {plans.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">Nenhum plano cadastrado.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Plano</TableHead>
+                      <TableHead>Intervalo</TableHead>
+                      <TableHead>Preço atual</TableHead>
+                      <TableHead>Novo preço (R$)</TableHead>
+                      <TableHead className="text-right">Ação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {plans.map((p) => {
+                      const draft = priceDrafts[p.id];
+                      const dirty = draft !== undefined && draft !== "" && Number(String(draft).replace(",", ".")) !== Number(p.price);
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-medium">{p.name}</TableCell>
+                          <TableCell>{p.interval === "year" ? "Anual" : "Mensal"}</TableCell>
+                          <TableCell>{fmtBRL(Number(p.price))}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              disabled={!isMaster}
+                              value={draft ?? String(p.price ?? "")}
+                              onChange={(e) =>
+                                setPriceDrafts((d) => ({ ...d, [p.id]: e.target.value }))
+                              }
+                              className="max-w-[140px]"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              disabled={!isMaster || !dirty || savingId === p.id}
+                              onClick={() => savePlanPrice(p.id)}
+                              className="gap-1.5"
+                            >
+                              <Save className="w-3.5 h-3.5" />
+                              {savingId === p.id ? "Salvando..." : "Salvar"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+              <p className="text-xs text-muted-foreground mt-4">
+                Observação: este preço é o exibido na plataforma e usado no resumo financeiro. Para que o valor cobrado pelo Stripe mude, o preço também precisa ser atualizado no produto/preço do gateway.
+              </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
