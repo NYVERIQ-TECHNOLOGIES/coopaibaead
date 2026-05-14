@@ -266,6 +266,9 @@ export default function AdminSubscriptions() {
           <TabsTrigger value="subscriptions">Assinaturas ({filteredSubs.length})</TabsTrigger>
           <TabsTrigger value="purchases">Pagamentos ({filteredPurchases.length})</TabsTrigger>
           <TabsTrigger value="cooperativas">Cooperativas ({coopBreakdown.length})</TabsTrigger>
+          <TabsTrigger value="plans" className="gap-1.5">
+            Planos {!isMaster && <Lock className="w-3 h-3" />}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscriptions">
