@@ -29,6 +29,7 @@ const navItems = [
   { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
   { label: "Relatórios", icon: BarChart3, path: "/reports", adminOnly: true },
   { label: "Assinaturas", icon: CreditCard, path: "/subscriptions", adminOnly: true },
+  { label: "Planos", icon: CreditCard, path: "/plans", adminOnly: true },
   { label: "Logs de Acesso", icon: Activity, path: "/admin-logs", adminOnly: true },
   { label: "Configurações", icon: Settings, path: "/settings", moderatorAllowed: true },
 ];

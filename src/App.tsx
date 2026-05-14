@@ -22,6 +22,7 @@ import AdminManagement from "@/pages/AdminManagement";
 import AdminLogs from "@/pages/AdminLogs";
 import Reports from "@/pages/Reports";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
+import AdminPlans from "@/pages/AdminPlans";
 import SettingsPage from "@/pages/SettingsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import Forum from "@/pages/Forum";
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="/admin-logs" element={<ProtectedRoute allowedRoles={["admin"]}><AdminLogs /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
               <Route path="/subscriptions" element={<ProtectedRoute allowedRoles={["admin"]}><AdminSubscriptions /></ProtectedRoute>} />
+              <Route path="/plans" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPlans /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
