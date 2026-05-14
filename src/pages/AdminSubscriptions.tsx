@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Users, Building2, DollarSign, TrendingUp, Search } from "lucide-react";
+import { CreditCard, Users, Building2, DollarSign, TrendingUp, Search, Lock, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StatCard from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Sub = {
   id: string;
