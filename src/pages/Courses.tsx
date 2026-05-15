@@ -401,6 +401,16 @@ export default function Courses() {
                 </div>
               )}
             </div>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={form.premium_enabled}
+                onCheckedChange={(v) => setForm({ ...form, premium_enabled: v })}
+              />
+              <Label>Incluso no Premium</Label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Quando ativo, assinantes Premium têm acesso a este curso. Desligue para vender apenas avulso.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
