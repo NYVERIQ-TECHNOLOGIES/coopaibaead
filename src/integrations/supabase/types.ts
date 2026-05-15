@@ -456,6 +456,7 @@ export type Database = {
           id: string
           image: string | null
           is_paid: boolean
+          premium_enabled: boolean
           price: number | null
           promotional_price: number | null
           standalone_access_days: number | null
@@ -471,6 +472,7 @@ export type Database = {
           id?: string
           image?: string | null
           is_paid?: boolean
+          premium_enabled?: boolean
           price?: number | null
           promotional_price?: number | null
           standalone_access_days?: number | null
@@ -486,6 +488,7 @@ export type Database = {
           id?: string
           image?: string | null
           is_paid?: boolean
+          premium_enabled?: boolean
           price?: number | null
           promotional_price?: number | null
           standalone_access_days?: number | null

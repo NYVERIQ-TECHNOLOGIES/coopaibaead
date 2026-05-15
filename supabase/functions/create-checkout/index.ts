@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
 
       session = await stripe.checkout.sessions.create({
         payment_method_types: ["card", "pix"],
+        allow_promotion_codes: true,
         line_items: [{
           price_data: {
             currency: "brl",
@@ -89,6 +90,7 @@ Deno.serve(async (req) => {
 
       session = await stripe.checkout.sessions.create({
         payment_method_types: isRecurring ? ["card"] : ["card", "pix"],
+        allow_promotion_codes: true,
         line_items: [{ price: stripePrice.id, quantity: 1 }],
         mode: isRecurring ? "subscription" : "payment",
         ui_mode: "embedded_page",

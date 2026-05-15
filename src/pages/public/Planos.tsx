@@ -206,6 +206,45 @@ export default function Planos() {
           </div>
         )}
 
+        <div className="mt-16">
+          <h2 className="font-heading text-2xl md:text-3xl font-bold text-foreground text-center">
+            Premium ou compra avulsa?
+          </h2>
+          <p className="text-center text-muted-foreground mt-2 max-w-2xl mx-auto">
+            Você escolhe: assine para acessar todo o catálogo Premium ou compre apenas o curso que tem interesse.
+          </p>
+          <div className="grid md:grid-cols-2 gap-5 mt-8 max-w-4xl mx-auto">
+            <div className="rounded-2xl border border-border bg-card p-6">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted text-xs font-semibold text-muted-foreground mb-3">
+                Compra avulsa
+              </div>
+              <ul className="space-y-2.5 text-sm">
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Pague apenas pelo curso que quer</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Sem mensalidade</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Cartão, Pix e cupons de desconto</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Acesso conforme a regra do curso (vitalício ou por período)</li>
+              </ul>
+              <Link to="/cursos" className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+                Ver catálogo de cursos <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+            <div className="rounded-2xl border-2 border-primary bg-card p-6 shadow-elevated">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full gradient-primary text-primary-foreground text-xs font-semibold mb-3">
+                <Sparkles className="w-3 h-3" /> Premium
+              </div>
+              <ul className="space-y-2.5 text-sm">
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Acesso a todos os cursos inclusos no Premium</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Novos cursos liberados automaticamente</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Cancele quando quiser</li>
+                <li className="flex gap-2"><Check className="w-4 h-4 text-success mt-0.5 shrink-0" /> Melhor custo-benefício a partir de 2 cursos</li>
+              </ul>
+              <p className="mt-5 text-xs text-muted-foreground">
+                Se a assinatura expirar, os cursos comprados avulsos continuam liberados.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <p className="text-center text-xs text-muted-foreground mt-10">
           A cobrança será ativada em breve com pagamento seguro. Os planos aqui exibidos já estão configurados no sistema.
         </p>
