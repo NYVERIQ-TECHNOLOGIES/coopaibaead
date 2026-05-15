@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       );
       const { data: course, error: cErr } = await admin
         .from("courses")
-        .select("id, title, description, is_paid, price, promotional_price")
+        .select("id, title, description, is_paid, price, promotional_price, standalone_access_days")
         .eq("id", courseId)
         .single();
       if (cErr || !course) throw new Error("Curso não encontrado");
@@ -58,6 +58,9 @@ Deno.serve(async (req) => {
       const amountReais = Number(course.promotional_price ?? course.price ?? 0);
       const amount = Math.round(amountReais * 100);
       if (!amount || amount < 50) throw new Error("Preço do curso inválido");
+      if (course.standalone_access_days) {
+        metadata.accessDays = String(course.standalone_access_days);
+      }
 
       session = await stripe.checkout.sessions.create({
         payment_method_types: ["card", "pix"],

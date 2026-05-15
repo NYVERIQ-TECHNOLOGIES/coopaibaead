@@ -458,6 +458,7 @@ export type Database = {
           is_paid: boolean
           price: number | null
           promotional_price: number | null
+          standalone_access_days: number | null
           title: string
           updated_at: string
         }
@@ -472,6 +473,7 @@ export type Database = {
           is_paid?: boolean
           price?: number | null
           promotional_price?: number | null
+          standalone_access_days?: number | null
           title: string
           updated_at?: string
         }
@@ -486,6 +488,7 @@ export type Database = {
           is_paid?: boolean
           price?: number | null
           promotional_price?: number | null
+          standalone_access_days?: number | null
           title?: string
           updated_at?: string
         }
@@ -873,6 +876,7 @@ export type Database = {
       }
       purchases: {
         Row: {
+          access_expires_at: string | null
           amount: number
           course_id: string
           created_at: string
@@ -888,6 +892,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_expires_at?: string | null
           amount: number
           course_id: string
           created_at?: string
@@ -903,6 +908,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_expires_at?: string | null
           amount?: number
           course_id?: string
           created_at?: string
