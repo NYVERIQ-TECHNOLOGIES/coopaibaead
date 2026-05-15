@@ -41,6 +41,11 @@ import CheckoutReturn from "@/pages/CheckoutReturn";
 import Contato from "@/pages/public/Contato";
 import Termos from "@/pages/public/Termos";
 import Privacidade from "@/pages/public/Privacidade";
+import PresencaList from "@/pages/PresencaList";
+import PresencaNovo from "@/pages/PresencaNovo";
+import PresencaEvento from "@/pages/PresencaEvento";
+import PresencaRelatorios from "@/pages/PresencaRelatorios";
+import PresencaAssinar from "@/pages/PresencaAssinar";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +63,8 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/checkout/return" element={<CheckoutReturn />} />
+            <Route path="/p/:codigo" element={<PresencaAssinar />} />
+
 
             {/* Páginas públicas (institucional) */}
             <Route element={<PublicLayout />}>
@@ -94,6 +101,10 @@ const App = () => (
               <Route path="/students" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Students /></ProtectedRoute>} />
               <Route path="/unlisted-users" element={<ProtectedRoute allowedRoles={["admin"]}><UnlistedUsers /></ProtectedRoute>} />
               <Route path="/attendance" element={<ProtectedRoute allowedRoles={["admin"]}><Attendance /></ProtectedRoute>} />
+              <Route path="/presenca" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaList /></ProtectedRoute>} />
+              <Route path="/presenca/novo" element={<ProtectedRoute allowedRoles={["admin"]}><PresencaNovo /></ProtectedRoute>} />
+              <Route path="/presenca/relatorios" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaRelatorios /></ProtectedRoute>} />
+              <Route path="/presenca/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaEvento /></ProtectedRoute>} />
               <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin"]}><SupplementaryMaterials /></ProtectedRoute>} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
