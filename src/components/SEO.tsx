@@ -24,9 +24,12 @@ export default function SEO({ title, description, canonical, jsonLd, ogImage }: 
     document.title = title.length > 60 ? title.slice(0, 57) + "..." : title;
     const desc = description.length > 160 ? description.slice(0, 157) + "..." : description;
 
+    const url = canonical || window.location.href.split("?")[0];
+
     setMeta('meta[name="description"]', "content", desc);
     setMeta('meta[property="og:title"]', "content", title);
     setMeta('meta[property="og:description"]', "content", desc);
+    setMeta('meta[property="og:url"]', "content", url);
     setMeta('meta[name="twitter:title"]', "content", title);
     setMeta('meta[name="twitter:description"]', "content", desc);
     if (ogImage) {

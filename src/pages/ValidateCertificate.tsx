@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import logoImg from "@/assets/logo-coopaiba.png";
+import SEO from "@/components/SEO";
 
 type ValidationResult = {
   code: string;
@@ -65,14 +66,10 @@ export default function ValidateCertificate() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* SEO */}
-      <head>
-        <title>Validar Certificado | Coopaiba EAD</title>
-        <meta
-          name="description"
-          content="Verifique a autenticidade de um certificado emitido pela Coopaiba EAD informando o código único."
-        />
-      </head>
+      <SEO
+        title="Validar Certificado | Coopaiba EAD"
+        description="Verifique a autenticidade de um certificado emitido pela Coopaiba EAD informando o código único."
+      />
 
       <header className="border-b border-border bg-card">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">

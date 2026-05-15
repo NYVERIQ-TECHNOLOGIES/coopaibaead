@@ -1,0 +1,19 @@
+# Coopaiba EAD
+
+> Plataforma de educação cooperativista da Coopaiba: cursos online, certificados validáveis e planos de assinatura para cooperados e cooperativas.
+
+## Pages
+
+- [Início](/): Apresentação da plataforma e principais cursos.
+- [Sobre](/sobre): História e missão da Coopaiba EAD.
+- [Cursos](/cursos): Catálogo público de cursos disponíveis.
+- [Planos](/planos): Planos de assinatura para alunos e cooperativas.
+- [Contato](/contato): Canais de atendimento.
+- [Validar certificado](/validar-certificado): Verificação pública de autenticidade de certificados emitidos.
+- [Entrar](/login): Acesso de alunos, cooperativas e administradores.
+- [Cadastre-se](/register): Criação de conta gratuita.
+
+## Optional
+
+- [Termos de uso](/termos)
+- [Política de privacidade](/privacidade)
