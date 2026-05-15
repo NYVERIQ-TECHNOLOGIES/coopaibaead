@@ -5,6 +5,7 @@ import logoImg from "@/assets/logo-coopaiba.png";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SEO from "@/components/SEO";
 
 type Strength = { score: number; label: string; color: string };
 
