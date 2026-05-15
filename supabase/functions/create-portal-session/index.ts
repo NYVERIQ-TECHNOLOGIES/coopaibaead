@@ -15,6 +15,22 @@ Deno.serve(async (req) => {
   try {
     const { environment, returnUrl } = await req.json();
     if (environment !== "sandbox" && environment !== "live") throw new Error("Invalid environment");
+    if (returnUrl) {
+      const ALLOWED_ORIGINS = [
+        "https://coopaiba.com.br",
+        "https://coopaibaead.lovable.app",
+        "https://id-preview--e31127c3-135d-408d-bc68-803e74fb3989.lovable.app",
+      ];
+      try {
+        const parsed = new URL(returnUrl);
+        const isLovableSandbox = parsed.hostname.endsWith(".lovable.app") || parsed.hostname.endsWith(".lovableproject.com");
+        if (!ALLOWED_ORIGINS.includes(parsed.origin) && !isLovableSandbox) {
+          throw new Error("Invalid returnUrl origin");
+        }
+      } catch {
+        throw new Error("Invalid returnUrl");
+      }
+    }
     const env: StripeEnv = environment;
 
     const authHeader = req.headers.get("Authorization");
