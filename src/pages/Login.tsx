@@ -107,6 +107,10 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
+      <SEO
+        title="Entrar | Coopaiba EAD"
+        description="Acesse sua conta na plataforma Coopaiba EAD e continue sua jornada de educação cooperativista."
+      />
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 gradient-primary relative overflow-hidden items-center justify-center p-12">
         <div className="absolute inset-0 opacity-10">
