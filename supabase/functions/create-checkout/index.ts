@@ -65,7 +65,6 @@ Deno.serve(async (req) => {
       }
 
       session = await stripe.checkout.sessions.create({
-        payment_method_types: ["card", "pix"],
         allow_promotion_codes: true,
         line_items: [{
           price_data: {
