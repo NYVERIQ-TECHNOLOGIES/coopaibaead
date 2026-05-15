@@ -5,6 +5,7 @@ import logoImg from "@/assets/logo-coopaiba.png";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import SEO from "@/components/SEO";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
