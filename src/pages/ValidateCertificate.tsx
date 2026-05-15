@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import logoImg from "@/assets/logo-coopaiba.png";
+import SEO from "@/components/SEO";
 
 type ValidationResult = {
   code: string;
