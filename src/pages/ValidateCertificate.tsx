@@ -110,9 +110,10 @@ export default function ValidateCertificate() {
           onSubmit={handleSubmit}
           className="bg-card border border-border rounded-xl p-6 shadow-card"
         >
-          <label className="text-sm font-medium text-foreground">Código do certificado</label>
+          <label htmlFor="cert-code" className="text-sm font-medium text-foreground">Código do certificado</label>
           <div className="flex gap-2 mt-2">
             <Input
+              id="cert-code"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="Ex: CERT-A1B2C3D4"
