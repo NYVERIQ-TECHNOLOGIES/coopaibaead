@@ -30,6 +30,7 @@ interface Course {
   is_paid: boolean;
   price: number | null;
   promotional_price: number | null;
+  standalone_access_days: number | null;
   created_at: string;
 }
 
@@ -42,6 +43,7 @@ const emptyForm = {
   is_paid: false,
   price: "" as string,
   promotional_price: "" as string,
+  standalone_access_days: "" as string,
 };
 
 export default function Courses() {
@@ -90,6 +92,9 @@ export default function Courses() {
         is_paid: values.is_paid,
         price: values.is_paid && values.price ? Number(values.price) : null,
         promotional_price: values.is_paid && values.promotional_price ? Number(values.promotional_price) : null,
+        standalone_access_days: values.is_paid && values.standalone_access_days
+          ? Math.max(1, Math.floor(Number(values.standalone_access_days)))
+          : null,
       };
       if (editingCourse) {
         const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
@@ -132,6 +137,7 @@ export default function Courses() {
       is_paid: c.is_paid ?? false,
       price: c.price != null ? String(c.price) : "",
       promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
+      standalone_access_days: c.standalone_access_days != null ? String(c.standalone_access_days) : "",
     });
     setDialogOpen(true);
   };
@@ -372,6 +378,22 @@ export default function Courses() {
                       placeholder="Opcional"
                     />
                   </div>
+                </div>
+              )}
+              {form.is_paid && (
+                <div>
+                  <Label>Duração do acesso (dias)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={form.standalone_access_days}
+                    onChange={(e) => setForm({ ...form, standalone_access_days: e.target.value })}
+                    placeholder="Deixe em branco para acesso vitalício"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Após a compra avulsa, o aluno terá acesso por esta quantidade de dias. Em branco = vitalício.
+                  </p>
                 </div>
               )}
             </div>
