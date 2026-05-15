@@ -159,7 +159,7 @@ export default function Login() {
           </Link>
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain" />
-            <h1 className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</h1>
+            <p className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</p>
           </div>
 
           {mfaRequired ? (
