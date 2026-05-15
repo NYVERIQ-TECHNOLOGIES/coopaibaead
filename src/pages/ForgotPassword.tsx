@@ -57,6 +57,10 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen flex">
+      <SEO
+        title="Recuperar senha | Coopaiba EAD"
+        description="Receba um link por e-mail para redefinir a senha da sua conta Coopaiba EAD."
+      />
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 gradient-primary relative overflow-hidden items-center justify-center p-12">
         <motion.div
