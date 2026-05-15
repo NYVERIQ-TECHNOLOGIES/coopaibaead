@@ -57,7 +57,9 @@ Deno.serve(async (req) => {
       if (!course.is_paid) throw new Error("Curso gratuito não requer compra");
       const amountReais = Number(course.promotional_price ?? course.price ?? 0);
       const amount = Math.round(amountReais * 100);
-      if (!amount || amount < 50) throw new Error("Preço do curso inválido");
+      if (!amount || amount < 50) {
+        throw new Error("Preço do curso abaixo do mínimo aceito (R$ 0,50). Atualize o valor do curso.");
+      }
       if (course.standalone_access_days) {
         metadata.accessDays = String(course.standalone_access_days);
       }

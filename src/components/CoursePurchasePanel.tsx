@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Lock, ShoppingCart, Crown } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -46,7 +47,17 @@ export default function CoursePurchasePanel({ courseId, title, price, promotiona
           </div>
         </div>
         <div className="flex flex-col gap-2 w-full sm:w-auto">
-          <Button onClick={() => setOpen(true)} disabled={!isPaymentsConfigured()} className="gap-2">
+          <Button
+            onClick={() => {
+              if (finalPrice < 0.5) {
+                toast.error("Preço do curso abaixo do mínimo (R$ 0,50). Avise o administrador para atualizar o valor.");
+                return;
+              }
+              setOpen(true);
+            }}
+            disabled={!isPaymentsConfigured()}
+            className="gap-2"
+          >
             <ShoppingCart className="w-4 h-4" /> Comprar curso
           </Button>
           <Button variant="outline" asChild className="gap-2">
