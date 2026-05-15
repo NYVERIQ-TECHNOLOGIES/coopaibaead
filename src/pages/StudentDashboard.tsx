@@ -150,30 +150,87 @@ export default function StudentDashboard() {
         <StatCard title="Progresso Médio" value={enrollments.length > 0 ? `${Math.round(enrollments.reduce((s, e: any) => s + (e.progress || 0), 0) / enrollments.length)}%` : "0%"} icon={TrendingUp} gradient="primary" />
       </div>
 
-      {enrollments.length > 0 && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-xl p-5 shadow-card border border-border">
-          <h2 className="font-heading font-semibold text-card-foreground mb-4">Meus Cursos</h2>
-          <div className="space-y-3">
-            {enrollments.map((enr: any) => (
-              <Link key={enr.id} to={`/courses/${enr.course_id}`} className="flex items-center gap-4 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
-                <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
-                  <Play className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-card-foreground">{enr.courses?.title}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full gradient-primary rounded-full" style={{ width: `${enr.progress || 0}%` }} />
-                    </div>
-                    <span className="text-xs text-muted-foreground">{enr.progress || 0}%</span>
+      {(enrollments.length > 0 || purchases.length > 0) && (() => {
+        const purchasedEnr = enrollments.filter((e: any) => purchasedCourseIds.has(e.course_id));
+        const otherEnr = enrollments.filter((e: any) => !purchasedCourseIds.has(e.course_id));
+        const fmtBRL = (v: number, c = "BRL") =>
+          v.toLocaleString("pt-BR", { style: "currency", currency: c });
+        const renderList = (items: any[], emptyMsg: string) =>
+          items.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4">{emptyMsg}</p>
+          ) : (
+            <div className="space-y-3">
+              {items.map((enr: any) => (
+                <Link key={enr.id} to={`/courses/${enr.course_id}`} className="flex items-center gap-4 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                  <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+                    <Play className="w-5 h-5 text-primary-foreground" />
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </motion.div>
-      )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-card-foreground truncate">{enr.courses?.title}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full gradient-primary rounded-full" style={{ width: `${enr.progress || 0}%` }} />
+                      </div>
+                      <span className="text-xs text-muted-foreground">{enr.progress || 0}%</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          );
+        return (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-xl p-5 shadow-card border border-border">
+            <h2 className="font-heading font-semibold text-card-foreground mb-4">Meus Cursos</h2>
+            <Tabs defaultValue="comprados">
+              <TabsList className="grid w-full grid-cols-3 max-w-md">
+                <TabsTrigger value="comprados" className="gap-1.5">
+                  <ShoppingBag className="w-3.5 h-3.5" /> Comprados
+                </TabsTrigger>
+                <TabsTrigger value="premium" className="gap-1.5">
+                  <Crown className="w-3.5 h-3.5" /> Premium/Grátis
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="gap-1.5">
+                  <Receipt className="w-3.5 h-3.5" /> Histórico
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="comprados" className="mt-4">
+                {renderList(purchasedEnr, "Você ainda não comprou nenhum curso individualmente.")}
+              </TabsContent>
+              <TabsContent value="premium" className="mt-4">
+                {renderList(otherEnr, "Nenhum curso liberado por Premium ou gratuito ainda.")}
+              </TabsContent>
+              <TabsContent value="historico" className="mt-4">
+                {purchases.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4">Nenhuma compra registrada.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {purchases.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-muted/20">
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm text-card-foreground truncate">{p.courses?.title ?? "Curso"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {p.paid_at ? new Date(p.paid_at).toLocaleDateString("pt-BR") : "—"}
+                            {p.access_expires_at && (
+                              <> · expira {new Date(p.access_expires_at).toLocaleDateString("pt-BR")}</>
+                            )}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-sm font-semibold">{fmtBRL(Number(p.amount), p.currency || "BRL")}</span>
+                          <Badge variant={p.status === "paid" ? "default" : "secondary"}>
+                            {p.status === "paid" ? "pago" : p.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        );
+      })()}
 
       <div>
         <h2 className="font-heading font-semibold text-foreground mb-4">Cursos Disponíveis</h2>
