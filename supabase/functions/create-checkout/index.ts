@@ -90,7 +90,6 @@ Deno.serve(async (req) => {
       const isRecurring = stripePrice.type === "recurring";
 
       session = await stripe.checkout.sessions.create({
-        payment_method_types: isRecurring ? ["card"] : ["card", "pix"],
         allow_promotion_codes: true,
         line_items: [{ price: stripePrice.id, quantity: 1 }],
         mode: isRecurring ? "subscription" : "payment",
