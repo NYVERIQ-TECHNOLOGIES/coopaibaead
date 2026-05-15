@@ -205,10 +205,11 @@ export default function Login() {
 
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail ou CPF</label>
+                  <label htmlFor="login-identifier" className="text-sm font-medium text-foreground mb-1.5 block">E-mail ou CPF</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
+                      id="login-identifier"
                       type="text"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -220,10 +221,11 @@ export default function Login() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Senha</label>
+                  <label htmlFor="login-password" className="text-sm font-medium text-foreground mb-1.5 block">Senha</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
+                      id="login-password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -234,6 +236,8 @@ export default function Login() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      aria-pressed={showPassword}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
