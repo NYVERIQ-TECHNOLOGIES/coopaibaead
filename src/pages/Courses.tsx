@@ -31,6 +31,7 @@ interface Course {
   price: number | null;
   promotional_price: number | null;
   standalone_access_days: number | null;
+  premium_enabled: boolean;
   created_at: string;
 }
 
@@ -44,6 +45,7 @@ const emptyForm = {
   price: "" as string,
   promotional_price: "" as string,
   standalone_access_days: "" as string,
+  premium_enabled: true,
 };
 
 export default function Courses() {
@@ -95,6 +97,7 @@ export default function Courses() {
         standalone_access_days: values.is_paid && values.standalone_access_days
           ? Math.max(1, Math.floor(Number(values.standalone_access_days)))
           : null,
+        premium_enabled: values.premium_enabled,
       };
       if (editingCourse) {
         const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
@@ -138,6 +141,7 @@ export default function Courses() {
       price: c.price != null ? String(c.price) : "",
       promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
       standalone_access_days: c.standalone_access_days != null ? String(c.standalone_access_days) : "",
+      premium_enabled: c.premium_enabled ?? true,
     });
     setDialogOpen(true);
   };
