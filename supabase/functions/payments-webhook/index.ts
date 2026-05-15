@@ -81,6 +81,11 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
   const courseId = session.metadata?.courseId;
   if (!userId || !courseId) return;
 
+  const accessDays = Number(session.metadata?.accessDays) || 0;
+  const accessExpiresAt = accessDays > 0
+    ? new Date(Date.now() + accessDays * 24 * 60 * 60 * 1000).toISOString()
+    : null;
+
   await getSupabase().from("purchases").upsert(
     {
       user_id: userId,
@@ -93,6 +98,7 @@ async function handleCheckoutCompleted(session: any, env: StripeEnv) {
       stripe_session_id: session.id,
       environment: env,
       paid_at: new Date().toISOString(),
+      access_expires_at: accessExpiresAt,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "stripe_session_id" },
