@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BookOpen, Clock, Award, TrendingUp, Play, IdCard } from "lucide-react";
+import { BookOpen, Clock, Award, TrendingUp, Play, IdCard, ShoppingBag, Crown, Receipt } from "lucide-react";
 import StatCard from "@/components/StatCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,8 @@ import { Link } from "react-router-dom";
 import SignedImage from "@/components/SignedImage";
 import ContinueWatching from "@/components/ContinueWatching";
 import SubscriptionStatusCard from "@/components/SubscriptionStatusCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth();
@@ -31,12 +33,29 @@ export default function StudentDashboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from("enrollments")
-        .select("*, courses(id, title, description, image, duration)")
+        .select("*, courses(id, title, description, image, duration, is_paid)")
         .eq("user_id", user!.id)
         .order("last_accessed_at", { ascending: false, nullsFirst: false });
       return data ?? [];
     },
   });
+
+  const { data: purchases = [] } = useQuery({
+    queryKey: ["my-purchases", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("purchases")
+        .select("id, course_id, amount, currency, status, paid_at, access_expires_at, courses(title)")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+  });
+
+  const purchasedCourseIds = new Set(
+    purchases.filter((p: any) => p.status === "paid").map((p: any) => p.course_id),
+  );
 
   const continueEnrollment = enrollments.find((e: any) => e.last_accessed_lesson_id && (e.progress ?? 0) < 100) ?? null;
 
