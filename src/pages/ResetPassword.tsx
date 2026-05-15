@@ -114,6 +114,10 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex">
+      <SEO
+        title="Redefinir senha | Coopaiba EAD"
+        description="Defina uma nova senha segura para acessar sua conta na Coopaiba EAD."
+      />
       <div className="hidden lg:flex lg:w-1/2 gradient-primary relative overflow-hidden items-center justify-center p-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
