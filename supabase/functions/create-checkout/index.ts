@@ -66,7 +66,6 @@ Deno.serve(async (req) => {
             product_data: {
               name: course.title,
               description: course.description ?? undefined,
-              tax_code: "txcd_10000000", // general digital goods
             },
             unit_amount: amount,
           },
@@ -75,7 +74,6 @@ Deno.serve(async (req) => {
         mode: "payment",
         ui_mode: "embedded_page",
         return_url: returnUrl,
-        automatic_tax: { enabled: true },
         ...(userEmail && { customer_email: userEmail }),
         metadata,
       });
@@ -90,7 +88,6 @@ Deno.serve(async (req) => {
         mode: isRecurring ? "subscription" : "payment",
         ui_mode: "embedded_page",
         return_url: returnUrl,
-        automatic_tax: { enabled: true },
         ...(userEmail && { customer_email: userEmail }),
         ...(Object.keys(metadata).length > 0 && {
           metadata,
