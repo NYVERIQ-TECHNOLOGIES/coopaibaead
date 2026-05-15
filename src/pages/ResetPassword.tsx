@@ -131,7 +131,7 @@ export default function ResetPassword() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain" />
-            <h1 className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</h1>
+            <p className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</p>
           </div>
 
           {done ? (
