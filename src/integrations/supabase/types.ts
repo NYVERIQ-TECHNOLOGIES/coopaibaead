@@ -835,6 +835,110 @@ export type Database = {
         }
         Relationships: []
       }
+      presenca_assinaturas: {
+        Row: {
+          assinatura_tipo: string
+          assinatura_url: string | null
+          cooperado_user_id: string | null
+          cpf: string | null
+          created_at: string
+          evento_id: string
+          horario: string
+          id: string
+          ip: string | null
+          matricula: string | null
+          nome: string
+          user_agent: string | null
+        }
+        Insert: {
+          assinatura_tipo?: string
+          assinatura_url?: string | null
+          cooperado_user_id?: string | null
+          cpf?: string | null
+          created_at?: string
+          evento_id: string
+          horario?: string
+          id?: string
+          ip?: string | null
+          matricula?: string | null
+          nome: string
+          user_agent?: string | null
+        }
+        Update: {
+          assinatura_tipo?: string
+          assinatura_url?: string | null
+          cooperado_user_id?: string | null
+          cpf?: string | null
+          created_at?: string
+          evento_id?: string
+          horario?: string
+          id?: string
+          ip?: string | null
+          matricula?: string | null
+          nome?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presenca_assinaturas_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "presenca_eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presenca_eventos: {
+        Row: {
+          codigo: string
+          created_at: string
+          created_by: string | null
+          data: string
+          descricao: string | null
+          expected_count: number | null
+          horario: string | null
+          id: string
+          local: string | null
+          nome: string
+          responsavel: string | null
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          codigo: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          expected_count?: number | null
+          horario?: string | null
+          id?: string
+          local?: string | null
+          nome: string
+          responsavel?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          codigo?: string
+          created_at?: string
+          created_by?: string | null
+          data?: string
+          descricao?: string | null
+          expected_count?: number | null
+          horario?: string | null
+          id?: string
+          local?: string | null
+          nome?: string
+          responsavel?: string | null
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1338,6 +1442,21 @@ export type Database = {
           total_without_enrollment: number
         }[]
       }
+      get_evento_publico: {
+        Args: { _codigo: string }
+        Returns: {
+          codigo: string
+          data: string
+          descricao: string
+          horario: string
+          id: string
+          local: string
+          nome: string
+          responsavel: string
+          status: string
+          tipo: string
+        }[]
+      }
       get_missing_enrollments_with_users: {
         Args: never
         Returns: {
@@ -1410,6 +1529,19 @@ export type Database = {
       mark_lesson_access: {
         Args: { _course_id: string; _lesson_id: string }
         Returns: undefined
+      }
+      registrar_presenca: {
+        Args: {
+          _assinatura_tipo: string
+          _assinatura_url: string
+          _codigo: string
+          _cpf: string
+          _ip: string
+          _matricula: string
+          _nome: string
+          _user_agent: string
+        }
+        Returns: Json
       }
       reset_course_progress: {
         Args: { _course_id: string }
