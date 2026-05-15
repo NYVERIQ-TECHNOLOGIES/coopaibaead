@@ -86,8 +86,9 @@ export default function Contato() {
 
         <form onSubmit={handleSubmit} className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-card space-y-4">
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Nome</label>
+            <label htmlFor="contato-nome" className="text-sm font-medium text-foreground mb-1.5 block">Nome</label>
             <input
+              id="contato-nome"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               maxLength={100}
@@ -96,8 +97,9 @@ export default function Contato() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail</label>
+            <label htmlFor="contato-email" className="text-sm font-medium text-foreground mb-1.5 block">E-mail</label>
             <input
+              id="contato-email"
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -107,8 +109,9 @@ export default function Contato() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Assunto</label>
+            <label htmlFor="contato-assunto" className="text-sm font-medium text-foreground mb-1.5 block">Assunto</label>
             <input
+              id="contato-assunto"
               value={form.subject}
               onChange={(e) => setForm({ ...form, subject: e.target.value })}
               maxLength={150}
@@ -117,8 +120,9 @@ export default function Contato() {
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Mensagem</label>
+            <label htmlFor="contato-mensagem" className="text-sm font-medium text-foreground mb-1.5 block">Mensagem</label>
             <textarea
+              id="contato-mensagem"
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               maxLength={2000}

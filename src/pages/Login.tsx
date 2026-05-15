@@ -159,7 +159,7 @@ export default function Login() {
           </Link>
           <div className="lg:hidden flex items-center gap-3 mb-8">
             <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain" />
-            <h1 className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</h1>
+            <p className="font-heading text-xl font-bold text-foreground">Coopaiba EAD</p>
           </div>
 
           {mfaRequired ? (
@@ -167,7 +167,9 @@ export default function Login() {
               <h2 className="text-2xl font-heading font-bold text-foreground">Autenticação de 2 fatores</h2>
               <p className="text-muted-foreground mt-1 mb-8">Digite o código de 6 dígitos do seu app autenticador</p>
               <form className="space-y-4" onSubmit={verifyMfa}>
+                <label htmlFor="mfa-code" className="sr-only">Código de verificação</label>
                 <input
+                  id="mfa-code"
                   autoFocus
                   inputMode="numeric"
                   maxLength={6}
@@ -203,10 +205,11 @@ export default function Login() {
 
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail ou CPF</label>
+                  <label htmlFor="login-identifier" className="text-sm font-medium text-foreground mb-1.5 block">E-mail ou CPF</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
+                      id="login-identifier"
                       type="text"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -218,10 +221,11 @@ export default function Login() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Senha</label>
+                  <label htmlFor="login-password" className="text-sm font-medium text-foreground mb-1.5 block">Senha</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
+                      id="login-password"
                       type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -232,6 +236,8 @@ export default function Login() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      aria-pressed={showPassword}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
