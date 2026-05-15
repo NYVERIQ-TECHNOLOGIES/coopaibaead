@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       if (!amount || amount < 50) throw new Error("Preço do curso inválido");
 
       session = await stripe.checkout.sessions.create({
+        payment_method_types: ["card", "pix"],
         line_items: [{
           price_data: {
             currency: "brl",
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
       const isRecurring = stripePrice.type === "recurring";
 
       session = await stripe.checkout.sessions.create({
+        payment_method_types: isRecurring ? ["card"] : ["card", "pix"],
         line_items: [{ price: stripePrice.id, quantity: 1 }],
         mode: isRecurring ? "subscription" : "payment",
         ui_mode: "embedded_page",
