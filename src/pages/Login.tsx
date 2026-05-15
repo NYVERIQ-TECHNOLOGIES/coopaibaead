@@ -167,7 +167,9 @@ export default function Login() {
               <h2 className="text-2xl font-heading font-bold text-foreground">Autenticação de 2 fatores</h2>
               <p className="text-muted-foreground mt-1 mb-8">Digite o código de 6 dígitos do seu app autenticador</p>
               <form className="space-y-4" onSubmit={verifyMfa}>
+                <label htmlFor="mfa-code" className="sr-only">Código de verificação</label>
                 <input
+                  id="mfa-code"
                   autoFocus
                   inputMode="numeric"
                   maxLength={6}
