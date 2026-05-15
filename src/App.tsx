@@ -46,6 +46,7 @@ import PresencaNovo from "@/pages/PresencaNovo";
 import PresencaEvento from "@/pages/PresencaEvento";
 import PresencaRelatorios from "@/pages/PresencaRelatorios";
 import PresencaAssinar from "@/pages/PresencaAssinar";
+import Hub from "@/pages/Hub";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +81,7 @@ const App = () => (
             </Route>
 
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route path="/hub" element={<Hub />} />
               <Route path="/app" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Dashboard /></ProtectedRoute>} />
               <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
 
