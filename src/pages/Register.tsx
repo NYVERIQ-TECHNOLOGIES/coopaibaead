@@ -320,6 +320,10 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-background">
+      <SEO
+        title="Cadastre-se | Coopaiba EAD"
+        description="Crie sua conta gratuita na Coopaiba EAD e participe dos cursos de educação cooperativista."
+      />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
