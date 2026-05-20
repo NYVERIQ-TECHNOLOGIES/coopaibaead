@@ -347,14 +347,86 @@ export default function Courses() {
               <Label>Duração</Label>
               <Input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} placeholder="Ex: 12h" />
             </div>
-            <div>
-              <Label>Vídeo de introdução (URL)</Label>
+            <div className="space-y-2">
+              <Label>Vídeo de introdução do curso</Label>
               <Input
                 value={form.intro_video_url}
                 onChange={(e) => setForm({ ...form, intro_video_url: e.target.value })}
-                placeholder="YouTube, Vimeo ou link direto .mp4"
+                placeholder="Cole link do YouTube, Vimeo ou .mp4 — ou envie um arquivo abaixo"
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors">
+                {uploadingIntro ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                ) : (
+                  <Upload className="w-4 h-4 text-muted-foreground" />
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {uploadingIntro
+                    ? `Enviando vídeo... ${introProgress}%`
+                    : "Enviar arquivo de vídeo (MP4/WebM, até 500MB)"}
+                </span>
+                <input
+                  ref={introFileRef}
+                  type="file"
+                  className="hidden"
+                  accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const maxBytes = 500 * 1024 * 1024;
+                    if (file.size > maxBytes) {
+                      toast({
+                        title: "Arquivo muito grande",
+                        description: "O vídeo deve ter no máximo 500MB.",
+                        variant: "destructive",
+                      });
+                      if (introFileRef.current) introFileRef.current.value = "";
+                      return;
+                    }
+                    setUploadingIntro(true);
+                    setIntroProgress(0);
+                    try {
+                      const ext = file.name.split(".").pop() || "mp4";
+                      const path = `courses/intro/${Date.now()}_${Math.random()
+                        .toString(36)
+                        .slice(2)}.${ext}`;
+                      const { error } = await supabase.storage
+                        .from("media")
+                        .upload(path, file, {
+                          contentType: file.type || "video/mp4",
+                          upsert: false,
+                        });
+                      if (error) throw error;
+                      setIntroProgress(100);
+                      setForm((prev) => ({ ...prev, intro_video_url: path }));
+                      toast({ title: "Vídeo enviado!" });
+                    } catch (err: any) {
+                      toast({
+                        title: "Erro no upload",
+                        description: err.message,
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setUploadingIntro(false);
+                      if (introFileRef.current) introFileRef.current.value = "";
+                    }
+                  }}
+                />
+              </label>
+              {form.intro_video_url && (
+                <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/40 rounded px-2 py-1">
+                  <span className="truncate">{form.intro_video_url}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2"
+                    onClick={() => setForm({ ...form, intro_video_url: "" })}
+                  >
+                    Remover
+                  </Button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
                 Será exibido automaticamente ao aluno ao abrir o curso pela primeira vez.
               </p>
             </div>
