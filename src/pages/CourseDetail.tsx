@@ -222,7 +222,7 @@ export default function CourseDetail() {
   const [evalType, setEvalType] = useState("prova");
   const [evalDuration, setEvalDuration] = useState(60);
   const [evalQuestions, setEvalQuestions] = useState(10);
-  const [evalLessonId, setEvalLessonId] = useState<string>("none");
+  const [evalLessonIds, setEvalLessonIds] = useState<string[]>([]);
 
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
   const [editBookId, setEditBookId] = useState<string | null>(null);
