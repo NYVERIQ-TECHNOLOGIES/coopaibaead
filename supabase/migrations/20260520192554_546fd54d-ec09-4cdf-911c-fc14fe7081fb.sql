@@ -1,0 +1,1 @@
+ALTER TABLE public.courses ADD COLUMN IF NOT EXISTS progressive_unlock boolean NOT NULL DEFAULT false;
