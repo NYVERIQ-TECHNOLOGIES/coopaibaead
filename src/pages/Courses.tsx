@@ -47,6 +47,7 @@ const emptyForm = {
   promotional_price: "" as string,
   standalone_access_days: "" as string,
   premium_enabled: true,
+  progressive_unlock: false,
 };
 
 export default function Courses() {
@@ -103,6 +104,7 @@ export default function Courses() {
           ? Math.max(1, Math.floor(Number(values.standalone_access_days)))
           : null,
         premium_enabled: values.premium_enabled,
+        progressive_unlock: values.progressive_unlock,
       };
       if (editingCourse) {
         const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
@@ -148,6 +150,7 @@ export default function Courses() {
       promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
       standalone_access_days: c.standalone_access_days != null ? String(c.standalone_access_days) : "",
       premium_enabled: c.premium_enabled ?? true,
+      progressive_unlock: (c as any).progressive_unlock ?? false,
     });
     setDialogOpen(true);
   };
@@ -499,6 +502,16 @@ export default function Courses() {
             </div>
             <p className="text-xs text-muted-foreground -mt-2">
               Quando ativo, assinantes Premium têm acesso a este curso. Desligue para vender apenas avulso.
+            </p>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={form.progressive_unlock}
+                onCheckedChange={(v) => setForm({ ...form, progressive_unlock: v })}
+              />
+              <Label>Desbloqueio progressivo</Label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Quando ativo, as aulas e avaliações ficam bloqueadas até que o item anterior seja concluído. A avaliação de cada módulo só libera após todas as aulas do módulo serem concluídas, e a avaliação final só libera após todas as outras avaliações.
             </p>
           </div>
           <DialogFooter>
