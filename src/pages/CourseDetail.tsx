@@ -1242,7 +1242,7 @@ export default function CourseDetail() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__final__">Avaliação Final do Curso</SelectItem>
-                  {modules.map((m: any) => (
+                  {modules.filter((m: any) => !isIntroModule(m)).map((m: any) => (
                     <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
                   ))}
                 </SelectContent>
