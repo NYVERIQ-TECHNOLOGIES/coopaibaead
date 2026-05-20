@@ -151,6 +151,7 @@ export default function Courses() {
       promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
       standalone_access_days: c.standalone_access_days != null ? String(c.standalone_access_days) : "",
       premium_enabled: c.premium_enabled ?? true,
+      progressive_unlock: (c as any).progressive_unlock ?? false,
     });
     setDialogOpen(true);
   };
