@@ -932,6 +932,7 @@ export default function CourseDetail() {
                 const isFinal = ev.type === "prova";
                 const attemptsUsed = userAttempts.length;
                 const finalLockedOut = isFinal && !userPassed && attemptsUsed >= 3;
+                const progLocked = lockedEvalIds.has(ev.id);
                 return (
                   <div key={ev.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
