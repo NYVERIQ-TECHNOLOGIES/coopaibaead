@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
+import { getSignedUrl } from "@/lib/storage";
 import CourseChat from "@/components/CourseChat";
 import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
@@ -210,6 +211,8 @@ export default function CourseDetail() {
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
   const [contentType, setContentType] = useState("");
+  const [contentLoading, setContentLoading] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
   const [contentLessonId, setContentLessonId] = useState<string | null>(null);
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
@@ -444,11 +447,35 @@ export default function CourseDetail() {
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
-  const openContent = (url: string, type: string, lessonId?: string) => {
-    setContentUrl(url);
+  const openContent = async (url: string, type: string, lessonId?: string) => {
     setContentType(type);
     setContentLessonId(lessonId ?? null);
     setContentDialogOpen(true);
+    setContentError(null);
+    if (!url) {
+      setContentUrl("");
+      setContentError("URL do conteúdo não encontrada.");
+      return;
+    }
+    // External URL (not from our storage): use as-is
+    if (url.startsWith("http") && !url.includes("/storage/v1/object/")) {
+      setContentUrl(url);
+      return;
+    }
+    setContentLoading(true);
+    setContentUrl("");
+    try {
+      const signed = await getSignedUrl(url, "media", 3600);
+      if (!signed) {
+        setContentError("Não foi possível gerar a URL do arquivo.");
+      } else {
+        setContentUrl(signed);
+      }
+    } catch (e: any) {
+      setContentError(e?.message || "Falha ao carregar o conteúdo.");
+    } finally {
+      setContentLoading(false);
+    }
   };
 
   const openQuestions = (ev: any) => {
@@ -1166,26 +1193,57 @@ export default function CourseDetail() {
       </Dialog>
 
       {/* Content Viewer Dialog */}
-      <Dialog open={contentDialogOpen} onOpenChange={(o) => { if (!o) setContentLessonId(null); setContentDialogOpen(o); }}>
+      <Dialog open={contentDialogOpen} onOpenChange={(o) => { if (!o) { setContentLessonId(null); setContentUrl(""); setContentError(null); } setContentDialogOpen(o); }}>
         <DialogContent className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="text-base sm:text-lg">Visualizar Conteúdo</DialogTitle>
+            <DialogDescription className="sr-only">Visualização do conteúdo selecionado</DialogDescription>
           </DialogHeader>
           <div className={`grid gap-4 ${contentLessonId && !isAdmin ? "lg:grid-cols-[1fr_320px]" : ""}`}>
             <div>
-              {contentUrl && (
-                contentType === "pdf" || contentUrl.endsWith(".pdf") ? (
-                  <iframe src={contentUrl} className="w-full h-[60vh] sm:h-[70vh] rounded-lg" />
-                ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg)/i) ? (
-                  <video src={contentUrl} controls className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh]" />
-                ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg)/i) ? (
-                  <audio src={contentUrl} controls className="w-full mt-8" />
+              {contentLoading && (
+                <div className="flex items-center justify-center h-[40vh] rounded-lg bg-muted text-muted-foreground gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" /> Carregando...
+                </div>
+              )}
+              {!contentLoading && contentError && (
+                <div className="flex flex-col items-center justify-center h-[40vh] rounded-lg bg-muted text-center px-4">
+                  <XCircle className="w-8 h-8 text-destructive mb-2" />
+                  <p className="text-sm text-foreground font-medium">Não foi possível carregar o conteúdo</p>
+                  <p className="text-xs text-muted-foreground mt-1">{contentError}</p>
+                </div>
+              )}
+              {!contentLoading && !contentError && contentUrl && (
+                contentType === "pdf" || contentUrl.match(/\.pdf($|\?)/i) ? (
+                  <iframe src={contentUrl} className="w-full h-[60vh] sm:h-[70vh] rounded-lg" title="PDF" />
+                ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg|mov|m4v)($|\?)/i) ? (
+                  <video
+                    key={contentUrl}
+                    src={contentUrl}
+                    controls
+                    preload="metadata"
+                    playsInline
+                    controlsList="nodownload"
+                    className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh] bg-black"
+                    onError={() => setContentError("Não foi possível reproduzir o vídeo. Verifique o formato ou tente novamente.")}
+                  >
+                    Seu navegador não suporta vídeos.
+                  </video>
+                ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg|m4a)($|\?)/i) ? (
+                  <audio key={contentUrl} src={contentUrl} controls preload="metadata" className="w-full mt-8" />
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">Conteúdo externo</p>
                     <Button asChild><a href={contentUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><ExternalLink className="w-4 h-4" /> Abrir em nova aba</a></Button>
                   </div>
                 )
+              )}
+              {!contentLoading && !contentError && contentUrl && (
+                <div className="flex justify-end pt-2">
+                  <a href={contentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                    Abrir em nova aba ↗
+                  </a>
+                </div>
               )}
             </div>
             {contentLessonId && !isAdmin && courseId && (
