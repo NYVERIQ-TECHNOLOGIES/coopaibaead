@@ -127,7 +127,7 @@ export default function CourseDetail() {
   const completedLessonIds = new Set(myCompletions.map((c: any) => c.lesson_id));
 
   // ---- Fetch user exam attempts for this course's evaluations ----
-  const PASS_THRESHOLD = 60;
+  const PASS_THRESHOLD = 70;
   const evalIds = evaluations.map((e: any) => e.id);
   const { data: myAttempts = [] } = useQuery({
     queryKey: ["my_exam_attempts", courseId, user?.id, evalIds.length],
