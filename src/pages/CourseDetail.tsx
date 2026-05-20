@@ -1215,7 +1215,22 @@ export default function CourseDetail() {
               )}
               {!contentLoading && !contentError && contentUrl && (
                 contentType === "pdf" || contentUrl.match(/\.pdf($|\?)/i) ? (
-                  <iframe src={contentUrl} className="w-full h-[60vh] sm:h-[70vh] rounded-lg" title="PDF" />
+                  <div className="w-full h-[60vh] sm:h-[70vh] rounded-lg overflow-hidden border border-border bg-muted">
+                    <object data={contentUrl} type="application/pdf" className="w-full h-full">
+                      <iframe
+                        src={`https://docs.google.com/gview?url=${encodeURIComponent(contentUrl)}&embedded=true`}
+                        className="w-full h-full"
+                        title="PDF"
+                      />
+                      <div className="p-6 text-center text-sm text-muted-foreground">
+                        Não foi possível renderizar o PDF.{" "}
+                        <a href={contentUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                          Abrir em nova aba
+                        </a>
+                      </div>
+                    </object>
+                  </div>
+
                 ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg|mov|m4v)($|\?)/i) ? (
                   <video
                     key={contentUrl}
