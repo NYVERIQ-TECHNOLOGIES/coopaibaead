@@ -84,7 +84,7 @@ export default function StudentExamDialog({
       return data as any;
     },
     onSuccess: async (data) => {
-      setResult({ score: Number(data.score), correct: data.correct, total: data.total });
+      setResult({ score: Number(data.score), correct: data.correct, total: data.total, details: data.details });
       await refetchAttempts();
       qc.invalidateQueries({ queryKey: ["my_exam_attempts"] });
       const passed = Number(data.score) >= PASS_THRESHOLD;
