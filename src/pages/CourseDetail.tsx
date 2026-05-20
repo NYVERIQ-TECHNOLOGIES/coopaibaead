@@ -882,7 +882,7 @@ export default function CourseDetail() {
                             )}
                           </div>
                           {/* Inline lesson quiz CTA */}
-                          {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && (
+                          {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && !locked && (
                             <div className="flex items-center justify-between gap-3 px-4 py-2 pl-16 bg-accent/5 border-t border-border/30">
                               <div className="flex items-center gap-2 min-w-0">
                                 <ListChecks className="w-3.5 h-3.5 text-accent flex-shrink-0" />
