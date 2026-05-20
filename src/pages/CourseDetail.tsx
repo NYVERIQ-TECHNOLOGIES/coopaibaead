@@ -526,8 +526,29 @@ export default function CourseDetail() {
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
   const allLessons = modules.flatMap((m: any) => (m.lessons || []).map((l: any) => ({ ...l, module_title: m.title })));
-  // Map of lesson_id -> evaluation attached to that lesson (first one if multiple)
+
+  // Fetch all lesson<->evaluation links for this course's evaluations
+  const { data: evalLessonLinks = [] } = useQuery({
+    queryKey: ["evaluation_lessons", courseId, evalIds.length],
+    queryFn: async () => {
+      if (evalIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("evaluation_lessons")
+        .select("evaluation_id, lesson_id")
+        .in("evaluation_id", evalIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: evalIds.length > 0,
+  });
+
+  // Map of lesson_id -> evaluation attached to that lesson (supports N:N via evaluation_lessons)
   const lessonQuizMap = new Map<string, any>();
+  for (const link of evalLessonLinks as any[]) {
+    const ev = (evaluations as any[]).find((e) => e.id === link.evaluation_id);
+    if (ev && !lessonQuizMap.has(link.lesson_id)) lessonQuizMap.set(link.lesson_id, ev);
+  }
+  // Backwards compatibility: legacy single lesson_id column
   for (const ev of evaluations as any[]) {
     if (ev.lesson_id && !lessonQuizMap.has(ev.lesson_id)) lessonQuizMap.set(ev.lesson_id, ev);
   }
