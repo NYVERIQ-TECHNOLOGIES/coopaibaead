@@ -40,6 +40,7 @@ const emptyForm = {
   description: "",
   image: "",
   duration: "",
+  intro_video_url: "",
   cooperado_only: false,
   is_paid: false,
   price: "" as string,
