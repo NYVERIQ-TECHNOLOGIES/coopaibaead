@@ -559,6 +559,50 @@ export default function CourseDetail() {
     if (ev.lesson_id && !lessonQuizMap.has(ev.lesson_id)) lessonQuizMap.set(ev.lesson_id, ev);
   }
   const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
+
+  // ---- Progressive unlock helpers ----
+  const progressiveUnlock = !!(course as any)?.progressive_unlock;
+  const orderedLessons: any[] = modules.flatMap((m: any) => m.lessons || []);
+  const isLessonLocked = (lessonId: string): boolean => {
+    if (isAdmin || !progressiveUnlock) return false;
+    const idx = orderedLessons.findIndex((l) => l.id === lessonId);
+    if (idx <= 0) return false;
+    for (let i = 0; i < idx; i++) {
+      const prev = orderedLessons[i];
+      if (!completedLessonIds.has(prev.id)) return true;
+      const prevQuiz = lessonQuizMap.get(prev.id);
+      if (prevQuiz && prevQuiz.status === "publicada" && !passedEvalIds.has(prevQuiz.id)) return true;
+    }
+    return false;
+  };
+  const isEvalLocked = (ev: any): boolean => {
+    if (isAdmin || !progressiveUnlock) return false;
+    if (ev.module_id) {
+      const mod = modules.find((m: any) => m.id === ev.module_id);
+      if (mod) {
+        for (const l of mod.lessons || []) {
+          if (!completedLessonIds.has(l.id)) return true;
+        }
+      }
+      const moduleEvals = (evaluations as any[])
+        .filter((e: any) => e.module_id === ev.module_id && e.status === "publicada")
+        .sort((a: any, b: any) => (a.created_at || "").localeCompare(b.created_at || ""));
+      const evIdx = moduleEvals.findIndex((e: any) => e.id === ev.id);
+      for (let i = 0; i < evIdx; i++) {
+        if (!passedEvalIds.has(moduleEvals[i].id)) return true;
+      }
+      return false;
+    }
+    // Final evaluation
+    for (const l of orderedLessons) {
+      if (!completedLessonIds.has(l.id)) return true;
+    }
+    for (const me of (evaluations as any[]).filter((e: any) => e.module_id && e.status === "publicada")) {
+      if (!passedEvalIds.has(me.id)) return true;
+    }
+    return false;
+  };
+
   const totalUnits = totalLessons + publishedEvals.length;
   const completedLessonsCount = isAdmin
     ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
