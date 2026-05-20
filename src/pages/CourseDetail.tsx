@@ -971,6 +971,9 @@ export default function CourseDetail() {
                           {!isAdmin && isFinal && !userPassed && (
                             <span className="text-[10px] text-muted-foreground">Tentativas: {attemptsUsed}/3</span>
                           )}
+                          {!isAdmin && evLocked && (
+                            <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>
+                          )}
                         </div>
                       </div>
                     </div>
