@@ -288,6 +288,7 @@ export default function CourseDetail() {
     qc.invalidateQueries({ queryKey: ["course_modules", courseId] });
     qc.invalidateQueries({ queryKey: ["course_evaluations", courseId] });
     qc.invalidateQueries({ queryKey: ["course_books", courseId] });
+    qc.invalidateQueries({ queryKey: ["evaluation_lessons", courseId] });
   };
 
   // ---- Module mutations ----
