@@ -57,7 +57,10 @@ export default function Courses() {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingIntro, setUploadingIntro] = useState(false);
+  const [introProgress, setIntroProgress] = useState(0);
   const imageFileRef = useRef<HTMLInputElement>(null);
+  const introFileRef = useRef<HTMLInputElement>(null);
   const { role } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
