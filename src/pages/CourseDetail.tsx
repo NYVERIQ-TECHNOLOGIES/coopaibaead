@@ -839,8 +839,12 @@ export default function CourseDetail() {
                       return (
                         <div key={lesson.id}>
                           <div
-                            className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
+                            className={`flex items-center gap-3 px-4 py-2.5 pl-8 transition-colors group ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/10 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
                             onClick={() => {
+                              if (locked) {
+                                toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
+                                return;
+                              }
                               if (lesson.content_url) {
                                 openContent(lesson.content_url, lesson.type, lesson.id);
                                 markLessonAccess(lesson.id);
@@ -849,11 +853,12 @@ export default function CourseDetail() {
                             {!isAdmin ? (
                               <button
                                 type="button"
-                                title={userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
-                                onClick={(e) => { e.stopPropagation(); toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
+                                title={locked ? "Bloqueada" : userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                                disabled={locked}
+                                onClick={(e) => { e.stopPropagation(); if (!locked) toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${locked ? "bg-muted" : userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
                               >
-                                {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                                {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                               </button>
                             ) : (
                               <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${userCompleted ? "bg-success/10" : "bg-muted"}`}>
@@ -863,9 +868,10 @@ export default function CourseDetail() {
                             <div className="flex-1 min-w-0">
                               <p className={`text-sm ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                             </div>
-                            {lesson.content_url && (
+                            {lesson.content_url && !locked && (
                               <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                             )}
+                            {locked && <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>}
                             <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
                             <span className="text-xs text-muted-foreground flex-shrink-0">{lesson.duration}</span>
                             {isAdmin && (
