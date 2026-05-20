@@ -47,7 +47,8 @@ export default function PresencaAssinar() {
       return toast({ title: "Informe CPF ou matrícula", variant: "destructive" });
     }
 
-    let assinaturaUrl: string | null = null;
+    let assinaturaBase64: string | null = null;
+    let assinaturaTexto: string | null = null;
     setSubmitting(true);
 
     try {
@@ -56,32 +57,29 @@ export default function PresencaAssinar() {
           setSubmitting(false);
           return toast({ title: "Desenhe sua assinatura", variant: "destructive" });
         }
-        const dataUrl = sigRef.current!.toDataURL();
-        const blob = await (await fetch(dataUrl)).blob();
-        const path = `${evento.id}/${crypto.randomUUID()}.png`;
-        const { error: upErr } = await supabase.storage.from("assinaturas").upload(path, blob, { contentType: "image/png" });
-        if (upErr) throw upErr;
-        assinaturaUrl = path;
+        assinaturaBase64 = sigRef.current!.toDataURL();
       } else if (tipo === "digitada") {
         if (!form.assinaturaTexto.trim()) {
           setSubmitting(false);
           return toast({ title: "Digite sua assinatura", variant: "destructive" });
         }
-        assinaturaUrl = `texto:${form.assinaturaTexto.trim()}`;
+        assinaturaTexto = form.assinaturaTexto.trim();
       }
 
-      const { data, error } = await supabase.rpc("registrar_presenca", {
-        _codigo: evento.codigo,
-        _nome: form.nome.trim(),
-        _cpf: form.cpf ? onlyDigits(form.cpf) : null,
-        _matricula: form.matricula || null,
-        _assinatura_url: assinaturaUrl,
-        _assinatura_tipo: tipo,
-        _ip: null,
-        _user_agent: navigator.userAgent,
+      const { data, error } = await supabase.functions.invoke("registrar-presenca", {
+        body: {
+          codigo: evento.codigo,
+          nome: form.nome.trim(),
+          cpf: form.cpf ? onlyDigits(form.cpf) : null,
+          matricula: form.matricula || null,
+          tipo,
+          assinaturaBase64,
+          assinaturaTexto,
+        },
       });
       if (error) throw error;
       const result = data as any;
+      if (result?.error) throw new Error(result.error);
       setDone({ horario: result.horario });
     } catch (err: any) {
       toast({ title: "Erro ao registrar", description: err.message, variant: "destructive" });
