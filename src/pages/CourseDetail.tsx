@@ -225,6 +225,7 @@ export default function CourseDetail() {
   const [evalDuration, setEvalDuration] = useState(60);
   const [evalQuestions, setEvalQuestions] = useState(10);
   const [evalLessonIds, setEvalLessonIds] = useState<string[]>([]);
+  const [evalModuleId, setEvalModuleId] = useState<string | null>(null);
 
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
   const [editBookId, setEditBookId] = useState<string | null>(null);
@@ -345,12 +346,13 @@ export default function CourseDetail() {
   const saveEvalMut = useMutation({
     mutationFn: async () => {
       const primaryLessonId = evalLessonIds[0] ?? null;
+      const payload = { title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId, module_id: evalModuleId };
       let evaluationId = editEvalId;
       if (editEvalId) {
-        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).eq("id", editEvalId);
+        const { error } = await supabase.from("course_evaluations").update(payload).eq("id", editEvalId);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).select("id").single();
+        const { data, error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, ...payload }).select("id").single();
         if (error) throw error;
         evaluationId = data.id;
       }
@@ -457,9 +459,10 @@ export default function CourseDetail() {
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
   const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonDialogOpen(true); };
   const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonDialogOpen(true); };
-  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonIds([]); setEvalDialogOpen(true); };
+  const openNewEval = (moduleId: string | null = null) => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonIds([]); setEvalModuleId(moduleId); setEvalDialogOpen(true); };
   const openEditEval = async (ev: any) => {
     setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions);
+    setEvalModuleId(ev.module_id ?? null);
     const { data } = await supabase.from("evaluation_lessons").select("lesson_id").eq("evaluation_id", ev.id);
     const ids = (data ?? []).map((r: any) => r.lesson_id);
     setEvalLessonIds(ids.length > 0 ? ids : (ev.lesson_id ? [ev.lesson_id] : []));
@@ -876,14 +879,14 @@ export default function CourseDetail() {
         {expandedSections.evaluations && (
           <div className="border-t border-border">
             {isAdmin && (
-              <div className="p-3 border-b border-border bg-muted/10">
-                <Button size="sm" onClick={openNewEval} className="gradient-primary text-primary-foreground gap-1">
-                  <Plus className="w-3 h-3" /> Nova Avaliação
+              <div className="p-3 border-b border-border bg-muted/10 flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => openNewEval(null)} className="gradient-primary text-primary-foreground gap-1">
+                  <Plus className="w-3 h-3" /> Nova Avaliação Final
                 </Button>
               </div>
             )}
-            <div className="divide-y divide-border">
-              {evaluations.map((ev: any) => {
+            {(() => {
+              const renderEvalRow = (ev: any) => {
                 const userAttempts = (myAttempts as any[]).filter((a) => a.evaluation_id === ev.id);
                 const userBest = bestScoreByEval.get(ev.id) ?? 0;
                 const userPassed = passedEvalIds.has(ev.id);
@@ -914,9 +917,7 @@ export default function CourseDetail() {
                             )
                           )}
                           {!isAdmin && isFinal && !userPassed && (
-                            <span className="text-[10px] text-muted-foreground">
-                              Tentativas: {attemptsUsed}/3
-                            </span>
+                            <span className="text-[10px] text-muted-foreground">Tentativas: {attemptsUsed}/3</span>
                           )}
                         </div>
                       </div>
@@ -939,13 +940,7 @@ export default function CourseDetail() {
                             <CheckCircle className="w-3.5 h-3.5" /> Concluído
                           </Badge>
                         ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => startExam(ev)}
-                            className="gradient-primary text-primary-foreground gap-1"
-                            disabled={finalLockedOut}
-                            title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}
-                          >
+                          <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1" disabled={finalLockedOut} title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}>
                             <ListChecks className="w-3.5 h-3.5" />
                             {attemptsUsed > 0 ? "Refazer" : "Responder"}
                           </Button>
@@ -954,11 +949,61 @@ export default function CourseDetail() {
                     )}
                   </div>
                 );
-              })}
-              {evaluations.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação vinculada</p>
-              )}
-            </div>
+              };
+
+              const evalsByModule = new Map<string, any[]>();
+              const finalEvals: any[] = [];
+              for (const ev of evaluations as any[]) {
+                if (ev.module_id) {
+                  const arr = evalsByModule.get(ev.module_id) || [];
+                  arr.push(ev);
+                  evalsByModule.set(ev.module_id, arr);
+                } else {
+                  finalEvals.push(ev);
+                }
+              }
+
+              return (
+                <div>
+                  {modules.map((m: any) => {
+                    const list = evalsByModule.get(m.id) || [];
+                    if (!isAdmin && list.length === 0) return null;
+                    return (
+                      <div key={m.id} className="border-b border-border">
+                        <div className="px-4 py-2 bg-muted/20 flex items-center justify-between">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{m.title}</p>
+                          {isAdmin && (
+                            <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => openNewEval(m.id)}>
+                              <Plus className="w-3 h-3" /> Adicionar
+                            </Button>
+                          )}
+                        </div>
+                        <div className="divide-y divide-border">
+                          {list.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma avaliação neste módulo</p>
+                          ) : list.map(renderEvalRow)}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div>
+                    <div className="px-4 py-2 bg-accent/10 flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-accent">Avaliação Final do Curso</p>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {finalEvals.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-4">Nenhuma avaliação final cadastrada</p>
+                      ) : finalEvals.map(renderEvalRow)}
+                    </div>
+                  </div>
+
+                  {evaluations.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação vinculada</p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -1134,6 +1179,19 @@ export default function CourseDetail() {
             <div className="space-y-2">
               <Label>Título</Label>
               <Input value={evalTitle} onChange={(e) => setEvalTitle(e.target.value)} placeholder="Nome da avaliação" />
+            </div>
+            <div className="space-y-2">
+              <Label>Módulo</Label>
+              <Select value={evalModuleId ?? "__final__"} onValueChange={(v) => setEvalModuleId(v === "__final__" ? null : v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__final__">Avaliação Final do Curso</SelectItem>
+                  {modules.map((m: any) => (
+                    <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Vincule a um módulo específico ou deixe como Avaliação Final do curso.</p>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
