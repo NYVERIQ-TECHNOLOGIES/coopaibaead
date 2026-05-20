@@ -48,6 +48,7 @@ export default function CourseDetail() {
   const qc = useQueryClient();
   const isAdmin = role === "admin";
   const [generatingCert, setGeneratingCert] = useState(false);
+  const [replayIntro, setReplayIntro] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState({ modules: true, evaluations: true, books: true });
   const toggleSection = (key: keyof typeof expandedSections) =>
