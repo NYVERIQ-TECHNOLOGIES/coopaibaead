@@ -104,6 +104,7 @@ export default function Courses() {
           ? Math.max(1, Math.floor(Number(values.standalone_access_days)))
           : null,
         premium_enabled: values.premium_enabled,
+        progressive_unlock: values.progressive_unlock,
       };
       if (editingCourse) {
         const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
