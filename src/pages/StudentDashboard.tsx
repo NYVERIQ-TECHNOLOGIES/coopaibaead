@@ -10,6 +10,7 @@ import ContinueWatching from "@/components/ContinueWatching";
 import SubscriptionStatusCard from "@/components/SubscriptionStatusCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import DashboardWelcomeVideo from "@/components/DashboardWelcomeVideo";
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth();
