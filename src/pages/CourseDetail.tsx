@@ -211,6 +211,8 @@ export default function CourseDetail() {
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
   const [contentType, setContentType] = useState("");
+  const [contentLoading, setContentLoading] = useState(false);
+  const [contentError, setContentError] = useState<string | null>(null);
   const [contentLessonId, setContentLessonId] = useState<string | null>(null);
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
