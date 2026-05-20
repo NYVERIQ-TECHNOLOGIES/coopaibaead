@@ -835,6 +835,7 @@ export default function CourseDetail() {
                       const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
                       const attachedQuiz = lessonQuizMap.get(lesson.id);
                       const quizPassed = attachedQuiz ? passedEvalIds.has(attachedQuiz.id) : false;
+                      const locked = isLessonLocked(lesson.id);
                       return (
                         <div key={lesson.id}>
                           <div
