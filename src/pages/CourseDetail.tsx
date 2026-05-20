@@ -1114,20 +1114,32 @@ export default function CourseDetail() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Vincular a uma aula (opcional)</Label>
-              <Select value={evalLessonId} onValueChange={setEvalLessonId}>
-                <SelectTrigger><SelectValue placeholder="Quiz de curso (não atrelado)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Nenhuma (avaliação geral do curso) —</SelectItem>
-                  {allLessons.map((l: any) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.module_title} → {l.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Vincular a aulas (opcional, múltiplas)</Label>
+              <div className="max-h-52 overflow-y-auto rounded-md border border-border divide-y divide-border">
+                {allLessons.length === 0 && (
+                  <p className="text-xs text-muted-foreground p-3">Nenhuma aula cadastrada neste curso.</p>
+                )}
+                {allLessons.map((l: any) => {
+                  const checked = evalLessonIds.includes(l.id);
+                  return (
+                    <label key={l.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-muted/40">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setEvalLessonIds((prev) =>
+                            v ? Array.from(new Set([...prev, l.id])) : prev.filter((id) => id !== l.id)
+                          );
+                        }}
+                      />
+                      <span className="text-card-foreground">
+                        <span className="text-muted-foreground">{l.module_title} →</span> {l.title}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Se vinculada, o quiz aparece sob a aula e abre automaticamente quando o aluno marca a aula como concluída.
+                Selecione uma ou mais aulas. O quiz aparecerá em todas elas e abrirá automaticamente quando o aluno concluir qualquer uma das aulas vinculadas.
               </p>
             </div>
           </div>
