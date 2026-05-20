@@ -490,7 +490,6 @@ export type Database = {
           is_paid: boolean
           premium_enabled: boolean
           price: number | null
-          progressive_unlock: boolean
           promotional_price: number | null
           standalone_access_days: number | null
           title: string
@@ -508,7 +507,6 @@ export type Database = {
           is_paid?: boolean
           premium_enabled?: boolean
           price?: number | null
-          progressive_unlock?: boolean
           promotional_price?: number | null
           standalone_access_days?: number | null
           title: string
@@ -526,7 +524,6 @@ export type Database = {
           is_paid?: boolean
           premium_enabled?: boolean
           price?: number | null
-          progressive_unlock?: boolean
           promotional_price?: number | null
           standalone_access_days?: number | null
           title?: string
