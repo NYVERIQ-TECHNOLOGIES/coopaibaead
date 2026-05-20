@@ -138,6 +138,7 @@ export default function Courses() {
       description: c.description || "",
       image: c.image || "",
       duration: c.duration || "",
+      intro_video_url: (c as any).intro_video_url || "",
       cooperado_only: c.cooperado_only,
       is_paid: c.is_paid ?? false,
       price: c.price != null ? String(c.price) : "",
