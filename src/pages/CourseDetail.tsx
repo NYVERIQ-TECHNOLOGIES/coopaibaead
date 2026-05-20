@@ -681,6 +681,27 @@ export default function CourseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressPct, totalUnits, user?.id, courseId, isAdmin]);
 
+  // Auto-issue certificate when student reaches 100% completion OR avg score >= 70%
+  const autoCertTriedRef = useRef(false);
+  useEffect(() => {
+    if (!user || isAdmin || !courseId) return;
+    if (existingCert || generatingCert || autoCertTriedRef.current) return;
+    const pubEvals = (evaluations as any[]).filter((e: any) => e.status === "publicada");
+    let avgOk = false;
+    if (pubEvals.length > 0) {
+      const scores = pubEvals.map((e: any) => bestScoreByEval.get(e.id));
+      if (scores.every((s) => typeof s === "number")) {
+        const avg = scores.reduce((a: number, b: any) => a + (b as number), 0) / scores.length;
+        avgOk = avg >= PASS_THRESHOLD;
+      }
+    }
+    if (isCourseComplete || avgOk) {
+      autoCertTriedRef.current = true;
+      handleGenerateCertificate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isAdmin, courseId, existingCert, isCourseComplete, progressPct, myAttempts.length]);
+
   if (loadingCourse || loadingModules) {
     return (
       <div className="flex justify-center items-center py-20">
