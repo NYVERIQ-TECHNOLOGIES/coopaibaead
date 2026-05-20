@@ -676,6 +676,25 @@ export default function CourseDetail() {
         </div>
       </motion.div>
 
+      {course.intro_video_url && !isAdmin && (
+        <>
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => setReplayIntro(true)} className="gap-2">
+              <Play className="w-4 h-4" /> Assistir introdução
+            </Button>
+          </div>
+          <IntroVideoModal
+            videoUrl={course.intro_video_url}
+            storageKey={`intro_seen_course_${course.id}`}
+            forceOpen={replayIntro}
+            onClose={() => setReplayIntro(false)}
+            title={`Bem-vindo ao curso: ${course.title}`}
+            description="Assista à introdução para conhecer os objetivos e o que esperar deste curso."
+          />
+        </>
+      )}
+
+
       {needsPurchase && (
         <CoursePurchasePanel
           courseId={courseId!}
