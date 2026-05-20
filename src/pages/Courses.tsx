@@ -504,6 +504,16 @@ export default function Courses() {
             <p className="text-xs text-muted-foreground -mt-2">
               Quando ativo, assinantes Premium têm acesso a este curso. Desligue para vender apenas avulso.
             </p>
+            <div className="flex items-center gap-2 pt-2 border-t border-border">
+              <Switch
+                checked={form.progressive_unlock}
+                onCheckedChange={(v) => setForm({ ...form, progressive_unlock: v })}
+              />
+              <Label>Desbloqueio progressivo</Label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              Quando ativo, cada aula só é liberada após a anterior ser concluída, e cada avaliação só é liberada após todas as aulas do módulo (e avaliações anteriores) serem concluídas.
+            </p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
