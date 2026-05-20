@@ -10,6 +10,7 @@ import ContinueWatching from "@/components/ContinueWatching";
 import SubscriptionStatusCard from "@/components/SubscriptionStatusCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import DashboardWelcomeVideo from "@/components/DashboardWelcomeVideo";
 
 export default function StudentDashboard() {
   const { user, profile } = useAuth();
@@ -93,6 +94,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6">
+      <DashboardWelcomeVideo />
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Olá, {firstName}! 👋</h1>

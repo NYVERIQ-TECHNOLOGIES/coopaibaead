@@ -29,6 +29,7 @@ import { getSignedUrl } from "@/lib/storage";
 import CourseChat from "@/components/CourseChat";
 import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
+import IntroVideoModal from "@/components/IntroVideoModal";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
@@ -47,6 +48,7 @@ export default function CourseDetail() {
   const qc = useQueryClient();
   const isAdmin = role === "admin";
   const [generatingCert, setGeneratingCert] = useState(false);
+  const [replayIntro, setReplayIntro] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState({ modules: true, evaluations: true, books: true });
   const toggleSection = (key: keyof typeof expandedSections) =>
@@ -673,6 +675,25 @@ export default function CourseDetail() {
           </div>
         </div>
       </motion.div>
+
+      {course.intro_video_url && !isAdmin && (
+        <>
+          <div className="flex justify-end">
+            <Button variant="outline" size="sm" onClick={() => setReplayIntro(true)} className="gap-2">
+              <Play className="w-4 h-4" /> Assistir introdução
+            </Button>
+          </div>
+          <IntroVideoModal
+            videoUrl={course.intro_video_url}
+            storageKey={`intro_seen_course_${course.id}`}
+            forceOpen={replayIntro}
+            onClose={() => setReplayIntro(false)}
+            title={`Bem-vindo ao curso: ${course.title}`}
+            description="Assista à introdução para conhecer os objetivos e o que esperar deste curso."
+          />
+        </>
+      )}
+
 
       {needsPurchase && (
         <CoursePurchasePanel

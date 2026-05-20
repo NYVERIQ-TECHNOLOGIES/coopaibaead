@@ -77,7 +77,8 @@ const isValidCpf = (value: string) => {
 };
 
 export default function SettingsPage() {
-  const { profile, user } = useAuth();
+  const { profile, user, role } = useAuth();
+  const isAdmin = role === "admin";
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -99,6 +100,35 @@ export default function SettingsPage() {
   const [notifEmail, setNotifEmail] = useState(true);
   const [notifCourse, setNotifCourse] = useState(true);
   const [notifCert, setNotifCert] = useState(true);
+
+  const [welcomeVideoUrl, setWelcomeVideoUrl] = useState("");
+  const [savingWelcome, setSavingWelcome] = useState(false);
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from("app_settings").select("value").eq("key", "dashboard_welcome_video").maybeSingle()
+      .then(({ data }) => {
+        const v = (data?.value as any)?.url || "";
+        setWelcomeVideoUrl(v);
+      });
+  }, [isAdmin]);
+  const saveWelcomeVideo = async () => {
+    setSavingWelcome(true);
+    const { error } = await supabase.from("app_settings").upsert({
+      key: "dashboard_welcome_video",
+      value: { url: welcomeVideoUrl.trim() } as any,
+      updated_by: user?.id,
+    });
+    setSavingWelcome(false);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Vídeo de boas-vindas atualizado" });
+    }
+  };
+  const resetWelcomeSeen = () => {
+    try { localStorage.removeItem("intro_seen_dashboard_v1"); } catch {}
+    toast({ title: "Pronto", description: "O vídeo será exibido novamente no próximo acesso ao dashboard." });
+  };
 
   // Load existing CPF from DB and lock the field if already set
   useEffect(() => {
@@ -402,6 +432,32 @@ export default function SettingsPage() {
               </div>
             </div>
           </Section>
+
+          {isAdmin && (
+            <Section title="Vídeo de boas-vindas (Dashboard)" desc="Exibido em modal na primeira vez que o usuário acessa o dashboard" icon={Globe}>
+              <div className="space-y-3">
+                <div>
+                  <Label>URL do vídeo</Label>
+                  <Input
+                    value={welcomeVideoUrl}
+                    onChange={(e) => setWelcomeVideoUrl(e.target.value)}
+                    placeholder="YouTube, Vimeo ou link direto .mp4"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Deixe em branco para desativar o vídeo de boas-vindas.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveWelcomeVideo} disabled={savingWelcome} className="gap-2">
+                    <Save className="w-4 h-4" /> {savingWelcome ? "Salvando..." : "Salvar"}
+                  </Button>
+                  <Button variant="outline" onClick={resetWelcomeSeen}>
+                    Exibir novamente para mim
+                  </Button>
+                </div>
+              </div>
+            </Section>
+          )}
         </TabsContent>
       </Tabs>
 

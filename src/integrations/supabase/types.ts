@@ -35,6 +35,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           course_id: string
@@ -455,6 +476,7 @@ export type Database = {
           duration: string | null
           id: string
           image: string | null
+          intro_video_url: string | null
           is_paid: boolean
           premium_enabled: boolean
           price: number | null
@@ -471,6 +493,7 @@ export type Database = {
           duration?: string | null
           id?: string
           image?: string | null
+          intro_video_url?: string | null
           is_paid?: boolean
           premium_enabled?: boolean
           price?: number | null
@@ -487,6 +510,7 @@ export type Database = {
           duration?: string | null
           id?: string
           image?: string | null
+          intro_video_url?: string | null
           is_paid?: boolean
           premium_enabled?: boolean
           price?: number | null

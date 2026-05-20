@@ -40,6 +40,7 @@ const emptyForm = {
   description: "",
   image: "",
   duration: "",
+  intro_video_url: "",
   cooperado_only: false,
   is_paid: false,
   price: "" as string,
@@ -90,6 +91,7 @@ export default function Courses() {
         description: values.description,
         image: values.image,
         duration: values.duration,
+        intro_video_url: values.intro_video_url || null,
         cooperado_only: values.cooperado_only,
         is_paid: values.is_paid,
         price: values.is_paid && values.price ? Number(values.price) : null,
@@ -136,6 +138,7 @@ export default function Courses() {
       description: c.description || "",
       image: c.image || "",
       duration: c.duration || "",
+      intro_video_url: (c as any).intro_video_url || "",
       cooperado_only: c.cooperado_only,
       is_paid: c.is_paid ?? false,
       price: c.price != null ? String(c.price) : "",
@@ -340,6 +343,17 @@ export default function Courses() {
             <div>
               <Label>Duração</Label>
               <Input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} placeholder="Ex: 12h" />
+            </div>
+            <div>
+              <Label>Vídeo de introdução (URL)</Label>
+              <Input
+                value={form.intro_video_url}
+                onChange={(e) => setForm({ ...form, intro_video_url: e.target.value })}
+                placeholder="YouTube, Vimeo ou link direto .mp4"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Será exibido automaticamente ao aluno ao abrir o curso pela primeira vez.
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.cooperado_only} onCheckedChange={(v) => setForm({ ...form, cooperado_only: v })} />
