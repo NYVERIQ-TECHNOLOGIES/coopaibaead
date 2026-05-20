@@ -29,6 +29,7 @@ import { getSignedUrl } from "@/lib/storage";
 import CourseChat from "@/components/CourseChat";
 import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
+import IntroVideoModal from "@/components/IntroVideoModal";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
