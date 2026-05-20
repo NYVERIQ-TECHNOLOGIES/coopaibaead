@@ -18,7 +18,7 @@ interface Props {
   courseId?: string | null;          // required for final-exam reset
 }
 
-const PASS_THRESHOLD = 60;            // 6,0 / 10
+const PASS_THRESHOLD = 70;           // 7,0 / 10
 const MAX_FINAL_ATTEMPTS = 3;
 
 export default function StudentExamDialog({
