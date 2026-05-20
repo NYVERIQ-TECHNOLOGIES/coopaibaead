@@ -995,9 +995,9 @@ export default function CourseDetail() {
                             <CheckCircle className="w-3.5 h-3.5" /> Concluído
                           </Badge>
                         ) : (
-                          <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1" disabled={finalLockedOut} title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}>
-                            <ListChecks className="w-3.5 h-3.5" />
-                            {attemptsUsed > 0 ? "Refazer" : "Responder"}
+                          <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1" disabled={finalLockedOut || evLocked} title={evLocked ? "Conclua as etapas anteriores para desbloquear" : finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}>
+                            {evLocked ? <Lock className="w-3.5 h-3.5" /> : <ListChecks className="w-3.5 h-3.5" />}
+                            {evLocked ? "Bloqueada" : attemptsUsed > 0 ? "Refazer" : "Responder"}
                           </Button>
                         )
                       )
