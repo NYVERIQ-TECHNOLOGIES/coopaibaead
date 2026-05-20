@@ -1180,6 +1180,19 @@ export default function CourseDetail() {
               <Label>Título</Label>
               <Input value={evalTitle} onChange={(e) => setEvalTitle(e.target.value)} placeholder="Nome da avaliação" />
             </div>
+            <div className="space-y-2">
+              <Label>Módulo</Label>
+              <Select value={evalModuleId ?? "__final__"} onValueChange={(v) => setEvalModuleId(v === "__final__" ? null : v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__final__">Avaliação Final do Curso</SelectItem>
+                  {modules.map((m: any) => (
+                    <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Vincule a um módulo específico ou deixe como Avaliação Final do curso.</p>
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Tipo</Label>
