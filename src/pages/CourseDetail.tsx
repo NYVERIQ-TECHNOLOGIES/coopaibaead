@@ -149,7 +149,7 @@ export default function CourseDetail() {
     const prev = bestScoreByEval.get(a.evaluation_id) ?? 0;
     if (Number(a.score) > prev) bestScoreByEval.set(a.evaluation_id, Number(a.score));
   }
-  // An evaluation is "completed" only if the student passed (>= 60%)
+  // An evaluation is "completed" only if the student passed (>= 70%)
   const passedEvalIds = new Set(
     Array.from(bestScoreByEval.entries()).filter(([, s]) => s >= PASS_THRESHOLD).map(([id]) => id)
   );
