@@ -560,6 +560,9 @@ export default function CourseDetail() {
   }
   const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
 
+  // Intro modules don't have evaluations/activities
+  const isIntroModule = (m: any) => /\bintrodu|^intro\b/i.test((m?.title || "").trim());
+
   // ---- Progressive unlock helpers ----
   const progressiveUnlock = !!(course as any)?.progressive_unlock;
   const orderedLessons: any[] = modules.flatMap((m: any) => m.lessons || []);
