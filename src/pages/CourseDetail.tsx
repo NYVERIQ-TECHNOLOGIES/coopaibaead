@@ -559,6 +559,50 @@ export default function CourseDetail() {
     if (ev.lesson_id && !lessonQuizMap.has(ev.lesson_id)) lessonQuizMap.set(ev.lesson_id, ev);
   }
   const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
+
+  // ---- Progressive unlock helpers ----
+  const progressiveUnlock = !!(course as any)?.progressive_unlock;
+  const orderedLessons: any[] = modules.flatMap((m: any) => m.lessons || []);
+  const isLessonLocked = (lessonId: string): boolean => {
+    if (isAdmin || !progressiveUnlock) return false;
+    const idx = orderedLessons.findIndex((l) => l.id === lessonId);
+    if (idx <= 0) return false;
+    for (let i = 0; i < idx; i++) {
+      const prev = orderedLessons[i];
+      if (!completedLessonIds.has(prev.id)) return true;
+      const prevQuiz = lessonQuizMap.get(prev.id);
+      if (prevQuiz && prevQuiz.status === "publicada" && !passedEvalIds.has(prevQuiz.id)) return true;
+    }
+    return false;
+  };
+  const isEvalLocked = (ev: any): boolean => {
+    if (isAdmin || !progressiveUnlock) return false;
+    if (ev.module_id) {
+      const mod = modules.find((m: any) => m.id === ev.module_id);
+      if (mod) {
+        for (const l of mod.lessons || []) {
+          if (!completedLessonIds.has(l.id)) return true;
+        }
+      }
+      const moduleEvals = (evaluations as any[])
+        .filter((e: any) => e.module_id === ev.module_id && e.status === "publicada")
+        .sort((a: any, b: any) => (a.created_at || "").localeCompare(b.created_at || ""));
+      const evIdx = moduleEvals.findIndex((e: any) => e.id === ev.id);
+      for (let i = 0; i < evIdx; i++) {
+        if (!passedEvalIds.has(moduleEvals[i].id)) return true;
+      }
+      return false;
+    }
+    // Final evaluation
+    for (const l of orderedLessons) {
+      if (!completedLessonIds.has(l.id)) return true;
+    }
+    for (const me of (evaluations as any[]).filter((e: any) => e.module_id && e.status === "publicada")) {
+      if (!passedEvalIds.has(me.id)) return true;
+    }
+    return false;
+  };
+
   const totalUnits = totalLessons + publishedEvals.length;
   const completedLessonsCount = isAdmin
     ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
@@ -791,11 +835,16 @@ export default function CourseDetail() {
                       const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
                       const attachedQuiz = lessonQuizMap.get(lesson.id);
                       const quizPassed = attachedQuiz ? passedEvalIds.has(attachedQuiz.id) : false;
+                      const locked = isLessonLocked(lesson.id);
                       return (
                         <div key={lesson.id}>
                           <div
-                            className={`flex items-center gap-3 px-4 py-2.5 pl-8 hover:bg-muted/10 transition-colors group ${lesson.content_url ? "cursor-pointer" : ""}`}
+                            className={`flex items-center gap-3 px-4 py-2.5 pl-8 transition-colors group ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/10 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
                             onClick={() => {
+                              if (locked) {
+                                toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
+                                return;
+                              }
                               if (lesson.content_url) {
                                 openContent(lesson.content_url, lesson.type, lesson.id);
                                 markLessonAccess(lesson.id);
@@ -804,11 +853,12 @@ export default function CourseDetail() {
                             {!isAdmin ? (
                               <button
                                 type="button"
-                                title={userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
-                                onClick={(e) => { e.stopPropagation(); toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
-                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
+                                title={locked ? "Bloqueada" : userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                                disabled={locked}
+                                onClick={(e) => { e.stopPropagation(); if (!locked) toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${locked ? "bg-muted" : userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
                               >
-                                {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                                {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                               </button>
                             ) : (
                               <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${userCompleted ? "bg-success/10" : "bg-muted"}`}>
@@ -818,9 +868,10 @@ export default function CourseDetail() {
                             <div className="flex-1 min-w-0">
                               <p className={`text-sm ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                             </div>
-                            {lesson.content_url && (
+                            {lesson.content_url && !locked && (
                               <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
                             )}
+                            {locked && <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>}
                             <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
                             <span className="text-xs text-muted-foreground flex-shrink-0">{lesson.duration}</span>
                             {isAdmin && (
@@ -831,7 +882,7 @@ export default function CourseDetail() {
                             )}
                           </div>
                           {/* Inline lesson quiz CTA */}
-                          {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && (
+                          {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && !locked && (
                             <div className="flex items-center justify-between gap-3 px-4 py-2 pl-16 bg-accent/5 border-t border-border/30">
                               <div className="flex items-center gap-2 min-w-0">
                                 <ListChecks className="w-3.5 h-3.5 text-accent flex-shrink-0" />
@@ -893,6 +944,7 @@ export default function CourseDetail() {
                 const isFinal = ev.type === "prova";
                 const attemptsUsed = userAttempts.length;
                 const finalLockedOut = isFinal && !userPassed && attemptsUsed >= 3;
+                const evLocked = isEvalLocked(ev);
                 return (
                   <div key={ev.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/10 transition-colors group">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -919,6 +971,9 @@ export default function CourseDetail() {
                           {!isAdmin && isFinal && !userPassed && (
                             <span className="text-[10px] text-muted-foreground">Tentativas: {attemptsUsed}/3</span>
                           )}
+                          {!isAdmin && evLocked && (
+                            <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -940,9 +995,9 @@ export default function CourseDetail() {
                             <CheckCircle className="w-3.5 h-3.5" /> Concluído
                           </Badge>
                         ) : (
-                          <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1" disabled={finalLockedOut} title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}>
-                            <ListChecks className="w-3.5 h-3.5" />
-                            {attemptsUsed > 0 ? "Refazer" : "Responder"}
+                          <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1" disabled={finalLockedOut || evLocked} title={evLocked ? "Conclua as etapas anteriores para desbloquear" : finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}>
+                            {evLocked ? <Lock className="w-3.5 h-3.5" /> : <ListChecks className="w-3.5 h-3.5" />}
+                            {evLocked ? "Bloqueada" : attemptsUsed > 0 ? "Refazer" : "Responder"}
                           </Button>
                         )
                       )
