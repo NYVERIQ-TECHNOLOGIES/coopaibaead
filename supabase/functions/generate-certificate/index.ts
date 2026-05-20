@@ -89,8 +89,35 @@ Deno.serve(async (req) => {
         completedLessons = count ?? 0;
       }
 
-      if (totalLessons === 0 || completedLessons < totalLessons) {
-        return new Response(JSON.stringify({ error: "Conclua 100% do curso antes de gerar o certificado." }), {
+      const fullyCompleted = totalLessons > 0 && completedLessons >= totalLessons;
+
+      // Alternative: avg best score across published evaluations >= 70%
+      let avgScoreOk = false;
+      const { data: pubEvals } = await supabaseAdmin
+        .from("course_evaluations")
+        .select("id")
+        .eq("course_id", course_id)
+        .eq("status", "publicada");
+      const pubEvalIds = (pubEvals || []).map((e: any) => e.id);
+      if (pubEvalIds.length > 0) {
+        const { data: attempts } = await supabaseAdmin
+          .from("exam_attempts")
+          .select("evaluation_id, score")
+          .eq("user_id", user.id)
+          .in("evaluation_id", pubEvalIds);
+        const best = new Map<string, number>();
+        for (const a of (attempts || []) as any[]) {
+          const prev = best.get(a.evaluation_id) ?? 0;
+          if (Number(a.score) > prev) best.set(a.evaluation_id, Number(a.score));
+        }
+        if (best.size === pubEvalIds.length) {
+          const avg = Array.from(best.values()).reduce((s, v) => s + v, 0) / best.size;
+          avgScoreOk = avg >= 70;
+        }
+      }
+
+      if (!fullyCompleted && !avgScoreOk) {
+        return new Response(JSON.stringify({ error: "Conclua 100% do curso ou atinja média mínima de 70% nas avaliações para gerar o certificado." }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
