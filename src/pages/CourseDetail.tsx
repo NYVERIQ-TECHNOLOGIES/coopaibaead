@@ -1241,6 +1241,19 @@ export default function CourseDetail() {
                     controlsList="nodownload"
                     className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh] bg-black"
                     onError={() => setContentError("Não foi possível reproduzir o vídeo. Verifique o formato ou tente novamente.")}
+                    onEnded={() => {
+                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
+                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                      }
+                    }}
+                    onTimeUpdate={(e) => {
+                      if (isAdmin || !contentLessonId || !user) return;
+                      if (completedLessonIds.has(contentLessonId)) return;
+                      const v = e.currentTarget;
+                      if (v.duration > 0 && v.currentTime / v.duration >= 0.98) {
+                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                      }
+                    }}
                   >
                     Seu navegador não suporta vídeos.
                   </video>
