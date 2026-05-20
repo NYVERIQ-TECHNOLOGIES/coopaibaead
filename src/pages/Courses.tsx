@@ -344,6 +344,17 @@ export default function Courses() {
               <Label>Duração</Label>
               <Input value={form.duration} onChange={(e) => setForm({ ...form, duration: e.target.value })} placeholder="Ex: 12h" />
             </div>
+            <div>
+              <Label>Vídeo de introdução (URL)</Label>
+              <Input
+                value={form.intro_video_url}
+                onChange={(e) => setForm({ ...form, intro_video_url: e.target.value })}
+                placeholder="YouTube, Vimeo ou link direto .mp4"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Será exibido automaticamente ao aluno ao abrir o curso pela primeira vez.
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.cooperado_only} onCheckedChange={(v) => setForm({ ...form, cooperado_only: v })} />
               <Label>Exclusivo para cooperados</Label>
