@@ -342,6 +342,7 @@ export type Database = {
           duration: number
           id: string
           lesson_id: string | null
+          module_id: string | null
           questions: number
           status: string
           title: string
@@ -354,6 +355,7 @@ export type Database = {
           duration?: number
           id?: string
           lesson_id?: string | null
+          module_id?: string | null
           questions?: number
           status?: string
           title: string
@@ -366,6 +368,7 @@ export type Database = {
           duration?: number
           id?: string
           lesson_id?: string | null
+          module_id?: string | null
           questions?: number
           status?: string
           title?: string
@@ -378,6 +381,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_evaluations_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
             referencedColumns: ["id"]
           },
         ]

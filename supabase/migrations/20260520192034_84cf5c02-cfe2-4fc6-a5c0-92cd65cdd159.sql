@@ -1,0 +1,2 @@
+ALTER TABLE public.course_evaluations ADD COLUMN IF NOT EXISTS module_id uuid REFERENCES public.course_modules(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_course_evaluations_module_id ON public.course_evaluations(module_id);
