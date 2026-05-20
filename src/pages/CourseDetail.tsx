@@ -1258,7 +1258,18 @@ export default function CourseDetail() {
                     Seu navegador não suporta vídeos.
                   </video>
                 ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg|m4a)($|\?)/i) ? (
-                  <audio key={contentUrl} src={contentUrl} controls preload="metadata" className="w-full mt-8" />
+                  <audio
+                    key={contentUrl}
+                    src={contentUrl}
+                    controls
+                    preload="metadata"
+                    className="w-full mt-8"
+                    onEnded={() => {
+                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
+                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                      }
+                    }}
+                  />
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">Conteúdo externo</p>
