@@ -77,7 +77,8 @@ const isValidCpf = (value: string) => {
 };
 
 export default function SettingsPage() {
-  const { profile, user } = useAuth();
+  const { profile, user, role } = useAuth();
+  const isAdmin = role === "admin";
   const navigate = useNavigate();
   const { toast } = useToast();
 
