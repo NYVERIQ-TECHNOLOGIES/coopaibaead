@@ -63,6 +63,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <DashboardWelcomeVideo />
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Dashboard</h1>
