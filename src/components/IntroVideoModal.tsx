@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
+import { getSignedUrl } from "@/lib/storage";
 
 interface IntroVideoModalProps {
-  /** Direct video URL (.mp4/.webm) or YouTube/Vimeo URL */
+  /** Direct video URL (.mp4/.webm), storage path, or YouTube/Vimeo URL */
   videoUrl: string;
   /** Unique key persisted in localStorage so the modal shows only once */
   storageKey: string;
@@ -45,6 +46,13 @@ function toEmbedUrl(url: string): { embed: string | null; direct: string | null 
   }
 }
 
+function looksLikeStoragePath(url: string) {
+  if (!url) return false;
+  // Raw storage path (no protocol) or signed/public storage URL
+  if (!url.startsWith("http")) return true;
+  return url.includes("/storage/v1/object/");
+}
+
 export default function IntroVideoModal({
   videoUrl,
   storageKey,
@@ -54,8 +62,34 @@ export default function IntroVideoModal({
   description,
 }: IntroVideoModalProps) {
   const [open, setOpen] = useState(false);
+  const [resolvedUrl, setResolvedUrl] = useState<string>("");
 
-  const { embed, direct } = useMemo(() => toEmbedUrl(videoUrl), [videoUrl]);
+  // Resolve storage paths to signed URLs; pass through external URLs
+  useEffect(() => {
+    let cancelled = false;
+    async function resolve() {
+      if (!videoUrl) {
+        setResolvedUrl("");
+        return;
+      }
+      if (looksLikeStoragePath(videoUrl)) {
+        try {
+          const signed = await getSignedUrl(videoUrl, "media", 3600);
+          if (!cancelled) setResolvedUrl(signed || videoUrl);
+        } catch {
+          if (!cancelled) setResolvedUrl(videoUrl);
+        }
+      } else {
+        setResolvedUrl(videoUrl);
+      }
+    }
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, [videoUrl]);
+
+  const { embed, direct } = useMemo(() => toEmbedUrl(resolvedUrl), [resolvedUrl]);
 
   useEffect(() => {
     if (forceOpen) {
@@ -91,7 +125,11 @@ export default function IntroVideoModal({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
         <div className="aspect-video w-full bg-black">
-          {direct ? (
+          {!resolvedUrl ? (
+            <div className="w-full h-full flex items-center justify-center text-white/70 text-sm">
+              Carregando vídeo...
+            </div>
+          ) : direct ? (
             <video src={direct} controls autoPlay className="w-full h-full" />
           ) : embed ? (
             <iframe
