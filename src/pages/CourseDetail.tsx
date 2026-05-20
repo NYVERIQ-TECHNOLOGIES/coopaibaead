@@ -447,11 +447,35 @@ export default function CourseDetail() {
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
-  const openContent = (url: string, type: string, lessonId?: string) => {
-    setContentUrl(url);
+  const openContent = async (url: string, type: string, lessonId?: string) => {
     setContentType(type);
     setContentLessonId(lessonId ?? null);
     setContentDialogOpen(true);
+    setContentError(null);
+    if (!url) {
+      setContentUrl("");
+      setContentError("URL do conteúdo não encontrada.");
+      return;
+    }
+    // External URL (not from our storage): use as-is
+    if (url.startsWith("http") && !url.includes("/storage/v1/object/")) {
+      setContentUrl(url);
+      return;
+    }
+    setContentLoading(true);
+    setContentUrl("");
+    try {
+      const signed = await getSignedUrl(url, "media", 3600);
+      if (!signed) {
+        setContentError("Não foi possível gerar a URL do arquivo.");
+      } else {
+        setContentUrl(signed);
+      }
+    } catch (e: any) {
+      setContentError(e?.message || "Falha ao carregar o conteúdo.");
+    } finally {
+      setContentLoading(false);
+    }
   };
 
   const openQuestions = (ev: any) => {
