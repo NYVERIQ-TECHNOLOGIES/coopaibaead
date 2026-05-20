@@ -127,7 +127,7 @@ export default function CourseDetail() {
   const completedLessonIds = new Set(myCompletions.map((c: any) => c.lesson_id));
 
   // ---- Fetch user exam attempts for this course's evaluations ----
-  const PASS_THRESHOLD = 60;
+  const PASS_THRESHOLD = 70;
   const evalIds = evaluations.map((e: any) => e.id);
   const { data: myAttempts = [] } = useQuery({
     queryKey: ["my_exam_attempts", courseId, user?.id, evalIds.length],
@@ -149,7 +149,7 @@ export default function CourseDetail() {
     const prev = bestScoreByEval.get(a.evaluation_id) ?? 0;
     if (Number(a.score) > prev) bestScoreByEval.set(a.evaluation_id, Number(a.score));
   }
-  // An evaluation is "completed" only if the student passed (>= 60%)
+  // An evaluation is "completed" only if the student passed (>= 70%)
   const passedEvalIds = new Set(
     Array.from(bestScoreByEval.entries()).filter(([, s]) => s >= PASS_THRESHOLD).map(([id]) => id)
   );
@@ -1241,11 +1241,35 @@ export default function CourseDetail() {
                     controlsList="nodownload"
                     className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh] bg-black"
                     onError={() => setContentError("Não foi possível reproduzir o vídeo. Verifique o formato ou tente novamente.")}
+                    onEnded={() => {
+                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
+                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                      }
+                    }}
+                    onTimeUpdate={(e) => {
+                      if (isAdmin || !contentLessonId || !user) return;
+                      if (completedLessonIds.has(contentLessonId)) return;
+                      const v = e.currentTarget;
+                      if (v.duration > 0 && v.currentTime / v.duration >= 0.98) {
+                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                      }
+                    }}
                   >
                     Seu navegador não suporta vídeos.
                   </video>
                 ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg|m4a)($|\?)/i) ? (
-                  <audio key={contentUrl} src={contentUrl} controls preload="metadata" className="w-full mt-8" />
+                  <audio
+                    key={contentUrl}
+                    src={contentUrl}
+                    controls
+                    preload="metadata"
+                    className="w-full mt-8"
+                    onEnded={() => {
+                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
+                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                      }
+                    }}
+                  />
                 ) : (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground mb-4">Conteúdo externo</p>

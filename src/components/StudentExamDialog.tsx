@@ -18,7 +18,7 @@ interface Props {
   courseId?: string | null;          // required for final-exam reset
 }
 
-const PASS_THRESHOLD = 60;            // 6,0 / 10
+const PASS_THRESHOLD = 70;           // 7,0 / 10
 const MAX_FINAL_ATTEMPTS = 3;
 
 export default function StudentExamDialog({
@@ -33,7 +33,7 @@ export default function StudentExamDialog({
   const { toast } = useToast();
   const qc = useQueryClient();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{ score: number; correct: number; total: number } | null>(null);
+  const [result, setResult] = useState<{ score: number; correct: number; total: number; details?: Array<{ question_id: string; given: string; correct_option: string; is_correct: boolean }> } | null>(null);
   const [resetting, setResetting] = useState(false);
 
   const isFinalExam = evaluationType === "prova";
@@ -84,7 +84,7 @@ export default function StudentExamDialog({
       return data as any;
     },
     onSuccess: async (data) => {
-      setResult({ score: Number(data.score), correct: data.correct, total: data.total });
+      setResult({ score: Number(data.score), correct: data.correct, total: data.total, details: data.details });
       await refetchAttempts();
       qc.invalidateQueries({ queryKey: ["my_exam_attempts"] });
       const passed = Number(data.score) >= PASS_THRESHOLD;
@@ -219,6 +219,54 @@ export default function StudentExamDialog({
             {isFinalExam && !lastPassed && (
               <div className="text-sm text-muted-foreground">
                 Tentativas restantes: <strong className="text-foreground">{attemptsLeft}</strong> de {MAX_FINAL_ATTEMPTS}
+              </div>
+            )}
+
+            {result.details && result.details.length > 0 && (
+              <div className="text-left space-y-3 pt-4 border-t border-border">
+                <p className="text-sm font-heading font-semibold text-foreground">Gabarito</p>
+                {questions.map((q: any, idx: number) => {
+                  const d = result.details!.find((x) => x.question_id === q.id);
+                  if (!d) return null;
+                  const givenText = d.given ? q[`option_${d.given}`] : "—";
+                  const correctText = q[`option_${d.correct_option}`];
+                  return (
+                    <div
+                      key={q.id}
+                      className={`p-3 rounded-lg border ${
+                        d.is_correct ? "border-success/40 bg-success/5" : "border-destructive/40 bg-destructive/5"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        {d.is_correct ? (
+                          <CheckCircle className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-card-foreground">
+                            <span className="text-primary mr-1">{idx + 1}.</span>
+                            {q.question_text}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Sua resposta:{" "}
+                            <strong className={d.is_correct ? "text-success" : "text-destructive"}>
+                              {d.given ? `${d.given.toUpperCase()}) ${givenText}` : "Não respondida"}
+                            </strong>
+                          </p>
+                          {!d.is_correct && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Resposta correta:{" "}
+                              <strong className="text-success">
+                                {d.correct_option.toUpperCase()}) {correctText}
+                              </strong>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
