@@ -275,7 +275,7 @@ export default function Courses() {
 
       {/* Save Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingCourse ? "Editar Curso" : "Novo Curso"}</DialogTitle>
             <DialogDescription>Preencha as informações do curso</DialogDescription>
