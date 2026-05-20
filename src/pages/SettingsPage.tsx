@@ -432,6 +432,32 @@ export default function SettingsPage() {
               </div>
             </div>
           </Section>
+
+          {isAdmin && (
+            <Section title="Vídeo de boas-vindas (Dashboard)" desc="Exibido em modal na primeira vez que o usuário acessa o dashboard" icon={Globe}>
+              <div className="space-y-3">
+                <div>
+                  <Label>URL do vídeo</Label>
+                  <Input
+                    value={welcomeVideoUrl}
+                    onChange={(e) => setWelcomeVideoUrl(e.target.value)}
+                    placeholder="YouTube, Vimeo ou link direto .mp4"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Deixe em branco para desativar o vídeo de boas-vindas.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveWelcomeVideo} disabled={savingWelcome} className="gap-2">
+                    <Save className="w-4 h-4" /> {savingWelcome ? "Salvando..." : "Salvar"}
+                  </Button>
+                  <Button variant="outline" onClick={resetWelcomeSeen}>
+                    Exibir novamente para mim
+                  </Button>
+                </div>
+              </div>
+            </Section>
+          )}
         </TabsContent>
       </Tabs>
 
