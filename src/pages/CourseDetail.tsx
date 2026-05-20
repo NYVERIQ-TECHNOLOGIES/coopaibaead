@@ -569,6 +569,38 @@ export default function CourseDetail() {
   const progressPct = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
   const isCourseComplete = totalUnits > 0 && completedUnits >= totalUnits;
 
+  // ---- Progressive unlock (student-only gating) ----
+  const progressiveUnlock = !!(course as any)?.progressive_unlock;
+  const lockedLessonIds = new Set<string>();
+  const lockedEvalIds = new Set<string>();
+  if (progressiveUnlock && !isAdmin) {
+    // Lessons: each lesson locked until previous (in module order, then lesson order) is completed
+    let previousDone = true;
+    for (const m of modules as any[]) {
+      const modEvals = (publishedEvals as any[]).filter((e) => e.module_id === m.id);
+      for (const l of (m.lessons || [])) {
+        if (!previousDone) lockedLessonIds.add(l.id);
+        previousDone = completedLessonIds.has(l.id);
+      }
+      // Module evaluations require all lessons in the module completed
+      const allModuleLessonsDone = (m.lessons || []).every((l: any) => completedLessonIds.has(l.id));
+      let prevEvalPassed = allModuleLessonsDone;
+      for (const ev of modEvals) {
+        if (!prevEvalPassed) lockedEvalIds.add(ev.id);
+        prevEvalPassed = prevEvalPassed && passedEvalIds.has(ev.id);
+      }
+    }
+    // Final evaluations require all lessons + all module evaluations passed
+    const allLessonsDone = (modules as any[]).every((m: any) => (m.lessons || []).every((l: any) => completedLessonIds.has(l.id)));
+    const allModuleEvalsPassed = (publishedEvals as any[]).filter((e) => e.module_id).every((e) => passedEvalIds.has(e.id));
+    let prevFinalPassed = allLessonsDone && allModuleEvalsPassed;
+    for (const ev of (publishedEvals as any[]).filter((e) => !e.module_id)) {
+      if (!prevFinalPassed) lockedEvalIds.add(ev.id);
+      prevFinalPassed = prevFinalPassed && passedEvalIds.has(ev.id);
+    }
+  }
+
+
   // ---- Toggle lesson completion (student) ----
   const toggleLessonCompletionMut = useMutation({
     mutationFn: async ({ lessonId, completed }: { lessonId: string; completed: boolean }) => {
