@@ -341,13 +341,24 @@ export default function CourseDetail() {
   // ---- Evaluation mutations ----
   const saveEvalMut = useMutation({
     mutationFn: async () => {
-      const lessonIdValue = evalLessonId && evalLessonId !== "none" ? evalLessonId : null;
+      const primaryLessonId = evalLessonIds[0] ?? null;
+      let evaluationId = editEvalId;
       if (editEvalId) {
-        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue }).eq("id", editEvalId);
+        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).eq("id", editEvalId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue });
+        const { data, error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).select("id").single();
         if (error) throw error;
+        evaluationId = data.id;
+      }
+      // Sync evaluation_lessons join table
+      if (evaluationId) {
+        await supabase.from("evaluation_lessons").delete().eq("evaluation_id", evaluationId);
+        if (evalLessonIds.length > 0) {
+          const rows = evalLessonIds.map((lid) => ({ evaluation_id: evaluationId!, lesson_id: lid }));
+          const { error: linkErr } = await supabase.from("evaluation_lessons").insert(rows);
+          if (linkErr) throw linkErr;
+        }
       }
     },
     onSuccess: () => { invalidateAll(); setEvalDialogOpen(false); toast({ title: "Avaliação salva" }); },
