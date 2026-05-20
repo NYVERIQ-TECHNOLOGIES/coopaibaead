@@ -33,7 +33,7 @@ export default function StudentExamDialog({
   const { toast } = useToast();
   const qc = useQueryClient();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{ score: number; correct: number; total: number } | null>(null);
+  const [result, setResult] = useState<{ score: number; correct: number; total: number; details?: Array<{ question_id: string; given: string; correct_option: string; is_correct: boolean }> } | null>(null);
   const [resetting, setResetting] = useState(false);
 
   const isFinalExam = evaluationType === "prova";
