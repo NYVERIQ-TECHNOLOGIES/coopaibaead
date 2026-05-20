@@ -22,6 +22,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
 import { getSignedUrl } from "@/lib/storage";
@@ -221,7 +222,7 @@ export default function CourseDetail() {
   const [evalType, setEvalType] = useState("prova");
   const [evalDuration, setEvalDuration] = useState(60);
   const [evalQuestions, setEvalQuestions] = useState(10);
-  const [evalLessonId, setEvalLessonId] = useState<string>("none");
+  const [evalLessonIds, setEvalLessonIds] = useState<string[]>([]);
 
   const [bookDialogOpen, setBookDialogOpen] = useState(false);
   const [editBookId, setEditBookId] = useState<string | null>(null);
@@ -287,6 +288,7 @@ export default function CourseDetail() {
     qc.invalidateQueries({ queryKey: ["course_modules", courseId] });
     qc.invalidateQueries({ queryKey: ["course_evaluations", courseId] });
     qc.invalidateQueries({ queryKey: ["course_books", courseId] });
+    qc.invalidateQueries({ queryKey: ["evaluation_lessons", courseId] });
   };
 
   // ---- Module mutations ----
@@ -340,13 +342,24 @@ export default function CourseDetail() {
   // ---- Evaluation mutations ----
   const saveEvalMut = useMutation({
     mutationFn: async () => {
-      const lessonIdValue = evalLessonId && evalLessonId !== "none" ? evalLessonId : null;
+      const primaryLessonId = evalLessonIds[0] ?? null;
+      let evaluationId = editEvalId;
       if (editEvalId) {
-        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue }).eq("id", editEvalId);
+        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).eq("id", editEvalId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: lessonIdValue });
+        const { data, error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).select("id").single();
         if (error) throw error;
+        evaluationId = data.id;
+      }
+      // Sync evaluation_lessons join table
+      if (evaluationId) {
+        await supabase.from("evaluation_lessons").delete().eq("evaluation_id", evaluationId);
+        if (evalLessonIds.length > 0) {
+          const rows = evalLessonIds.map((lid) => ({ evaluation_id: evaluationId!, lesson_id: lid }));
+          const { error: linkErr } = await supabase.from("evaluation_lessons").insert(rows);
+          if (linkErr) throw linkErr;
+        }
       }
     },
     onSuccess: () => { invalidateAll(); setEvalDialogOpen(false); toast({ title: "Avaliação salva" }); },
@@ -442,8 +455,14 @@ export default function CourseDetail() {
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
   const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonDialogOpen(true); };
   const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonDialogOpen(true); };
-  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonId("none"); setEvalDialogOpen(true); };
-  const openEditEval = (ev: any) => { setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions); setEvalLessonId(ev.lesson_id || "none"); setEvalDialogOpen(true); };
+  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonIds([]); setEvalDialogOpen(true); };
+  const openEditEval = async (ev: any) => {
+    setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions);
+    const { data } = await supabase.from("evaluation_lessons").select("lesson_id").eq("evaluation_id", ev.id);
+    const ids = (data ?? []).map((r: any) => r.lesson_id);
+    setEvalLessonIds(ids.length > 0 ? ids : (ev.lesson_id ? [ev.lesson_id] : []));
+    setEvalDialogOpen(true);
+  };
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
@@ -508,8 +527,29 @@ export default function CourseDetail() {
 
   const totalLessons = modules.reduce((s: number, m: any) => s + (m.lessons?.length || 0), 0);
   const allLessons = modules.flatMap((m: any) => (m.lessons || []).map((l: any) => ({ ...l, module_title: m.title })));
-  // Map of lesson_id -> evaluation attached to that lesson (first one if multiple)
+
+  // Fetch all lesson<->evaluation links for this course's evaluations
+  const { data: evalLessonLinks = [] } = useQuery({
+    queryKey: ["evaluation_lessons", courseId, evalIds.length],
+    queryFn: async () => {
+      if (evalIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("evaluation_lessons")
+        .select("evaluation_id, lesson_id")
+        .in("evaluation_id", evalIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: evalIds.length > 0,
+  });
+
+  // Map of lesson_id -> evaluation attached to that lesson (supports N:N via evaluation_lessons)
   const lessonQuizMap = new Map<string, any>();
+  for (const link of evalLessonLinks as any[]) {
+    const ev = (evaluations as any[]).find((e) => e.id === link.evaluation_id);
+    if (ev && !lessonQuizMap.has(link.lesson_id)) lessonQuizMap.set(link.lesson_id, ev);
+  }
+  // Backwards compatibility: legacy single lesson_id column
   for (const ev of evaluations as any[]) {
     if (ev.lesson_id && !lessonQuizMap.has(ev.lesson_id)) lessonQuizMap.set(ev.lesson_id, ev);
   }
@@ -1096,20 +1136,32 @@ export default function CourseDetail() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Vincular a uma aula (opcional)</Label>
-              <Select value={evalLessonId} onValueChange={setEvalLessonId}>
-                <SelectTrigger><SelectValue placeholder="Quiz de curso (não atrelado)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Nenhuma (avaliação geral do curso) —</SelectItem>
-                  {allLessons.map((l: any) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.module_title} → {l.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Vincular a aulas (opcional, múltiplas)</Label>
+              <div className="max-h-52 overflow-y-auto rounded-md border border-border divide-y divide-border">
+                {allLessons.length === 0 && (
+                  <p className="text-xs text-muted-foreground p-3">Nenhuma aula cadastrada neste curso.</p>
+                )}
+                {allLessons.map((l: any) => {
+                  const checked = evalLessonIds.includes(l.id);
+                  return (
+                    <label key={l.id} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-muted/40">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(v) => {
+                          setEvalLessonIds((prev) =>
+                            v ? Array.from(new Set([...prev, l.id])) : prev.filter((id) => id !== l.id)
+                          );
+                        }}
+                      />
+                      <span className="text-card-foreground">
+                        <span className="text-muted-foreground">{l.module_title} →</span> {l.title}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Se vinculada, o quiz aparece sob a aula e abre automaticamente quando o aluno marca a aula como concluída.
+                Selecione uma ou mais aulas. O quiz aparecerá em todas elas e abrirá automaticamente quando o aluno concluir qualquer uma das aulas vinculadas.
               </p>
             </div>
           </div>
