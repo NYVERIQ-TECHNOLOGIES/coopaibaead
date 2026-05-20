@@ -32,6 +32,7 @@ interface Course {
   promotional_price: number | null;
   standalone_access_days: number | null;
   premium_enabled: boolean;
+  progressive_unlock?: boolean;
   created_at: string;
 }
 
@@ -47,6 +48,7 @@ const emptyForm = {
   promotional_price: "" as string,
   standalone_access_days: "" as string,
   premium_enabled: true,
+  progressive_unlock: false,
 };
 
 export default function Courses() {
