@@ -1125,7 +1125,7 @@ export default function CourseDetail() {
       </Dialog>
 
       <Dialog open={evalDialogOpen} onOpenChange={setEvalDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editEvalId ? "Editar Avaliação" : "Nova Avaliação"}</DialogTitle>
             <DialogDescription>Vincule uma avaliação a este curso</DialogDescription>
