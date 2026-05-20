@@ -560,6 +560,9 @@ export default function CourseDetail() {
   }
   const publishedEvals = evaluations.filter((e: any) => e.status === "publicada");
 
+  // Intro modules don't have evaluations/activities
+  const isIntroModule = (m: any) => /\bintrodu|^intro\b/i.test((m?.title || "").trim());
+
   // ---- Progressive unlock helpers ----
   const progressiveUnlock = !!(course as any)?.progressive_unlock;
   const orderedLessons: any[] = modules.flatMap((m: any) => m.lessons || []);
@@ -1021,6 +1024,7 @@ export default function CourseDetail() {
               return (
                 <div>
                   {modules.map((m: any) => {
+                    if (isIntroModule(m)) return null;
                     const list = evalsByModule.get(m.id) || [];
                     if (!isAdmin && list.length === 0) return null;
                     return (
@@ -1241,7 +1245,7 @@ export default function CourseDetail() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__final__">Avaliação Final do Curso</SelectItem>
-                  {modules.map((m: any) => (
+                  {modules.filter((m: any) => !isIntroModule(m)).map((m: any) => (
                     <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
                   ))}
                 </SelectContent>
