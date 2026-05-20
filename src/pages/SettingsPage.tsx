@@ -101,6 +101,35 @@ export default function SettingsPage() {
   const [notifCourse, setNotifCourse] = useState(true);
   const [notifCert, setNotifCert] = useState(true);
 
+  const [welcomeVideoUrl, setWelcomeVideoUrl] = useState("");
+  const [savingWelcome, setSavingWelcome] = useState(false);
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.from("app_settings").select("value").eq("key", "dashboard_welcome_video").maybeSingle()
+      .then(({ data }) => {
+        const v = (data?.value as any)?.url || "";
+        setWelcomeVideoUrl(v);
+      });
+  }, [isAdmin]);
+  const saveWelcomeVideo = async () => {
+    setSavingWelcome(true);
+    const { error } = await supabase.from("app_settings").upsert({
+      key: "dashboard_welcome_video",
+      value: { url: welcomeVideoUrl.trim() } as any,
+      updated_by: user?.id,
+    });
+    setSavingWelcome(false);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Vídeo de boas-vindas atualizado" });
+    }
+  };
+  const resetWelcomeSeen = () => {
+    try { localStorage.removeItem("intro_seen_dashboard_v1"); } catch {}
+    toast({ title: "Pronto", description: "O vídeo será exibido novamente no próximo acesso ao dashboard." });
+  };
+
   // Load existing CPF from DB and lock the field if already set
   useEffect(() => {
     if (!user) return;
