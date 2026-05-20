@@ -979,6 +979,8 @@ export default function CourseDetail() {
                           <Badge className="bg-success/10 text-success gap-1">
                             <CheckCircle className="w-3.5 h-3.5" /> Concluído
                           </Badge>
+                        ) : progLocked ? (
+                          <Badge variant="outline" className="gap-1 text-muted-foreground"><Lock className="w-3.5 h-3.5" /> Bloqueada</Badge>
                         ) : (
                           <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1" disabled={finalLockedOut} title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}>
                             <ListChecks className="w-3.5 h-3.5" />
