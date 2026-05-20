@@ -1021,6 +1021,7 @@ export default function CourseDetail() {
               return (
                 <div>
                   {modules.map((m: any) => {
+                    if (isIntroModule(m)) return null;
                     const list = evalsByModule.get(m.id) || [];
                     if (!isAdmin && list.length === 0) return null;
                     return (
