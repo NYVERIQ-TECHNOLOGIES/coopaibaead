@@ -879,14 +879,14 @@ export default function CourseDetail() {
         {expandedSections.evaluations && (
           <div className="border-t border-border">
             {isAdmin && (
-              <div className="p-3 border-b border-border bg-muted/10">
-                <Button size="sm" onClick={openNewEval} className="gradient-primary text-primary-foreground gap-1">
-                  <Plus className="w-3 h-3" /> Nova Avaliação
+              <div className="p-3 border-b border-border bg-muted/10 flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => openNewEval(null)} className="gradient-primary text-primary-foreground gap-1">
+                  <Plus className="w-3 h-3" /> Nova Avaliação Final
                 </Button>
               </div>
             )}
-            <div className="divide-y divide-border">
-              {evaluations.map((ev: any) => {
+            {(() => {
+              const renderEvalRow = (ev: any) => {
                 const userAttempts = (myAttempts as any[]).filter((a) => a.evaluation_id === ev.id);
                 const userBest = bestScoreByEval.get(ev.id) ?? 0;
                 const userPassed = passedEvalIds.has(ev.id);
@@ -917,9 +917,7 @@ export default function CourseDetail() {
                             )
                           )}
                           {!isAdmin && isFinal && !userPassed && (
-                            <span className="text-[10px] text-muted-foreground">
-                              Tentativas: {attemptsUsed}/3
-                            </span>
+                            <span className="text-[10px] text-muted-foreground">Tentativas: {attemptsUsed}/3</span>
                           )}
                         </div>
                       </div>
@@ -942,13 +940,7 @@ export default function CourseDetail() {
                             <CheckCircle className="w-3.5 h-3.5" /> Concluído
                           </Badge>
                         ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => startExam(ev)}
-                            className="gradient-primary text-primary-foreground gap-1"
-                            disabled={finalLockedOut}
-                            title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}
-                          >
+                          <Button size="sm" onClick={() => startExam(ev)} className="gradient-primary text-primary-foreground gap-1" disabled={finalLockedOut} title={finalLockedOut ? "Tentativas esgotadas — reinicie o curso" : ""}>
                             <ListChecks className="w-3.5 h-3.5" />
                             {attemptsUsed > 0 ? "Refazer" : "Responder"}
                           </Button>
@@ -957,11 +949,61 @@ export default function CourseDetail() {
                     )}
                   </div>
                 );
-              })}
-              {evaluations.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação vinculada</p>
-              )}
-            </div>
+              };
+
+              const evalsByModule = new Map<string, any[]>();
+              const finalEvals: any[] = [];
+              for (const ev of evaluations as any[]) {
+                if (ev.module_id) {
+                  const arr = evalsByModule.get(ev.module_id) || [];
+                  arr.push(ev);
+                  evalsByModule.set(ev.module_id, arr);
+                } else {
+                  finalEvals.push(ev);
+                }
+              }
+
+              return (
+                <div>
+                  {modules.map((m: any) => {
+                    const list = evalsByModule.get(m.id) || [];
+                    if (!isAdmin && list.length === 0) return null;
+                    return (
+                      <div key={m.id} className="border-b border-border">
+                        <div className="px-4 py-2 bg-muted/20 flex items-center justify-between">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{m.title}</p>
+                          {isAdmin && (
+                            <Button size="sm" variant="ghost" className="h-7 gap-1 text-xs" onClick={() => openNewEval(m.id)}>
+                              <Plus className="w-3 h-3" /> Adicionar
+                            </Button>
+                          )}
+                        </div>
+                        <div className="divide-y divide-border">
+                          {list.length === 0 ? (
+                            <p className="text-xs text-muted-foreground text-center py-4">Nenhuma avaliação neste módulo</p>
+                          ) : list.map(renderEvalRow)}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div>
+                    <div className="px-4 py-2 bg-accent/10 flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-accent">Avaliação Final do Curso</p>
+                    </div>
+                    <div className="divide-y divide-border">
+                      {finalEvals.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-4">Nenhuma avaliação final cadastrada</p>
+                      ) : finalEvals.map(renderEvalRow)}
+                    </div>
+                  </div>
+
+                  {evaluations.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-6">Nenhuma avaliação vinculada</p>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
