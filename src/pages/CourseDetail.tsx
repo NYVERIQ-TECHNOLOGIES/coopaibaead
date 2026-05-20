@@ -346,12 +346,13 @@ export default function CourseDetail() {
   const saveEvalMut = useMutation({
     mutationFn: async () => {
       const primaryLessonId = evalLessonIds[0] ?? null;
+      const payload = { title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId, module_id: evalModuleId };
       let evaluationId = editEvalId;
       if (editEvalId) {
-        const { error } = await supabase.from("course_evaluations").update({ title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).eq("id", editEvalId);
+        const { error } = await supabase.from("course_evaluations").update(payload).eq("id", editEvalId);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, title: evalTitle, type: evalType, duration: evalDuration, questions: evalQuestions, lesson_id: primaryLessonId }).select("id").single();
+        const { data, error } = await supabase.from("course_evaluations").insert({ course_id: courseId!, ...payload }).select("id").single();
         if (error) throw error;
         evaluationId = data.id;
       }
