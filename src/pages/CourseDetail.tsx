@@ -459,9 +459,10 @@ export default function CourseDetail() {
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
   const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonDialogOpen(true); };
   const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonDialogOpen(true); };
-  const openNewEval = () => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonIds([]); setEvalDialogOpen(true); };
+  const openNewEval = (moduleId: string | null = null) => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonIds([]); setEvalModuleId(moduleId); setEvalDialogOpen(true); };
   const openEditEval = async (ev: any) => {
     setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions);
+    setEvalModuleId(ev.module_id ?? null);
     const { data } = await supabase.from("evaluation_lessons").select("lesson_id").eq("evaluation_id", ev.id);
     const ids = (data ?? []).map((r: any) => r.lesson_id);
     setEvalLessonIds(ids.length > 0 ? ids : (ev.lesson_id ? [ev.lesson_id] : []));
