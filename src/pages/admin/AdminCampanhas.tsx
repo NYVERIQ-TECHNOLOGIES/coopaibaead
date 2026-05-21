@@ -10,11 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Sparkles, ExternalLink } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, Archive, ArchiveRestore } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminCampanhas() {
   const [list, setList] = useState<any[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({
@@ -85,11 +86,17 @@ export default function AdminCampanhas() {
             <p className="text-sm text-muted-foreground">Campanhas, vagas e inscritos</p>
           </div>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Nova Campanha</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowArchived((v) => !v)}>
+            {showArchived ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
+            {showArchived ? "Ver ativas" : "Ver arquivadas"}
+          </Button>
+          <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Nova Campanha</Button>
+        </div>
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Campanhas</CardTitle></CardHeader>
+        <CardHeader><CardTitle>{showArchived ? "Campanhas arquivadas" : "Campanhas"}</CardTitle></CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
@@ -102,7 +109,7 @@ export default function AdminCampanhas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {list.map((c) => (
+              {list.filter((c) => showArchived ? c.status === "arquivada" : c.status !== "arquivada").map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-sm">
@@ -118,12 +125,16 @@ export default function AdminCampanhas() {
                     <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>Editar</Button>
                     {c.status === "ativa" && <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "encerrada")}>Encerrar</Button>}
                     {c.status === "encerrada" && <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "ativa")}>Reabrir</Button>}
-                    {c.status !== "arquivada" && <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "arquivada")}>Arquivar</Button>}
+                    {c.status === "arquivada"
+                      ? <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "encerrada")}>Desarquivar</Button>
+                      : <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "arquivada")}>Arquivar</Button>}
                   </TableCell>
                 </TableRow>
               ))}
-              {list.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhuma campanha</TableCell></TableRow>
+              {list.filter((c) => showArchived ? c.status === "arquivada" : c.status !== "arquivada").length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  {showArchived ? "Nenhuma campanha arquivada" : "Nenhuma campanha"}
+                </TableCell></TableRow>
               )}
             </TableBody>
           </Table>
