@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Award, Search, CheckCircle, Clock, Upload, ToggleLeft, ToggleRight, FileImage, Trash2, Download, Loader2, Plus } from "lucide-react";
-import { useState, useRef } from "react";
+import { Award, Search, CheckCircle, Clock, Upload, ToggleLeft, ToggleRight, FileImage, Trash2, Download, Loader2, Plus, Printer, RefreshCw, XCircle, ClipboardCheck, Settings, MoreHorizontal, Filter, X } from "lucide-react";
+import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Link } from "react-router-dom";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
 } from "@/components/ui/dialog";
@@ -18,13 +20,25 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SignedImage from "@/components/SignedImage";
+import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
+import { CERT_STATUS_LABEL, CERT_STATUS_STYLE } from "@/lib/certificates";
+
+type Cert = any;
 
 export default function Certificates() {
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("todos");
+  const [filterCourse, setFilterCourse] = useState<string>("todos");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const { role, user } = useAuth();
   const isAdmin = role === "admin";
+  const isStaff = isAdmin || role === "moderador";
   const { toast } = useToast();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -35,37 +49,36 @@ export default function Certificates() {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
 
-  // Certificates - alunos veem apenas os próprios emitidos; admins veem todos
+  // Pickup / cancel state
+  const [pickupCert, setPickupCert] = useState<Cert | null>(null);
+  const [cancelCert, setCancelCert] = useState<Cert | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
   const { data: certificates = [], isLoading } = useQuery({
     queryKey: ["certificates", isAdmin, user?.id],
     queryFn: async () => {
       let query = supabase
         .from("certificates")
-        .select("*, courses(title), profiles!certificates_user_id_fkey(full_name)")
+        .select("*, courses(title), profiles!certificates_user_id_fkey(full_name, cpf)")
         .order("created_at", { ascending: false });
-      if (!isAdmin && user) {
+      if (!isStaff && user) {
         query = query.eq("user_id", user.id).in("status", ["disponivel_retirada", "emitido", "retirado", "pendente"]);
       }
       const { data } = await query;
       return data ?? [];
     },
-    enabled: isAdmin || !!user,
+    enabled: isStaff || !!user,
   });
 
-  // Templates
   const { data: templates = [] } = useQuery({
     queryKey: ["certificate-templates"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("certificate_templates")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data } = await supabase.from("certificate_templates").select("*").order("created_at", { ascending: false });
       return data ?? [];
     },
     enabled: isAdmin,
   });
 
-  // Students list for generation
   const { data: students = [] } = useQuery({
     queryKey: ["students-for-cert"],
     queryFn: async () => {
@@ -75,7 +88,6 @@ export default function Certificates() {
     enabled: isAdmin,
   });
 
-  // Courses list for generation
   const { data: courses = [] } = useQuery({
     queryKey: ["courses-for-cert"],
     queryFn: async () => {
@@ -93,17 +105,13 @@ export default function Certificates() {
       const { error: upErr } = await supabase.storage.from("media").upload(path, templateFile);
       if (upErr) throw upErr;
       const { error } = await supabase.from("certificate_templates").insert({
-        name: templateName.trim(),
-        file_url: path,
-        uploaded_by: user?.id,
+        name: templateName.trim(), file_url: path, uploaded_by: user?.id,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["certificate-templates"] });
-      setUploadOpen(false);
-      setTemplateName("");
-      setTemplateFile(null);
+      setUploadOpen(false); setTemplateName(""); setTemplateFile(null);
       toast({ title: "Modelo enviado com sucesso!" });
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
@@ -128,52 +136,126 @@ export default function Certificates() {
     },
   });
 
+  const callGenerate = async (payload: any) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-certificate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || "Erro ao gerar certificado");
+    return json;
+  };
+
   const generateCert = useMutation({
     mutationFn: async () => {
       if (!selectedStudent || !selectedCourse) throw new Error("Selecione aluno e curso");
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-certificate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({ user_id: selectedStudent, course_id: selectedCourse }),
-        }
-      );
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Erro ao gerar certificado");
-      return json;
+      return callGenerate({ user_id: selectedStudent, course_id: selectedCourse });
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["certificates"] });
-      setGenerateOpen(false);
-      setSelectedStudent("");
-      setSelectedCourse("");
+      setGenerateOpen(false); setSelectedStudent(""); setSelectedCourse("");
       toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code} — disponível para retirada presencial.` });
-      // Admin pode abrir o PDF para impressão; alunos nunca recebem URL.
       if (isAdmin && data.pdf_url) window.open(data.pdf_url, "_blank");
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
-  const emitted = certificates.filter(c => c.status === "emitido").length;
-  const pending = certificates.filter(c => c.status === "pendente").length;
-
-  const filtered = certificates.filter((c) => {
-    const name = (c as any).profiles?.full_name ?? "";
-    const course = (c as any).courses?.title ?? "";
-    return name.toLowerCase().includes(search.toLowerCase()) || course.toLowerCase().includes(search.toLowerCase());
+  const reissueCert = useMutation({
+    mutationFn: async (cert: Cert) => {
+      // Cancel current
+      const { error: cErr } = await supabase.rpc("cancel_certificate", {
+        _certificate_id: cert.id,
+        _reason: "Reemissão — substituído por novo certificado",
+      });
+      if (cErr) throw cErr;
+      return callGenerate({ user_id: cert.user_id, course_id: cert.course_id, reissue_of: cert.id });
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["certificates"] });
+      toast({ title: "Certificado reemitido", description: `Novo código: ${data.certificate.code}` });
+      if (data.pdf_url) window.open(data.pdf_url, "_blank");
+    },
+    onError: (e: any) => toast({ title: "Erro ao reemitir", description: e.message, variant: "destructive" }),
   });
+
+  const cancelCertMut = useMutation({
+    mutationFn: async () => {
+      if (!cancelCert) return;
+      if (!cancelReason.trim()) throw new Error("Informe o motivo do cancelamento");
+      const { error } = await supabase.rpc("cancel_certificate", {
+        _certificate_id: cancelCert.id, _reason: cancelReason.trim(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["certificates"] });
+      setCancelCert(null); setCancelReason("");
+      toast({ title: "Certificado cancelado" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+  const printCert = async (cert: Cert) => {
+    if (!cert.pdf_path) {
+      toast({ title: "PDF indisponível", description: "Este certificado não possui PDF arquivado.", variant: "destructive" });
+      return;
+    }
+    const { data, error } = await supabase.storage.from("media").createSignedUrl(cert.pdf_path, 300);
+    if (error || !data?.signedUrl) {
+      toast({ title: "Erro ao gerar link", variant: "destructive" });
+      return;
+    }
+    window.open(data.signedUrl, "_blank");
+  };
+
+  const emitted = certificates.filter((c) => c.status === "emitido" || c.status === "disponivel_retirada").length;
+  const pending = certificates.filter((c) => c.status === "pendente").length;
+  const retirados = certificates.filter((c) => c.status === "retirado").length;
+
+  const filtered = useMemo(() => {
+    return certificates.filter((c) => {
+      const name = (c as any).profiles?.full_name ?? c.student_name_snapshot ?? "";
+      const cpf = (c as any).profiles?.cpf ?? c.student_cpf_snapshot ?? "";
+      const course = (c as any).courses?.title ?? c.course_title_snapshot ?? "";
+      const q = search.trim().toLowerCase();
+      if (q) {
+        const cpfDigits = cpf.replace(/\D/g, "");
+        const qDigits = q.replace(/\D/g, "");
+        const matches =
+          name.toLowerCase().includes(q) ||
+          course.toLowerCase().includes(q) ||
+          c.code.toLowerCase().includes(q) ||
+          (qDigits && cpfDigits.includes(qDigits));
+        if (!matches) return false;
+      }
+      if (filterStatus !== "todos" && c.status !== filterStatus) return false;
+      if (filterCourse !== "todos" && c.course_id !== filterCourse) return false;
+      if (filterDateFrom) {
+        const ref = new Date(c.issued_at || c.created_at);
+        if (ref < new Date(filterDateFrom)) return false;
+      }
+      if (filterDateTo) {
+        const ref = new Date(c.issued_at || c.created_at);
+        const end = new Date(filterDateTo); end.setHours(23, 59, 59, 999);
+        if (ref > end) return false;
+      }
+      return true;
+    });
+  }, [certificates, search, filterStatus, filterCourse, filterDateFrom, filterDateTo]);
+
+  const clearFilters = () => {
+    setSearch(""); setFilterStatus("todos"); setFilterCourse("todos");
+    setFilterDateFrom(""); setFilterDateTo("");
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Certificados</h1>
-          <p className="text-muted-foreground mt-1">Gerencie certificados e modelos</p>
+          <p className="text-muted-foreground mt-1">Gerencie certificados, modelos e retirada presencial</p>
         </div>
         {isAdmin && (
           <div className="flex gap-2 flex-wrap">
@@ -183,15 +265,19 @@ export default function Certificates() {
             <Button variant="outline" onClick={() => setUploadOpen(true)} className="gap-2">
               <Upload className="w-4 h-4" /> Enviar Modelo
             </Button>
+            <Button asChild variant="outline" className="gap-2">
+              <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
+            </Button>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: "Total", value: certificates.length, icon: Award, gradient: "gradient-primary" },
-          { label: "Emitidos", value: emitted, icon: CheckCircle, gradient: "gradient-secondary" },
-          { label: "Pendentes", value: pending, icon: Clock, gradient: "gradient-accent" },
+          { label: "Disponíveis", value: emitted, icon: CheckCircle, gradient: "gradient-secondary" },
+          { label: "Retirados", value: retirados, icon: ClipboardCheck, gradient: "bg-success" },
+          { label: "Em processamento", value: pending, icon: Clock, gradient: "gradient-accent" },
         ].map((stat) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-xl p-4 shadow-card border border-border flex items-center gap-4">
@@ -213,8 +299,25 @@ export default function Certificates() {
             <TabsTrigger value="templates">Modelos ({templates.length})</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="certificates">
-            <CertificatesTable search={search} setSearch={setSearch} filtered={filtered} isLoading={isLoading} />
+          <TabsContent value="certificates" className="space-y-4">
+            <AdminFilters
+              search={search} setSearch={setSearch}
+              filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+              filterCourse={filterCourse} setFilterCourse={setFilterCourse}
+              filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
+              filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
+              clearFilters={clearFilters} courses={courses}
+            />
+            <CertificatesTable
+              filtered={filtered}
+              isLoading={isLoading}
+              isStaff={isStaff}
+              isAdmin={isAdmin}
+              onPickup={(c) => setPickupCert(c)}
+              onPrint={printCert}
+              onReissue={(c) => reissueCert.mutate(c)}
+              onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
+            />
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-4">
@@ -243,9 +346,7 @@ export default function Certificates() {
                           {tpl.active ? "Ativo" : "Inativo"}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Enviado em {new Date(tpl.created_at).toLocaleDateString("pt-BR")}
-                      </p>
+                      <p className="text-xs text-muted-foreground">Enviado em {new Date(tpl.created_at).toLocaleDateString("pt-BR")}</p>
                       <div className="flex gap-2">
                         <Button size="sm" variant={tpl.active ? "outline" : "default"} className="flex-1 gap-1"
                           onClick={() => toggleActive.mutate({ id: tpl.id, active: !tpl.active })}>
@@ -254,9 +355,7 @@ export default function Certificates() {
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="destructive" className="gap-1">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <Button size="sm" variant="destructive" className="gap-1"><Trash2 className="w-4 h-4" /></Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
@@ -278,7 +377,12 @@ export default function Certificates() {
           </TabsContent>
         </Tabs>
       ) : (
-        <CertificatesTable search={search} setSearch={setSearch} filtered={filtered} isLoading={isLoading} />
+        <CertificatesTable
+          filtered={filtered.filter(() => true)}
+          isLoading={isLoading}
+          isStaff={isStaff}
+          isAdmin={false}
+        />
       )}
 
       {/* Upload template dialog */}
@@ -325,9 +429,7 @@ export default function Certificates() {
               <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                 <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
                 <SelectContent>
-                  {students.map((s) => (
-                    <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || "Sem nome"}</SelectItem>
-                  ))}
+                  {students.map((s) => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || "Sem nome"}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -336,9 +438,7 @@ export default function Certificates() {
               <Select value={selectedCourse} onValueChange={setSelectedCourse}>
                 <SelectTrigger><SelectValue placeholder="Selecione o curso" /></SelectTrigger>
                 <SelectContent>
-                  {courses.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
-                  ))}
+                  {courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -346,89 +446,283 @@ export default function Certificates() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setGenerateOpen(false)}>Cancelar</Button>
             <Button onClick={() => generateCert.mutate()} disabled={generateCert.isPending || !selectedStudent || !selectedCourse}>
-              {generateCert.isPending ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>
-              ) : (
-                <><Download className="w-4 h-4 mr-2" /> Gerar PDF</>
-              )}
+              {generateCert.isPending ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>) : (<><Download className="w-4 h-4 mr-2" /> Gerar PDF</>)}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pickup dialog */}
+      <PickupDialog
+        cert={pickupCert}
+        onClose={() => setPickupCert(null)}
+        onSuccess={() => {
+          qc.invalidateQueries({ queryKey: ["certificates"] });
+          setPickupCert(null);
+        }}
+      />
+
+      {/* Cancel dialog */}
+      <AlertDialog open={!!cancelCert} onOpenChange={(open) => !open && setCancelCert(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar certificado {cancelCert?.code}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação marca o certificado como cancelado. O cooperado verá o status atualizado imediatamente.
+              Informe o motivo abaixo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Label>Motivo do cancelamento</Label>
+            <Textarea value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex.: dados incorretos, duplicidade…" rows={3} maxLength={500} />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); cancelCertMut.mutate(); }}
+              disabled={cancelCertMut.isPending || !cancelReason.trim()}
+            >
+              {cancelCertMut.isPending ? "Cancelando…" : "Cancelar certificado"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
-function CertificatesTable({ search, setSearch, filtered, isLoading }: {
-  search: string; setSearch: (v: string) => void; filtered: any[]; isLoading: boolean;
+function AdminFilters(props: {
+  search: string; setSearch: (v: string) => void;
+  filterStatus: string; setFilterStatus: (v: string) => void;
+  filterCourse: string; setFilterCourse: (v: string) => void;
+  filterDateFrom: string; setFilterDateFrom: (v: string) => void;
+  filterDateTo: string; setFilterDateTo: (v: string) => void;
+  clearFilters: () => void;
+  courses: { id: string; title: string }[];
 }) {
+  const hasFilters = props.search || props.filterStatus !== "todos" || props.filterCourse !== "todos" || props.filterDateFrom || props.filterDateTo;
   return (
-    <div className="space-y-4">
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input type="text" placeholder="Buscar certificados..." value={search} onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+    <div className="bg-card rounded-xl border border-border p-4 space-y-3">
+      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+        <Filter className="w-4 h-4" /> Filtros
+        {hasFilters && (
+          <Button size="sm" variant="ghost" className="ml-auto gap-1 h-7" onClick={props.clearFilters}>
+            <X className="w-3.5 h-3.5" /> Limpar
+          </Button>
+        )}
       </div>
-      {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">Carregando...</div>
-      ) : (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Código</th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Aluno</th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Data</th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
-                  <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
-                  <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
-                ) : filtered.map((cert, i) => {
-                  const labels: Record<string, string> = {
-                    pendente: "Em processamento",
-                    emitido: "Disponível para retirada",
-                    disponivel_retirada: "Disponível para retirada",
-                    retirado: "Retirado",
-                    cancelado: "Cancelado",
-                  };
-                  const styles: Record<string, string> = {
-                    pendente: "text-warning",
-                    emitido: "text-primary",
-                    disponivel_retirada: "text-primary",
-                    retirado: "text-success",
-                    cancelado: "text-destructive",
-                  };
-                  return (
-                    <motion.tr key={cert.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                      className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                      <td className="py-3 px-4 text-sm font-mono text-primary font-medium">{cert.code}</td>
-                      <td className="py-3 px-4 text-sm text-card-foreground">{cert.profiles?.full_name ?? "—"}</td>
-                      <td className="py-3 px-4 text-sm text-card-foreground">{cert.courses?.title ?? "—"}</td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">{new Date(cert.created_at).toLocaleDateString("pt-BR")}</td>
-                      <td className="py-3 px-4">
-                        <span className={`text-xs font-medium ${styles[cert.status] || "text-muted-foreground"}`}>
-                          {labels[cert.status] || cert.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <a href={`/certificates/${cert.code}/retirada`} className="text-xs text-primary hover:underline">
-                          Informações para retirada
-                        </a>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
-      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="lg:col-span-2 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input value={props.search} onChange={(e) => props.setSearch(e.target.value)}
+            placeholder="Nome, CPF, curso ou código…" className="pl-9" />
+        </div>
+        <Select value={props.filterStatus} onValueChange={props.setFilterStatus}>
+          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os status</SelectItem>
+            <SelectItem value="pendente">Em processamento</SelectItem>
+            <SelectItem value="disponivel_retirada">Disponível para retirada</SelectItem>
+            <SelectItem value="retirado">Retirado</SelectItem>
+            <SelectItem value="cancelado">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={props.filterCourse} onValueChange={props.setFilterCourse}>
+          <SelectTrigger><SelectValue placeholder="Curso" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os cursos</SelectItem>
+            {props.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2">
+          <Input type="date" value={props.filterDateFrom} onChange={(e) => props.setFilterDateFrom(e.target.value)} />
+          <Input type="date" value={props.filterDateTo} onChange={(e) => props.setFilterDateTo(e.target.value)} />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function CertificatesTable({
+  filtered, isLoading, isStaff, isAdmin,
+  onPickup, onPrint, onReissue, onCancel,
+}: {
+  filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
+  onPickup?: (c: any) => void; onPrint?: (c: any) => void;
+  onReissue?: (c: any) => void; onCancel?: (c: any) => void;
+}) {
+  if (isLoading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border bg-muted/30">
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Código</th>
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Cooperado</th>
+              {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">CPF</th>}
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Data</th>
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
+              <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={isStaff ? 7 : 6} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+            ) : filtered.map((cert, i) => {
+              const name = cert.profiles?.full_name ?? cert.student_name_snapshot ?? "—";
+              const cpf = cert.profiles?.cpf ?? cert.student_cpf_snapshot ?? "—";
+              return (
+                <motion.tr key={cert.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+                  className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="py-3 px-4 text-sm font-mono text-primary font-medium">{cert.code}</td>
+                  <td className="py-3 px-4 text-sm text-card-foreground">{name}</td>
+                  {isStaff && <td className="py-3 px-4 text-xs text-muted-foreground font-mono">{cpf}</td>}
+                  <td className="py-3 px-4 text-sm text-card-foreground">{cert.courses?.title ?? cert.course_title_snapshot ?? "—"}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground">{new Date(cert.issued_at || cert.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td className="py-3 px-4">
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${CERT_STATUS_STYLE[cert.status] || "text-muted-foreground"}`}>
+                      {CERT_STATUS_LABEL[cert.status] || cert.status}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    {isAdmin ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="w-4 h-4" /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/certificates/${cert.code}/retirada`}>Ver informações</Link>
+                          </DropdownMenuItem>
+                          {cert.status === "disponivel_retirada" && (
+                            <DropdownMenuItem onClick={() => onPickup?.(cert)} className="gap-2">
+                              <ClipboardCheck className="w-4 h-4" /> Registrar retirada
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem onClick={() => onPrint?.(cert)} className="gap-2" disabled={!cert.pdf_path}>
+                            <Printer className="w-4 h-4" /> Imprimir PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {cert.status !== "cancelado" && (
+                            <DropdownMenuItem onClick={() => onReissue?.(cert)} className="gap-2">
+                              <RefreshCw className="w-4 h-4" /> Reemitir
+                            </DropdownMenuItem>
+                          )}
+                          {cert.status !== "cancelado" && cert.status !== "retirado" && (
+                            <DropdownMenuItem onClick={() => onCancel?.(cert)} className="gap-2 text-destructive focus:text-destructive">
+                              <XCircle className="w-4 h-4" /> Cancelar
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <Link to={`/certificates/${cert.code}/retirada`} className="text-xs text-primary hover:underline">
+                        Informações para retirada
+                      </Link>
+                    )}
+                  </td>
+                </motion.tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </motion.div>
+  );
+}
+
+function PickupDialog({ cert, onClose, onSuccess }: { cert: any | null; onClose: () => void; onSuccess: () => void }) {
+  const { toast } = useToast();
+  const sigRef = useRef<SignaturePadHandle>(null);
+  const [attendant, setAttendant] = useState("");
+  const [doc, setDoc] = useState("");
+  const [obs, setObs] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Reset when opening
+  useMemo(() => {
+    if (cert) { setAttendant(""); setDoc(""); setObs(""); setTimeout(() => sigRef.current?.clear(), 50); }
+  }, [cert?.id]);
+
+  const submit = async () => {
+    if (!cert) return;
+    if (attendant.trim().length < 2) return toast({ title: "Informe o nome do atendente", variant: "destructive" });
+    if (doc.trim().length < 2) return toast({ title: "Informe o documento apresentado", variant: "destructive" });
+    if (sigRef.current?.isEmpty()) return toast({ title: "Capture a assinatura do cooperado", variant: "destructive" });
+
+    setSubmitting(true);
+    try {
+      const dataUrl = sigRef.current!.toDataURL();
+      const bytes = Uint8Array.from(atob(dataUrl.split(",")[1]), (c) => c.charCodeAt(0));
+      const path = `certificate-pickups/${cert.code}-${Date.now()}.png`;
+      const { error: upErr } = await supabase.storage.from("media").upload(path, bytes, { contentType: "image/png", upsert: true });
+      if (upErr) throw upErr;
+
+      const { error } = await supabase.rpc("register_certificate_pickup", {
+        _certificate_id: cert.id,
+        _attendant_name: attendant.trim(),
+        _document_presented: doc.trim(),
+        _observations: obs.trim() || null,
+        _signature_url: path,
+      });
+      if (error) throw error;
+      toast({ title: "Retirada registrada com sucesso" });
+      onSuccess();
+    } catch (e: any) {
+      toast({ title: "Erro ao registrar retirada", description: e.message, variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!cert} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Registrar retirada presencial</DialogTitle>
+          <DialogDescription>
+            Confirme a identidade do cooperado e capture a assinatura no comprovante de retirada.
+          </DialogDescription>
+        </DialogHeader>
+        {cert && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-muted/30 p-3 text-sm space-y-1">
+              <p><span className="text-muted-foreground">Certificado:</span> <span className="font-mono">{cert.code}</span></p>
+              <p><span className="text-muted-foreground">Cooperado:</span> {cert.profiles?.full_name ?? cert.student_name_snapshot ?? "—"}</p>
+              <p><span className="text-muted-foreground">CPF:</span> {cert.profiles?.cpf ?? cert.student_cpf_snapshot ?? "—"}</p>
+              <p><span className="text-muted-foreground">Curso:</span> {cert.courses?.title ?? cert.course_title_snapshot ?? "—"}</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Nome do atendente</Label>
+                <Input value={attendant} onChange={(e) => setAttendant(e.target.value)} maxLength={120} placeholder="Quem está entregando" />
+              </div>
+              <div>
+                <Label>Documento apresentado</Label>
+                <Input value={doc} onChange={(e) => setDoc(e.target.value)} maxLength={120} placeholder="Ex.: RG 12.345.678-9" />
+              </div>
+            </div>
+            <div>
+              <Label>Observações (opcional)</Label>
+              <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} maxLength={500} />
+            </div>
+            <div>
+              <Label>Assinatura do cooperado</Label>
+              <SignaturePad ref={sigRef} />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
+          <Button onClick={submit} disabled={submitting} className="gap-2">
+            {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Registrando…</> : <><ClipboardCheck className="w-4 h-4" /> Confirmar retirada</>}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
