@@ -55,6 +55,9 @@ const statusVariant = (s: string): "default" | "secondary" | "destructive" | "ou
 };
 
 export default function AdminSubscriptions() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "subscriptions";
+  const [tab, setTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -62,6 +65,12 @@ export default function AdminSubscriptions() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [courses, setCourses] = useState<Record<string, Course>>({});
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && t !== tab) setTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {
