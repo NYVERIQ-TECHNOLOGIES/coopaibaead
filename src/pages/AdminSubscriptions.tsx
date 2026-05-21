@@ -221,11 +221,20 @@ export default function AdminSubscriptions() {
         />
       </div>
 
-      <Tabs defaultValue="subscriptions">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          setTab(v);
+          const next = new URLSearchParams(searchParams);
+          next.set("tab", v);
+          setSearchParams(next, { replace: true });
+        }}
+      >
         <TabsList>
           <TabsTrigger value="subscriptions">Assinaturas ({filteredSubs.length})</TabsTrigger>
           <TabsTrigger value="purchases">Pagamentos ({filteredPurchases.length})</TabsTrigger>
           <TabsTrigger value="cooperativas">Cooperativas ({coopBreakdown.length})</TabsTrigger>
+          <TabsTrigger value="plans">Planos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscriptions">
