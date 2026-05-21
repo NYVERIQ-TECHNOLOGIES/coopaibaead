@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const studentName = profile.full_name || "Aluno";
+    const studentName = sanitizeName(profile.full_name || "Aluno");
     const studentCpf = profile.cpf || null;
     const courseTitle = course.title;
     const courseDuration = course.duration || "—";
