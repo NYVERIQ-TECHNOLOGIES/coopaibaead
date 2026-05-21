@@ -349,6 +349,167 @@ export type Database = {
         }
         Relationships: []
       }
+      cooperados_eventuais_campanhas: {
+        Row: {
+          aprovacao_automatica: boolean
+          created_at: string
+          created_by: string | null
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          id: string
+          limite_vagas: number
+          manter_acesso_cursos: boolean
+          nome: string
+          status: string
+          updated_at: string
+          vagas_ocupadas: number
+        }
+        Insert: {
+          aprovacao_automatica?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_fim: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          limite_vagas: number
+          manter_acesso_cursos?: boolean
+          nome: string
+          status?: string
+          updated_at?: string
+          vagas_ocupadas?: number
+        }
+        Update: {
+          aprovacao_automatica?: boolean
+          created_at?: string
+          created_by?: string | null
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          limite_vagas?: number
+          manter_acesso_cursos?: boolean
+          nome?: string
+          status?: string
+          updated_at?: string
+          vagas_ocupadas?: number
+        }
+        Relationships: []
+      }
+      cooperados_eventuais_cursos: {
+        Row: {
+          campanha_id: string
+          created_at: string
+          curso_id: string
+          id: string
+        }
+        Insert: {
+          campanha_id: string
+          created_at?: string
+          curso_id: string
+          id?: string
+        }
+        Update: {
+          campanha_id?: string
+          created_at?: string
+          curso_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cooperados_eventuais_cursos_campanha_id_fkey"
+            columns: ["campanha_id"]
+            isOneToOne: false
+            referencedRelation: "cooperados_eventuais_campanhas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cooperados_eventuais_cursos_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cooperados_eventuais_inscricoes: {
+        Row: {
+          aprovado_por: string | null
+          campanha_id: string
+          cancelado_em: string | null
+          cancelado_por: string | null
+          cidade: string
+          cpf: string
+          created_at: string
+          data_aprovacao: string | null
+          data_inscricao: string
+          email: string
+          estado: string
+          id: string
+          motivo_cancelamento: string | null
+          nome_completo: string
+          protocolo: string
+          rg: string
+          status: string
+          telefone: string
+          updated_at: string
+          usuario_id: string | null
+        }
+        Insert: {
+          aprovado_por?: string | null
+          campanha_id: string
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          cidade: string
+          cpf: string
+          created_at?: string
+          data_aprovacao?: string | null
+          data_inscricao?: string
+          email: string
+          estado: string
+          id?: string
+          motivo_cancelamento?: string | null
+          nome_completo: string
+          protocolo: string
+          rg: string
+          status?: string
+          telefone: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Update: {
+          aprovado_por?: string | null
+          campanha_id?: string
+          cancelado_em?: string | null
+          cancelado_por?: string | null
+          cidade?: string
+          cpf?: string
+          created_at?: string
+          data_aprovacao?: string | null
+          data_inscricao?: string
+          email?: string
+          estado?: string
+          id?: string
+          motivo_cancelamento?: string | null
+          nome_completo?: string
+          protocolo?: string
+          rg?: string
+          status?: string
+          telefone?: string
+          updated_at?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cooperados_eventuais_inscricoes_campanha_id_fkey"
+            columns: ["campanha_id"]
+            isOneToOne: false
+            referencedRelation: "cooperados_eventuais_campanhas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cooperativas: {
         Row: {
           active: boolean
@@ -1649,6 +1810,10 @@ export type Database = {
         Args: { _certificate_id: string; _reason: string }
         Returns: undefined
       }
+      cancelar_inscricao_eventual: {
+        Args: { _id: string; _motivo: string }
+        Returns: undefined
+      }
       get_admin_reports: { Args: never; Returns: Json }
       get_duplicate_enrollments: {
         Args: never
@@ -1739,6 +1904,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      inscrever_cooperado_eventual: {
+        Args: {
+          _campanha_id: string
+          _cidade: string
+          _cpf: string
+          _email: string
+          _estado: string
+          _nome: string
+          _rg: string
+          _telefone: string
+        }
+        Returns: Json
+      }
       is_master_admin: { Args: { _user_id: string }; Returns: boolean }
       link_enrollment_to_user: {
         Args: { _enrollment_number: string; _user_id: string }
@@ -1791,6 +1969,10 @@ export type Database = {
       submit_exam_answers: {
         Args: { _answers: Json; _evaluation_id: string }
         Returns: Json
+      }
+      tem_acesso_curso_eventual: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
       }
       validate_certificate: {
         Args: { _code: string }
