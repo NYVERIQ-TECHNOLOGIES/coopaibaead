@@ -27,6 +27,7 @@ interface Course {
   image: string | null;
   duration: string | null;
   cooperado_only: boolean;
+  eventual?: boolean;
   is_paid: boolean;
   price: number | null;
   promotional_price: number | null;
@@ -43,6 +44,7 @@ const emptyForm = {
   duration: "",
   intro_video_url: "",
   cooperado_only: false,
+  eventual: false,
   is_paid: false,
   price: "" as string,
   promotional_price: "" as string,
@@ -98,6 +100,7 @@ export default function Courses() {
         duration: values.duration,
         intro_video_url: values.intro_video_url || null,
         cooperado_only: values.cooperado_only,
+        eventual: values.eventual,
         is_paid: values.is_paid,
         price: values.is_paid && values.price ? Number(values.price) : null,
         promotional_price: values.is_paid && values.promotional_price ? Number(values.promotional_price) : null,
@@ -146,6 +149,7 @@ export default function Courses() {
       duration: c.duration || "",
       intro_video_url: (c as any).intro_video_url || "",
       cooperado_only: c.cooperado_only,
+      eventual: (c as any).eventual ?? false,
       is_paid: c.is_paid ?? false,
       price: c.price != null ? String(c.price) : "",
       promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
@@ -159,7 +163,8 @@ export default function Courses() {
   const filtered = courses.filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || c.cooperado_only;
-    return matchSearch && matchFilter;
+    const hideEventual = !isAdmin && (c as any).eventual;
+    return matchSearch && matchFilter && !hideEventual;
   });
 
   return (
@@ -222,6 +227,11 @@ export default function Courses() {
                   {course.cooperado_only && (
                     <span className="absolute top-2 right-2 bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
                       <Lock className="w-3 h-3" /> Cooperado
+                    </span>
+                  )}
+                  {(course as any).eventual && (
+                    <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-xs px-2 py-1 rounded-full">
+                      Eventual
                     </span>
                   )}
                 </div>
@@ -437,6 +447,15 @@ export default function Courses() {
             <div className="flex items-center gap-2">
               <Switch checked={form.cooperado_only} onCheckedChange={(v) => setForm({ ...form, cooperado_only: v })} />
               <Label>Exclusivo para cooperados</Label>
+            </div>
+            <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+              <Switch checked={form.eventual} onCheckedChange={(v) => setForm({ ...form, eventual: v })} />
+              <div>
+                <Label>Curso eventual</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Cursos eventuais ficam ocultos da grade principal e só ficam disponíveis para alunos inscritos em campanhas de Cooperados Eventuais.
+                </p>
+              </div>
             </div>
             <div className="space-y-3 rounded-lg border border-border p-4">
               <div className="flex items-center gap-2">

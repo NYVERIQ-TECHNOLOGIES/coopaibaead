@@ -748,6 +748,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           duration: string | null
+          eventual: boolean
           id: string
           image: string | null
           intro_video_url: string | null
@@ -766,6 +767,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           duration?: string | null
+          eventual?: boolean
           id?: string
           image?: string | null
           intro_video_url?: string | null
@@ -784,6 +786,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           duration?: string | null
+          eventual?: boolean
           id?: string
           image?: string | null
           intro_video_url?: string | null
