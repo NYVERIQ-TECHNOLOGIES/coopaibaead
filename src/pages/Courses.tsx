@@ -163,7 +163,8 @@ export default function Courses() {
   const filtered = courses.filter((c) => {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || c.cooperado_only;
-    return matchSearch && matchFilter;
+    const hideEventual = !isAdmin && (c as any).eventual;
+    return matchSearch && matchFilter && !hideEventual;
   });
 
   return (
