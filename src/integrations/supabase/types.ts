@@ -964,6 +964,7 @@ export type Database = {
       presenca_eventos: {
         Row: {
           codigo: string
+          course_id: string | null
           created_at: string
           created_by: string | null
           data: string
@@ -980,6 +981,7 @@ export type Database = {
         }
         Insert: {
           codigo: string
+          course_id?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
@@ -996,6 +998,7 @@ export type Database = {
         }
         Update: {
           codigo?: string
+          course_id?: string | null
           created_at?: string
           created_by?: string | null
           data?: string
@@ -1010,7 +1013,15 @@ export type Database = {
           tipo?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "presenca_eventos_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
