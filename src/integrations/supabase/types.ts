@@ -198,10 +198,13 @@ export type Database = {
           cancelled_by: string | null
           code: string
           completed_at: string | null
+          cooperativa_snapshot: string | null
           course_duration_snapshot: string | null
           course_id: string
+          course_started_at_snapshot: string | null
           course_title_snapshot: string | null
           created_at: string
+          enrollment_number_snapshot: string | null
           id: string
           issued_at: string | null
           pdf_path: string | null
@@ -225,10 +228,13 @@ export type Database = {
           cancelled_by?: string | null
           code?: string
           completed_at?: string | null
+          cooperativa_snapshot?: string | null
           course_duration_snapshot?: string | null
           course_id: string
+          course_started_at_snapshot?: string | null
           course_title_snapshot?: string | null
           created_at?: string
+          enrollment_number_snapshot?: string | null
           id?: string
           issued_at?: string | null
           pdf_path?: string | null
@@ -252,10 +258,13 @@ export type Database = {
           cancelled_by?: string | null
           code?: string
           completed_at?: string | null
+          cooperativa_snapshot?: string | null
           course_duration_snapshot?: string | null
           course_id?: string
+          course_started_at_snapshot?: string | null
           course_title_snapshot?: string | null
           created_at?: string
+          enrollment_number_snapshot?: string | null
           id?: string
           issued_at?: string | null
           pdf_path?: string | null
