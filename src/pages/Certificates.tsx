@@ -719,6 +719,9 @@ function CertificatesTable({
                           <DropdownMenuItem onClick={() => onPrint?.(cert)} className="gap-2" disabled={!cert.pdf_path}>
                             <Printer className="w-4 h-4" /> Imprimir PDF
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onReceipt?.(cert)} className="gap-2">
+                            <ClipboardCheck className="w-4 h-4" /> Comprovante de retirada
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onAudit?.(cert)} className="gap-2">
                             <History className="w-4 h-4" /> Histórico
                           </DropdownMenuItem>
