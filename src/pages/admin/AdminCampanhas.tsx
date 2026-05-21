@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 export default function AdminCampanhas() {
   const [list, setList] = useState<any[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({
