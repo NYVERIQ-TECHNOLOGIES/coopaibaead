@@ -362,7 +362,6 @@ export default function AdminSubscriptions() {
             </CardContent>
           </Card>
         </TabsContent>
-        </TabsContent>
 
         <TabsContent value="plans">
           <div className="-mx-6">
