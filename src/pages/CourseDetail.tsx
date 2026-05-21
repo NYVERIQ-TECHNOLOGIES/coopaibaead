@@ -157,17 +157,18 @@ export default function CourseDetail() {
     Array.from(bestScoreByEval.entries()).filter(([, s]) => s >= PASS_THRESHOLD).map(([id]) => id)
   );
 
-  // ---- Existing certificate ----
+  // ---- Existing certificate (any status) ----
   const { data: existingCert } = useQuery({
     queryKey: ["my_course_cert", courseId, user?.id],
     queryFn: async () => {
       if (!user) return null;
       const { data } = await supabase
         .from("certificates")
-        .select("id, code, status")
+        .select("id, code, status, issued_at")
         .eq("user_id", user.id)
         .eq("course_id", courseId!)
-        .eq("status", "emitido")
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
       return data;
     },
