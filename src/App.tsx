@@ -50,6 +50,10 @@ import PresencaEvento from "@/pages/PresencaEvento";
 import PresencaRelatorios from "@/pages/PresencaRelatorios";
 import PresencaAssinar from "@/pages/PresencaAssinar";
 import Hub from "@/pages/Hub";
+import CooperadosEventuaisList from "@/pages/CooperadosEventuaisList";
+import CooperadosEventuaisDetalhe from "@/pages/CooperadosEventuaisDetalhe";
+import AdminCampanhas from "@/pages/admin/AdminCampanhas";
+import AdminCampanhaDetalhe from "@/pages/admin/AdminCampanhaDetalhe";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -120,6 +124,12 @@ const App = () => (
               <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
               <Route path="/subscriptions" element={<ProtectedRoute allowedRoles={["admin"]}><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/plans" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPlans /></ProtectedRoute>} />
+
+              {/* Cooperados Eventuais */}
+              <Route path="/cooperados-eventuais" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CooperadosEventuaisList /></ProtectedRoute>} />
+              <Route path="/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CooperadosEventuaisDetalhe /></ProtectedRoute>} />
+              <Route path="/admin/cooperados-eventuais" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhas /></ProtectedRoute>} />
+              <Route path="/admin/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhaDetalhe /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

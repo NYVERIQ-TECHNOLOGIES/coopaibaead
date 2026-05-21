@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardCheck, BarChart3, Library,
   Award, Settings, Shield, Upload, MessageSquare, Activity, Headphones,
-  UserX, CreditCard, User, Compass,
+  UserX, CreditCard, User, Compass, Sparkles,
 } from "lucide-react";
 
 type Item = {
@@ -20,6 +20,8 @@ const items: Item[] = [
   { label: "Cursos", description: "Acesse e gerencie cursos", icon: BookOpen, path: "/courses", roles: ["admin", "aluno", "cooperado"] },
   { label: "Biblioteca", description: "Materiais e documentos", icon: Library, path: "/library", roles: ["admin", "aluno", "cooperado"] },
   { label: "Certificados", description: "Seus certificados emitidos", icon: Award, path: "/certificates", roles: ["admin", "aluno", "cooperado"] },
+  { label: "Cooperados Eventuais", description: "Programa de vagas por inscrição", icon: Sparkles, path: "/cooperados-eventuais", roles: ["admin", "moderador", "aluno", "cooperado"] },
+  { label: "Gestão Cooperados Eventuais", description: "Campanhas e inscritos", icon: Sparkles, path: "/admin/cooperados-eventuais", roles: ["admin"] },
   { label: "Fórum", description: "Discussões da comunidade", icon: MessageSquare, path: "/forum", roles: ["admin", "aluno", "cooperado"] },
   { label: "Suporte", description: "Tire dúvidas e abra chamados", icon: Headphones, path: "/support", roles: ["admin", "moderador", "aluno", "cooperado"] },
   { label: "Alunos", description: "Gestão de alunos", icon: Users, path: "/students", roles: ["admin", "moderador"] },
