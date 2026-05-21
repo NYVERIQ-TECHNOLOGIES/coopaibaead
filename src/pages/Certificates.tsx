@@ -418,6 +418,7 @@ export default function Certificates() {
               isAdmin={isAdmin}
               onPickup={(c) => setPickupCert(c)}
               onPrint={printCert}
+              onReceipt={(c) => printReceipt(c)}
               onReissue={(c) => reissueCert.mutate(c)}
               onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
               onAudit={(c) => setAuditCert(c)}
