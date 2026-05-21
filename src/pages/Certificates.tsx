@@ -43,12 +43,14 @@ export default function Certificates() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Pickup / cancel / audit state
   const [pickupCert, setPickupCert] = useState<Cert | null>(null);
