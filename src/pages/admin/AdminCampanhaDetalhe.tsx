@@ -35,7 +35,7 @@ export default function AdminCampanhaDetalhe() {
     const [{ data: c }, { data: ins }, { data: cu }, { data: vinc }] = await Promise.all([
       supabase.from("cooperados_eventuais_campanhas").select("*").eq("id", id).maybeSingle(),
       supabase.from("cooperados_eventuais_inscricoes").select("*").eq("campanha_id", id).order("data_inscricao", { ascending: false }),
-      supabase.from("courses").select("id, title"),
+      supabase.from("courses").select("id, title").eq("eventual", true).order("title"),
       supabase.from("cooperados_eventuais_cursos").select("curso_id").eq("campanha_id", id),
     ]);
     setCamp(c);
