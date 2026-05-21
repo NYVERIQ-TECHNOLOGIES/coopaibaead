@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Award, Search, CheckCircle, Clock, Upload, ToggleLeft, ToggleRight, FileImage, Trash2, Download, Loader2, Plus, Printer, RefreshCw, XCircle, ClipboardCheck, Settings, MoreHorizontal, Filter, X } from "lucide-react";
+import { Award, Search, CheckCircle, Clock, Upload, ToggleLeft, ToggleRight, FileImage, Trash2, Download, Loader2, Plus, Printer, RefreshCw, XCircle, ClipboardCheck, Settings, MoreHorizontal, Filter, X, BarChart3, History } from "lucide-react";
 import { useState, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SignedImage from "@/components/SignedImage";
 import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
 import { CERT_STATUS_LABEL, CERT_STATUS_STYLE } from "@/lib/certificates";
+import CertificateAuditDialog from "@/components/CertificateAuditDialog";
 
 type Cert = any;
 
@@ -49,10 +50,11 @@ export default function Certificates() {
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
 
-  // Pickup / cancel state
+  // Pickup / cancel / audit state
   const [pickupCert, setPickupCert] = useState<Cert | null>(null);
   const [cancelCert, setCancelCert] = useState<Cert | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const [auditCert, setAuditCert] = useState<Cert | null>(null);
 
   const { data: certificates = [], isLoading } = useQuery({
     queryKey: ["certificates", isAdmin, user?.id],
@@ -257,17 +259,26 @@ export default function Certificates() {
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Certificados</h1>
           <p className="text-muted-foreground mt-1">Gerencie certificados, modelos e retirada presencial</p>
         </div>
-        {isAdmin && (
+        {isStaff && (
           <div className="flex gap-2 flex-wrap">
-            <Button onClick={() => setGenerateOpen(true)} className="gap-2">
-              <Plus className="w-4 h-4" /> Gerar Certificado
-            </Button>
-            <Button variant="outline" onClick={() => setUploadOpen(true)} className="gap-2">
-              <Upload className="w-4 h-4" /> Enviar Modelo
-            </Button>
+            {isAdmin && (
+              <Button onClick={() => setGenerateOpen(true)} className="gap-2">
+                <Plus className="w-4 h-4" /> Gerar Certificado
+              </Button>
+            )}
+            {isAdmin && (
+              <Button variant="outline" onClick={() => setUploadOpen(true)} className="gap-2">
+                <Upload className="w-4 h-4" /> Enviar Modelo
+              </Button>
+            )}
             <Button asChild variant="outline" className="gap-2">
-              <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
+              <Link to="/certificates/relatorios"><BarChart3 className="w-4 h-4" /> Relatórios</Link>
             </Button>
+            {isAdmin && (
+              <Button asChild variant="outline" className="gap-2">
+                <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -317,6 +328,7 @@ export default function Certificates() {
               onPrint={printCert}
               onReissue={(c) => reissueCert.mutate(c)}
               onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
+              onAudit={(c) => setAuditCert(c)}
             />
           </TabsContent>
 
@@ -488,6 +500,12 @@ export default function Certificates() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CertificateAuditDialog
+        certificateId={auditCert?.id ?? null}
+        certificateCode={auditCert?.code}
+        onClose={() => setAuditCert(null)}
+      />
     </div>
   );
 }
@@ -546,11 +564,12 @@ function AdminFilters(props: {
 
 function CertificatesTable({
   filtered, isLoading, isStaff, isAdmin,
-  onPickup, onPrint, onReissue, onCancel,
+  onPickup, onPrint, onReissue, onCancel, onAudit,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
   onPickup?: (c: any) => void; onPrint?: (c: any) => void;
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
+  onAudit?: (c: any) => void;
 }) {
   if (isLoading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
   return (
@@ -605,6 +624,9 @@ function CertificatesTable({
                           )}
                           <DropdownMenuItem onClick={() => onPrint?.(cert)} className="gap-2" disabled={!cert.pdf_path}>
                             <Printer className="w-4 h-4" /> Imprimir PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onAudit?.(cert)} className="gap-2">
+                            <History className="w-4 h-4" /> Histórico
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {cert.status !== "cancelado" && (

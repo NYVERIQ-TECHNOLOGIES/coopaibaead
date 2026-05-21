@@ -34,6 +34,7 @@ import ResetPassword from "@/pages/ResetPassword";
 import ValidateCertificate from "@/pages/ValidateCertificate";
 import CertificatePickup from "@/pages/CertificatePickup";
 import CertificatePickupSettings from "@/pages/CertificatePickupSettings";
+import CertificateReports from "@/pages/CertificateReports";
 import PublicLayout from "@/components/PublicLayout";
 import Home from "@/pages/public/Home";
 import Sobre from "@/pages/public/Sobre";
@@ -101,6 +102,7 @@ const App = () => (
               {/* Certificados: alunos veem apenas os próprios; admins gerenciam tudo */}
               <Route path="/certificates" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><Certificates /></ProtectedRoute>} />
               <Route path="/certificates/configuracoes" element={<ProtectedRoute allowedRoles={["admin"]}><CertificatePickupSettings /></ProtectedRoute>} />
+              <Route path="/certificates/relatorios" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><CertificateReports /></ProtectedRoute>} />
               <Route path="/certificates/:code/retirada" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CertificatePickup /></ProtectedRoute>} />
 
               {/* Restrito a admins (moderador tem acesso somente-leitura a Alunos) */}
