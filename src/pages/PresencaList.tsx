@@ -31,7 +31,7 @@ export default function PresencaList() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Presença Digital</h1>
+          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Dia de Campo</h1>
           <p className="text-muted-foreground mt-1">Gestão Inteligente de Presença e Assinaturas para Cooperados</p>
         </div>
         <div className="flex gap-2">

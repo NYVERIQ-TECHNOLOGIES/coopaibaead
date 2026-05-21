@@ -139,7 +139,7 @@ export default function PresencaAssinar() {
         <div className="flex items-center gap-3 mb-6">
           <img src={logoImg} alt="Coopaiba" className="w-10 h-10 rounded-lg" />
           <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Coopaiba Presença Digital</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Coopaiba Dia de Campo</p>
             <h1 className="font-heading font-bold text-foreground">{evento.nome}</h1>
           </div>
         </div>
