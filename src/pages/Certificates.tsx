@@ -276,7 +276,7 @@ export default function Certificates() {
         {[
           { label: "Total", value: certificates.length, icon: Award, gradient: "gradient-primary" },
           { label: "Disponíveis", value: emitted, icon: CheckCircle, gradient: "gradient-secondary" },
-          { label: "Retirados", value: retirados, icon: ClipboardCheck, gradient: "gradient-success" },
+          { label: "Retirados", value: retirados, icon: ClipboardCheck, gradient: "bg-success" },
           { label: "Em processamento", value: pending, icon: Clock, gradient: "gradient-accent" },
         ].map((stat) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
