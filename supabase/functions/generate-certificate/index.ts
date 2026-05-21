@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const studentName = profile.full_name || "Aluno";
+    const studentName = sanitizeName(profile.full_name || "Aluno");
     const studentCpf = profile.cpf || null;
     const courseTitle = course.title;
     const courseDuration = course.duration || "—";
@@ -458,8 +458,20 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
     cy -= 14;
   }
 
+  // Legal basis (MEC)
+  const legal =
+    "Fundamentação legal: Lei nº 9.394/96 (LDB), art. 39, § 2º, Inciso I, art. 41, 42 e 43, " +
+    "Incisos VII e VIII; Lei nº 11.741/08, art. 1º; Decreto nº 5.154/04 e Decreto nº 8.268/14.";
+  const legalLines = wrapText(legal, fontItalic, 8, pageWidth - 200);
+  let ly = 188;
+  for (const ln of legalLines) {
+    const lw = fontItalic.widthOfTextAtSize(ln, 8);
+    page.drawText(ln, { x: centerX - lw / 2, y: ly, size: 8, font: fontItalic, color: muted });
+    ly -= 10;
+  }
+
   // City/date line
-  const cityDate = `Piaçabuçu — AL, ${data.dateStr}.`;
+  const cityDate = `Piacabucu - AL, ${data.dateStr}.`;
   const cdw = fontItalic.widthOfTextAtSize(cityDate, 11);
   page.drawText(cityDate, { x: centerX - cdw / 2, y: 150, size: 11, font: fontItalic, color: ink });
 
@@ -513,6 +525,16 @@ function formatCpf(cpf: string): string {
   const d = cpf.replace(/\D/g, "");
   if (d.length !== 11) return cpf;
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+function sanitizeName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")  // strip diacritics
+    .replace(/[^A-Za-z0-9\s]/g, " ")  // strip special chars
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
 }
 
 function wrapText(text: string, font: any, size: number, maxWidth: number): string[] {
