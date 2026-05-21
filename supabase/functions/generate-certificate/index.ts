@@ -8,6 +8,15 @@ const corsHeaders = {
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// COOPAIBA brand colors
+const BRAND = {
+  green: { r: 0.0, g: 0.588, b: 0.251 },   // #009640
+  blue:  { r: 0.0, g: 0.341, b: 0.722 },   // #0057B8
+  yellow:{ r: 0.969, g: 0.776, b: 0.0 },   // #F7C600
+  ink:   { r: 0.1, g: 0.1, b: 0.1 },
+  muted: { r: 0.45, g: 0.45, b: 0.45 },
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -124,9 +133,11 @@ Deno.serve(async (req) => {
 
     // Snapshots
     const { data: profile } = await supabaseAdmin
-      .from("profiles").select("full_name, cpf").eq("user_id", user_id!).single();
+      .from("profiles").select("full_name, cpf, enrollment_number, cooperativa").eq("user_id", user_id!).single();
     const { data: course } = await supabaseAdmin
       .from("courses").select("title, duration").eq("id", course_id).single();
+    const { data: enrollment } = await supabaseAdmin
+      .from("enrollments").select("created_at").eq("user_id", user_id!).eq("course_id", course_id).maybeSingle();
     const { data: template } = await supabaseAdmin
       .from("certificate_templates").select("file_url").eq("active", true).limit(1).maybeSingle();
 
@@ -140,6 +151,12 @@ Deno.serve(async (req) => {
     const studentCpf = profile.cpf || null;
     const courseTitle = course.title;
     const courseDuration = course.duration || "—";
+    const courseStartedAt = enrollment?.created_at || null;
+    const nowIso = new Date().toISOString();
+    const startStr = courseStartedAt
+      ? new Date(courseStartedAt).toLocaleDateString("pt-BR")
+      : "—";
+    const endStr = new Date().toLocaleDateString("pt-BR");
     const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
     const certCode = `CERT-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const verifyUrl = `https://coopaiba.com.br/validar-certificado/${certCode}`;
@@ -150,9 +167,26 @@ Deno.serve(async (req) => {
       templateSignedUrl = signed?.signedUrl || null;
     }
 
+    // Try to load official logo from branding folder (uploaded by admin)
+    let logoSignedUrl: string | null = null;
+    try {
+      const { data: signedLogo } = await supabaseAdmin.storage
+        .from("media").createSignedUrl("branding/logo-coopaiba.png", 60);
+      if (signedLogo?.signedUrl) {
+        const head = await fetch(signedLogo.signedUrl, { method: "HEAD" });
+        if (head.ok) logoSignedUrl = signedLogo.signedUrl;
+      }
+    } catch { /* no logo yet */ }
+
     const pdfBytes = await buildCertificatePdf({
-      studentName, courseTitle, courseDuration, dateStr,
-      templateUrl: templateSignedUrl, certCode, verifyUrl,
+      studentName, studentCpf,
+      enrollmentNumber: profile.enrollment_number || null,
+      cooperativa: profile.cooperativa || null,
+      courseTitle, courseDuration,
+      startStr, endStr, dateStr,
+      templateUrl: templateSignedUrl,
+      logoUrl: logoSignedUrl,
+      certCode, verifyUrl,
     });
 
     const filePath = `certificates/${certCode}.pdf`;
@@ -160,7 +194,6 @@ Deno.serve(async (req) => {
       .from("media").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
     if (uploadError) throw uploadError;
 
-    const now = new Date().toISOString();
     const { data: cert, error: certError } = await supabaseAdmin
       .from("certificates")
       .insert({
@@ -168,14 +201,17 @@ Deno.serve(async (req) => {
         course_id,
         code: certCode,
         status: "disponivel_retirada",
-        issued_at: now,
-        available_at: now,
-        completed_at: now,
+        issued_at: nowIso,
+        available_at: nowIso,
+        completed_at: nowIso,
         pdf_path: filePath,
         student_name_snapshot: studentName,
         student_cpf_snapshot: studentCpf,
         course_title_snapshot: courseTitle,
         course_duration_snapshot: courseDuration,
+        course_started_at_snapshot: courseStartedAt,
+        enrollment_number_snapshot: profile.enrollment_number || null,
+        cooperativa_snapshot: profile.cooperativa || null,
         reissued_from: reissue_of || null,
       })
       .select()
@@ -224,7 +260,6 @@ Deno.serve(async (req) => {
       console.error("WhatsApp notification failed (non-blocking):", waErr);
     }
 
-    // Only admins receive the pdf_url back (for printing). Students never get a download URL.
     let pdf_url: string | null = null;
     if (isAdmin) {
       const { data: signed } = await supabaseAdmin.storage.from("media").createSignedUrl(filePath, 300);
@@ -243,8 +278,19 @@ Deno.serve(async (req) => {
 });
 
 interface CertData {
-  studentName: string; courseTitle: string; courseDuration: string;
-  dateStr: string; templateUrl: string | null; certCode: string; verifyUrl: string;
+  studentName: string;
+  studentCpf: string | null;
+  enrollmentNumber: string | null;
+  cooperativa: string | null;
+  courseTitle: string;
+  courseDuration: string;
+  startStr: string;
+  endStr: string;
+  dateStr: string;
+  templateUrl: string | null;
+  logoUrl: string | null;
+  certCode: string;
+  verifyUrl: string;
 }
 
 async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
@@ -256,6 +302,7 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   const pageHeight = 595.28;
   const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
+  // Background template image (overrides our layout) if provided
   if (data.templateUrl) {
     try {
       const response = await fetch(data.templateUrl);
@@ -267,73 +314,214 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
           : await pdfDoc.embedJpg(imgBytes);
         page.drawImage(image, { x: 0, y: 0, width: pageWidth, height: pageHeight });
       }
-    } catch { /* fallback */ }
+    } catch { /* fallback to default layout */ }
   }
 
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
+  const green = rgb(BRAND.green.r, BRAND.green.g, BRAND.green.b);
+  const blue = rgb(BRAND.blue.r, BRAND.blue.g, BRAND.blue.b);
+  const yellow = rgb(BRAND.yellow.r, BRAND.yellow.g, BRAND.yellow.b);
+  const ink = rgb(BRAND.ink.r, BRAND.ink.g, BRAND.ink.b);
+  const muted = rgb(BRAND.muted.r, BRAND.muted.g, BRAND.muted.b);
+
+  // Only draw our COOPAIBA layout when there's NO custom template
   if (!data.templateUrl) {
-    const borderColor = rgb(0.14, 0.42, 0.28);
-    page.drawRectangle({ x: 20, y: 20, width: pageWidth - 40, height: pageHeight - 40, borderColor, borderWidth: 3 });
-    page.drawRectangle({ x: 30, y: 30, width: pageWidth - 60, height: pageHeight - 60, borderColor, borderWidth: 1 });
+    // Outer green border + inner blue + yellow accent corners
+    page.drawRectangle({ x: 18, y: 18, width: pageWidth - 36, height: pageHeight - 36, borderColor: green, borderWidth: 4 });
+    page.drawRectangle({ x: 28, y: 28, width: pageWidth - 56, height: pageHeight - 56, borderColor: blue, borderWidth: 1 });
+
+    // Top bar
+    page.drawRectangle({ x: 28, y: pageHeight - 78, width: pageWidth - 56, height: 50, color: green });
+    // Yellow accent stripe under top bar
+    page.drawRectangle({ x: 28, y: pageHeight - 84, width: pageWidth - 56, height: 6, color: yellow });
+
+    // Corner accents
+    const cs = 28;
+    page.drawRectangle({ x: 28, y: 28, width: cs, height: 6, color: yellow });
+    page.drawRectangle({ x: 28, y: 28, width: 6, height: cs, color: yellow });
+    page.drawRectangle({ x: pageWidth - 28 - cs, y: 28, width: cs, height: 6, color: yellow });
+    page.drawRectangle({ x: pageWidth - 34, y: 28, width: 6, height: cs, color: yellow });
+
+    // Logo (top-left area) or text fallback inside top bar
+    const headerCenterY = pageHeight - 53;
+    if (data.logoUrl) {
+      try {
+        const resp = await fetch(data.logoUrl);
+        if (resp.ok) {
+          const bytes = new Uint8Array(await resp.arrayBuffer());
+          const ct = resp.headers.get("content-type") || "";
+          const img = ct.includes("png")
+            ? await pdfDoc.embedPng(bytes)
+            : await pdfDoc.embedJpg(bytes);
+          const targetH = 40;
+          const scale = targetH / img.height;
+          const targetW = img.width * scale;
+          page.drawImage(img, { x: 48, y: pageHeight - 78 + (50 - targetH) / 2, width: targetW, height: targetH });
+        }
+      } catch { /* ignore */ }
+    } else {
+      page.drawText("COOPAIBA", {
+        x: 48, y: headerCenterY - 8, size: 22, font: fontBold, color: rgb(1, 1, 1),
+      });
+    }
+
+    const headerRight = "Cooperativa dos Agricultores Familiares e dos Empreendimentos Solidários";
+    const hrw = fontRegular.widthOfTextAtSize(headerRight, 9);
+    page.drawText(headerRight, {
+      x: pageWidth - 48 - hrw, y: headerCenterY - 2, size: 9, font: fontRegular, color: rgb(1, 1, 1),
+    });
+    const pec = "Programa de Educação Cooperativa — PEC";
+    const pw = fontItalic.widthOfTextAtSize(pec, 8);
+    page.drawText(pec, {
+      x: pageWidth - 48 - pw, y: headerCenterY - 14, size: 8, font: fontItalic, color: rgb(1, 1, 1),
+    });
   }
 
   const centerX = pageWidth / 2;
-  const textColor = rgb(0.1, 0.1, 0.1);
-  const accentColor = rgb(0.14, 0.42, 0.28);
 
-  const title = "CERTIFICADO DE CONCLUSÃO";
-  const tw = fontBold.widthOfTextAtSize(title, 28);
-  page.drawText(title, { x: centerX - tw / 2, y: pageHeight - 120, size: 28, font: fontBold, color: accentColor });
-  page.drawLine({ start: { x: centerX - 150, y: pageHeight - 135 }, end: { x: centerX + 150, y: pageHeight - 135 }, thickness: 2, color: accentColor });
+  // Title
+  const title = "CERTIFICADO";
+  const tw = fontBold.widthOfTextAtSize(title, 36);
+  page.drawText(title, { x: centerX - tw / 2, y: pageHeight - 135, size: 36, font: fontBold, color: green });
 
-  const certText = "Certificamos que";
-  const cw = fontItalic.widthOfTextAtSize(certText, 14);
-  page.drawText(certText, { x: centerX - cw / 2, y: pageHeight - 180, size: 14, font: fontItalic, color: textColor });
+  const sub = "DE CONCLUSÃO";
+  const sw = fontBold.widthOfTextAtSize(sub, 16);
+  page.drawText(sub, { x: centerX - sw / 2, y: pageHeight - 158, size: 16, font: fontBold, color: blue });
 
-  const nw = fontBold.widthOfTextAtSize(data.studentName, 32);
-  page.drawText(data.studentName, { x: centerX - nw / 2, y: pageHeight - 230, size: 32, font: fontBold, color: accentColor });
-  page.drawLine({ start: { x: centerX - 200, y: pageHeight - 245 }, end: { x: centerX + 200, y: pageHeight - 245 }, thickness: 1, color: rgb(0.7, 0.7, 0.7) });
+  page.drawLine({
+    start: { x: centerX - 90, y: pageHeight - 172 },
+    end: { x: centerX + 90, y: pageHeight - 172 },
+    thickness: 2, color: yellow,
+  });
 
-  const line1 = "concluiu com êxito o curso";
-  const l1 = fontRegular.widthOfTextAtSize(line1, 14);
-  page.drawText(line1, { x: centerX - l1 / 2, y: pageHeight - 280, size: 14, font: fontRegular, color: textColor });
+  // Institutional text (PEC)
+  const intro = "A COOPAIBA — Cooperativa dos Agricultores Familiares e dos Empreendimentos Solidários,";
+  const intro2 = "por meio do Programa de Educação Cooperativa — PEC, certifica que";
+  const iw = fontRegular.widthOfTextAtSize(intro, 11);
+  const i2w = fontRegular.widthOfTextAtSize(intro2, 11);
+  page.drawText(intro, { x: centerX - iw / 2, y: pageHeight - 200, size: 11, font: fontRegular, color: ink });
+  page.drawText(intro2, { x: centerX - i2w / 2, y: pageHeight - 216, size: 11, font: fontRegular, color: ink });
 
-  const ct = fontBold.widthOfTextAtSize(data.courseTitle, 22);
-  page.drawText(data.courseTitle, { x: centerX - ct / 2, y: pageHeight - 315, size: 22, font: fontBold, color: textColor });
+  // Student name
+  const nameSize = 28;
+  const nw = fontBold.widthOfTextAtSize(data.studentName, nameSize);
+  page.drawText(data.studentName, { x: centerX - nw / 2, y: pageHeight - 258, size: nameSize, font: fontBold, color: blue });
+  page.drawLine({
+    start: { x: centerX - 230, y: pageHeight - 270 },
+    end: { x: centerX + 230, y: pageHeight - 270 },
+    thickness: 0.8, color: muted,
+  });
 
-  if (data.courseDuration !== "—") {
-    const dur = `Carga horária: ${data.courseDuration}`;
-    const dw = fontRegular.widthOfTextAtSize(dur, 12);
-    page.drawText(dur, { x: centerX - dw / 2, y: pageHeight - 345, size: 12, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
+  // CPF + matrícula line (subtle)
+  const idParts: string[] = [];
+  if (data.studentCpf) idParts.push(`CPF ${formatCpf(data.studentCpf)}`);
+  if (data.enrollmentNumber) idParts.push(`Matrícula ${data.enrollmentNumber}`);
+  if (data.cooperativa) idParts.push(data.cooperativa);
+  if (idParts.length) {
+    const id = idParts.join("  ·  ");
+    const idw = fontRegular.widthOfTextAtSize(id, 9);
+    page.drawText(id, { x: centerX - idw / 2, y: pageHeight - 284, size: 9, font: fontRegular, color: muted });
   }
 
-  const dateText = `Emitido em ${data.dateStr}`;
-  const dw = fontRegular.widthOfTextAtSize(dateText, 12);
-  page.drawText(dateText, { x: centerX - dw / 2, y: 80, size: 12, font: fontRegular, color: textColor });
+  // Body
+  const line1 = "concluiu com aproveitamento o curso";
+  const l1 = fontRegular.widthOfTextAtSize(line1, 12);
+  page.drawText(line1, { x: centerX - l1 / 2, y: pageHeight - 312, size: 12, font: fontRegular, color: ink });
 
-  const org = "Coopaiba EAD — Educação Cooperativista";
-  const ow = fontItalic.widthOfTextAtSize(org, 10);
-  page.drawText(org, { x: centerX - ow / 2, y: 55, size: 10, font: fontItalic, color: rgb(0.5, 0.5, 0.5) });
+  // Wrap course title if too long
+  const courseSize = 20;
+  const courseLines = wrapText(data.courseTitle, fontBold, courseSize, pageWidth - 160);
+  let cy = pageHeight - 340;
+  for (const ln of courseLines) {
+    const cw = fontBold.widthOfTextAtSize(ln, courseSize);
+    page.drawText(ln, { x: centerX - cw / 2, y: cy, size: courseSize, font: fontBold, color: ink });
+    cy -= courseSize + 4;
+  }
 
+  const period = data.startStr !== "—"
+    ? `realizado no período de ${data.startStr} a ${data.endStr}, com carga horária de ${data.courseDuration}.`
+    : `concluído em ${data.endStr}, com carga horária de ${data.courseDuration}.`;
+  const periodLines = wrapText(period, fontRegular, 11, pageWidth - 220);
+  cy -= 8;
+  for (const ln of periodLines) {
+    const pw2 = fontRegular.widthOfTextAtSize(ln, 11);
+    page.drawText(ln, { x: centerX - pw2 / 2, y: cy, size: 11, font: fontRegular, color: ink });
+    cy -= 14;
+  }
+
+  // City/date line
+  const cityDate = `Itapetinga — BA, ${data.dateStr}.`;
+  const cdw = fontItalic.widthOfTextAtSize(cityDate, 11);
+  page.drawText(cityDate, { x: centerX - cdw / 2, y: 150, size: 11, font: fontItalic, color: ink });
+
+  // Signature lines — Antonino (left) and Carlos Henrique (right)
+  const sigY = 105;
+  const sigLineLen = 200;
+
+  // Left
+  const lx = pageWidth * 0.27;
+  page.drawLine({ start: { x: lx - sigLineLen / 2, y: sigY }, end: { x: lx + sigLineLen / 2, y: sigY }, thickness: 0.8, color: ink });
+  const ln1 = "Antonino Cardozo";
+  const lt1 = "Presidente — COOPAIBA";
+  const ln1w = fontBold.widthOfTextAtSize(ln1, 11);
+  const lt1w = fontRegular.widthOfTextAtSize(lt1, 9);
+  page.drawText(ln1, { x: lx - ln1w / 2, y: sigY - 14, size: 11, font: fontBold, color: ink });
+  page.drawText(lt1, { x: lx - lt1w / 2, y: sigY - 26, size: 9, font: fontRegular, color: muted });
+
+  // Right
+  const rx = pageWidth * 0.73;
+  page.drawLine({ start: { x: rx - sigLineLen / 2, y: sigY }, end: { x: rx + sigLineLen / 2, y: sigY }, thickness: 0.8, color: ink });
+  const ln2 = "Carlos Henrique Silva Santos";
+  const lt2 = "Coordenador do PEC — COOPAIBA";
+  const ln2w = fontBold.widthOfTextAtSize(ln2, 11);
+  const lt2w = fontRegular.widthOfTextAtSize(lt2, 9);
+  page.drawText(ln2, { x: rx - ln2w / 2, y: sigY - 14, size: 11, font: fontBold, color: ink });
+  page.drawText(lt2, { x: rx - lt2w / 2, y: sigY - 26, size: 9, font: fontRegular, color: muted });
+
+  // QR Code + validation code (bottom-right outside signature area)
   try {
-    const qrDataUrl = await QRCode.toDataURL(data.verifyUrl, { margin: 1, width: 256 });
+    const qrDataUrl = await QRCode.toDataURL(data.verifyUrl, { margin: 1, width: 256, color: { dark: "#0057B8", light: "#FFFFFF" } });
     const qrBytes = Uint8Array.from(atob(qrDataUrl.split(",")[1]), (c) => c.charCodeAt(0));
     const qrImage = await pdfDoc.embedPng(qrBytes);
-    const qrSize = 80;
-    const qrX = pageWidth - qrSize - 40;
-    const qrY = 50;
+    const qrSize = 68;
+    const qrX = pageWidth - qrSize - 48;
+    const qrY = 48;
     page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
-    const ql = "Verifique a autenticidade";
-    const qlw = fontRegular.widthOfTextAtSize(ql, 8);
-    page.drawText(ql, { x: qrX + qrSize / 2 - qlw / 2, y: qrY - 12, size: 8, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
+    const ql = "Valide em coopaiba.com.br";
+    const qlw = fontRegular.widthOfTextAtSize(ql, 7);
+    page.drawText(ql, { x: qrX + qrSize / 2 - qlw / 2, y: qrY - 9, size: 7, font: fontRegular, color: muted });
   } catch (e) { console.error("QR error:", e); }
 
-  page.drawText("Código de validação:", { x: 50, y: 70, size: 9, font: fontRegular, color: rgb(0.4, 0.4, 0.4) });
-  page.drawText(data.certCode, { x: 50, y: 55, size: 11, font: fontBold, color: textColor });
+  // Validation code (bottom-left)
+  page.drawText("Código de validação", { x: 48, y: 70, size: 8, font: fontRegular, color: muted });
+  page.drawText(data.certCode, { x: 48, y: 56, size: 12, font: fontBold, color: blue });
 
   const bytes = await pdfDoc.save();
   return new Uint8Array(bytes);
+}
+
+function formatCpf(cpf: string): string {
+  const d = cpf.replace(/\D/g, "");
+  if (d.length !== 11) return cpf;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+function wrapText(text: string, font: any, size: number, maxWidth: number): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const w of words) {
+    const trial = current ? `${current} ${w}` : w;
+    if (font.widthOfTextAtSize(trial, size) <= maxWidth) {
+      current = trial;
+    } else {
+      if (current) lines.push(current);
+      current = w;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
 }
