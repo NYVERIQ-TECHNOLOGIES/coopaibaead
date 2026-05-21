@@ -134,6 +134,9 @@ Deno.serve(async (req) => {
     // Snapshots
     const { data: profile } = await supabaseAdmin
       .from("profiles").select("full_name, cpf, enrollment_number, cooperativa").eq("user_id", user_id!).single();
+    const { data: issuerProfile } = await supabaseAdmin
+      .from("profiles").select("full_name").eq("user_id", user.id).maybeSingle();
+    const issuerName = issuerProfile?.full_name || user.email || "Sistema";
     const { data: course } = await supabaseAdmin
       .from("courses").select("title, duration").eq("id", course_id).single();
     const { data: enrollment } = await supabaseAdmin
