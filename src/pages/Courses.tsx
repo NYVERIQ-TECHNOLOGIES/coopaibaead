@@ -149,6 +149,7 @@ export default function Courses() {
       duration: c.duration || "",
       intro_video_url: (c as any).intro_video_url || "",
       cooperado_only: c.cooperado_only,
+      eventual: (c as any).eventual ?? false,
       is_paid: c.is_paid ?? false,
       price: c.price != null ? String(c.price) : "",
       promotional_price: c.promotional_price != null ? String(c.promotional_price) : "",
