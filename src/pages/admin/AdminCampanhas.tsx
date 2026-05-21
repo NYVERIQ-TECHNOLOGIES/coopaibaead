@@ -109,7 +109,7 @@ export default function AdminCampanhas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {list.map((c) => (
+              {list.filter((c) => showArchived ? c.status === "arquivada" : c.status !== "arquivada").map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.nome}</TableCell>
                   <TableCell className="text-sm">
@@ -125,12 +125,16 @@ export default function AdminCampanhas() {
                     <Button size="sm" variant="ghost" onClick={() => openEdit(c)}>Editar</Button>
                     {c.status === "ativa" && <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "encerrada")}>Encerrar</Button>}
                     {c.status === "encerrada" && <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "ativa")}>Reabrir</Button>}
-                    {c.status !== "arquivada" && <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "arquivada")}>Arquivar</Button>}
+                    {c.status === "arquivada"
+                      ? <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "encerrada")}>Desarquivar</Button>
+                      : <Button size="sm" variant="ghost" onClick={() => setStatus(c.id, "arquivada")}>Arquivar</Button>}
                   </TableCell>
                 </TableRow>
               ))}
-              {list.length === 0 && (
-                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhuma campanha</TableCell></TableRow>
+              {list.filter((c) => showArchived ? c.status === "arquivada" : c.status !== "arquivada").length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  {showArchived ? "Nenhuma campanha arquivada" : "Nenhuma campanha"}
+                </TableCell></TableRow>
               )}
             </TableBody>
           </Table>
