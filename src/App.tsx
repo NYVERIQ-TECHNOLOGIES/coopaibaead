@@ -124,6 +124,12 @@ const App = () => (
               <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
               <Route path="/subscriptions" element={<ProtectedRoute allowedRoles={["admin"]}><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/plans" element={<ProtectedRoute allowedRoles={["admin"]}><AdminPlans /></ProtectedRoute>} />
+
+              {/* Cooperados Eventuais */}
+              <Route path="/cooperados-eventuais" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CooperadosEventuaisList /></ProtectedRoute>} />
+              <Route path="/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CooperadosEventuaisDetalhe /></ProtectedRoute>} />
+              <Route path="/admin/cooperados-eventuais" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhas /></ProtectedRoute>} />
+              <Route path="/admin/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhaDetalhe /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
