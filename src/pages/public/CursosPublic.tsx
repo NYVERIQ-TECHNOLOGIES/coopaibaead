@@ -22,7 +22,8 @@ export default function CursosPublic() {
     (async () => {
       const { data } = await supabase
         .from("courses")
-        .select("id, title, description, image, duration, cooperado_only")
+        .select("id, title, description, image, duration, cooperado_only, eventual")
+        .eq("eventual", false)
         .order("created_at", { ascending: false })
         .limit(24);
       setCourses((data as PublicCourse[]) || []);
