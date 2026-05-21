@@ -150,6 +150,37 @@ export default function Certificates() {
     return json;
   };
 
+  const openPdfSafely = async (signedUrl: string, title = "certificado.pdf") => {
+    const printWindow = window.open("about:blank", "_blank");
+    if (printWindow) {
+      printWindow.document.write("<p style='font-family: sans-serif; padding: 24px'>Preparando certificado...</p>");
+    }
+
+    try {
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error("Não foi possível carregar o PDF");
+      const blobUrl = URL.createObjectURL(await response.blob());
+
+      if (printWindow) {
+        printWindow.location.href = blobUrl;
+      } else {
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.download = title;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (error) {
+      printWindow?.close();
+      toast({ title: "Erro ao abrir certificado", description: "Tente usar o botão de impressão novamente.", variant: "destructive" });
+    }
+  };
+
   const generateCert = useMutation({
     mutationFn: async () => {
       if (!selectedStudent || !selectedCourse) throw new Error("Selecione aluno e curso");
@@ -159,7 +190,7 @@ export default function Certificates() {
       qc.invalidateQueries({ queryKey: ["certificates"] });
       setGenerateOpen(false); setSelectedStudent(""); setSelectedCourse("");
       toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code} — disponível para retirada presencial.` });
-      if (isAdmin && data.pdf_url) window.open(data.pdf_url, "_blank");
+      if (isAdmin && data.pdf_url) openPdfSafely(data.pdf_url, `${data.certificate.code}.pdf`);
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
@@ -177,7 +208,7 @@ export default function Certificates() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["certificates"] });
       toast({ title: "Certificado reemitido", description: `Novo código: ${data.certificate.code}` });
-      if (data.pdf_url) window.open(data.pdf_url, "_blank");
+      if (data.pdf_url) openPdfSafely(data.pdf_url, `${data.certificate.code}.pdf`);
     },
     onError: (e: any) => toast({ title: "Erro ao reemitir", description: e.message, variant: "destructive" }),
   });
@@ -209,7 +240,7 @@ export default function Certificates() {
       toast({ title: "Erro ao gerar link", variant: "destructive" });
       return;
     }
-    window.open(data.signedUrl, "_blank");
+    openPdfSafely(data.signedUrl, `${cert.code}.pdf`);
   };
 
   const emitted = certificates.filter((c) => c.status === "emitido" || c.status === "disponivel_retirada").length;
