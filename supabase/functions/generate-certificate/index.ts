@@ -454,7 +454,7 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   }
 
   // City/date line
-  const cityDate = `Itapetinga — BA, ${data.dateStr}.`;
+  const cityDate = `Piaçabuçu — AL, ${data.dateStr}.`;
   const cdw = fontItalic.widthOfTextAtSize(cityDate, 11);
   page.drawText(cityDate, { x: centerX - cdw / 2, y: 150, size: 11, font: fontItalic, color: ink });
 
