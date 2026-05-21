@@ -83,7 +83,7 @@ export default function AppSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto sidebar-scroll">
         {filteredNav.map((item) => {
           const isActive = location.pathname === item.path;
           return (
