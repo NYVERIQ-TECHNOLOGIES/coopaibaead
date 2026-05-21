@@ -61,7 +61,7 @@ export default function CooperadosEventuaisDetalhe() {
 
   useEffect(() => {
     if (profile && !form.nome) {
-      setForm((f) => ({ ...f, nome: profile.full_name || "", cpf: profile.cpf ? maskCPF(profile.cpf) : "" }));
+      setForm((f) => ({ ...f, nome: profile.full_name || "", cpf: (profile as any).cpf ? maskCPF((profile as any).cpf) : "" }));
     }
     if (user?.email && !form.email) setForm((f) => ({ ...f, email: user.email || "" }));
     // eslint-disable-next-line
