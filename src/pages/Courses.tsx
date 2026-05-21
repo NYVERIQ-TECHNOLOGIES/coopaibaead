@@ -100,6 +100,7 @@ export default function Courses() {
         duration: values.duration,
         intro_video_url: values.intro_video_url || null,
         cooperado_only: values.cooperado_only,
+        eventual: values.eventual,
         is_paid: values.is_paid,
         price: values.is_paid && values.price ? Number(values.price) : null,
         promotional_price: values.is_paid && values.promotional_price ? Number(values.promotional_price) : null,
