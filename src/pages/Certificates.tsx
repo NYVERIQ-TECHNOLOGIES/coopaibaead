@@ -249,6 +249,51 @@ export default function Certificates() {
     openPdfSafely(cert.code);
   };
 
+  const printReceipt = async (cert: Cert, { download = false }: { download?: boolean } = {}) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-pickup-receipt?code=${encodeURIComponent(cert.code)}${download ? "&download=1" : ""}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${session?.access_token}` } });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Erro ao gerar comprovante");
+      }
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      if (download) {
+        const a = document.createElement("a");
+        a.href = blobUrl; a.download = `comprovante-${cert.code}.pdf`;
+        document.body.appendChild(a); a.click(); a.remove();
+      } else {
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar comprovante", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const onLogoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Selecione uma imagem PNG/JPG", variant: "destructive" });
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const path = file.type.includes("png") ? "branding/logo-coopaiba.png" : "branding/logo-coopaiba.jpg";
+      const { error } = await supabase.storage.from("media").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      toast({ title: "Logo atualizado", description: "Será aplicado nos próximos certificados gerados." });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar logo", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
 
   const emitted = certificates.filter((c) => c.status === "emitido" || c.status === "disponivel_retirada").length;
   const pending = certificates.filter((c) => c.status === "pendente").length;
