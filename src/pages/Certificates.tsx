@@ -43,12 +43,14 @@ export default function Certificates() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateFile, setTemplateFile] = useState<File | null>(null);
   const [selectedStudent, setSelectedStudent] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Pickup / cancel / audit state
   const [pickupCert, setPickupCert] = useState<Cert | null>(null);
@@ -247,6 +249,51 @@ export default function Certificates() {
     openPdfSafely(cert.code);
   };
 
+  const printReceipt = async (cert: Cert, { download = false }: { download?: boolean } = {}) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-pickup-receipt?code=${encodeURIComponent(cert.code)}${download ? "&download=1" : ""}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${session?.access_token}` } });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || "Erro ao gerar comprovante");
+      }
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      if (download) {
+        const a = document.createElement("a");
+        a.href = blobUrl; a.download = `comprovante-${cert.code}.pdf`;
+        document.body.appendChild(a); a.click(); a.remove();
+      } else {
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar comprovante", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const onLogoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Selecione uma imagem PNG/JPG", variant: "destructive" });
+      return;
+    }
+    setUploadingLogo(true);
+    try {
+      const path = file.type.includes("png") ? "branding/logo-coopaiba.png" : "branding/logo-coopaiba.jpg";
+      const { error } = await supabase.storage.from("media").upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      toast({ title: "Logo atualizado", description: "Será aplicado nos próximos certificados gerados." });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar logo", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
 
   const emitted = certificates.filter((c) => c.status === "emitido" || c.status === "disponivel_retirada").length;
   const pending = certificates.filter((c) => c.status === "pendente").length;
@@ -307,6 +354,15 @@ export default function Certificates() {
                 <Upload className="w-4 h-4" /> Enviar Modelo
               </Button>
             )}
+            {isAdmin && (
+              <>
+                <input ref={logoRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogoSelected} />
+                <Button variant="outline" className="gap-2" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
+                  {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileImage className="w-4 h-4" />}
+                  {uploadingLogo ? "Enviando..." : "Logo COOPAIBA"}
+                </Button>
+              </>
+            )}
             <Button asChild variant="outline" className="gap-2">
               <Link to="/certificates/relatorios"><BarChart3 className="w-4 h-4" /> Relatórios</Link>
             </Button>
@@ -362,6 +418,7 @@ export default function Certificates() {
               isAdmin={isAdmin}
               onPickup={(c) => setPickupCert(c)}
               onPrint={printCert}
+              onReceipt={(c) => printReceipt(c)}
               onReissue={(c) => reissueCert.mutate(c)}
               onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
               onAudit={(c) => setAuditCert(c)}
@@ -600,10 +657,11 @@ function AdminFilters(props: {
 
 function CertificatesTable({
   filtered, isLoading, isStaff, isAdmin,
-  onPickup, onPrint, onReissue, onCancel, onAudit,
+  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
   onPickup?: (c: any) => void; onPrint?: (c: any) => void;
+  onReceipt?: (c: any) => void;
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
   onAudit?: (c: any) => void;
 }) {
@@ -660,6 +718,9 @@ function CertificatesTable({
                           )}
                           <DropdownMenuItem onClick={() => onPrint?.(cert)} className="gap-2" disabled={!cert.pdf_path}>
                             <Printer className="w-4 h-4" /> Imprimir PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onReceipt?.(cert)} className="gap-2">
+                            <ClipboardCheck className="w-4 h-4" /> Comprovante de retirada
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onAudit?.(cert)} className="gap-2">
                             <History className="w-4 h-4" /> Histórico
