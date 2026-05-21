@@ -790,32 +790,63 @@ export default function CourseDetail() {
           {completedUnits} de {totalUnits} itens concluídos ({totalLessons} aulas + {publishedEvals.length} avaliações)
         </p>
 
-        {!isAdmin && (
-          <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-3">
-            {existingCert ? (
-              <Link to="/certificates" className="inline-flex">
-                <Button size="sm" className="gradient-primary text-primary-foreground gap-2">
-                  <Award className="w-4 h-4" /> Ver Certificado ({existingCert.code})
-                </Button>
-              </Link>
-            ) : (
-              <Button
-                size="sm"
-                onClick={handleGenerateCertificate}
-                disabled={!isCourseComplete || generatingCert}
-                className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
-              >
-                {generatingCert ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
-                {generatingCert ? "Gerando..." : "Gerar Certificado"}
-              </Button>
-            )}
-            {!isCourseComplete && !existingCert && (
-              <span className="text-xs text-muted-foreground">
-                Conclua 100% do curso para liberar o certificado.
-              </span>
-            )}
-          </div>
-        )}
+        {!isAdmin && (() => {
+          const pubEvals = (evaluations as any[]).filter((e: any) => e.status === "publicada");
+          let avgOk = false;
+          if (pubEvals.length > 0) {
+            const scores = pubEvals.map((e: any) => bestScoreByEval.get(e.id));
+            if (scores.every((s) => typeof s === "number")) {
+              const avg = scores.reduce((a: number, b: any) => a + (b as number), 0) / scores.length;
+              avgOk = avg >= PASS_THRESHOLD;
+            }
+          }
+          const eligible = isCourseComplete || avgOk;
+          const certIssued = existingCert?.status === "emitido";
+          const certPending = existingCert && !certIssued;
+          return (
+            <div className="mt-4 pt-4 border-t border-border flex flex-wrap items-center gap-3">
+              {certIssued && (
+                <>
+                  <Badge className="bg-primary text-primary-foreground gap-1"><Award className="w-3 h-3" /> Certificado gerado</Badge>
+                  <Link to="/certificates" className="inline-flex">
+                    <Button size="sm" className="gradient-primary text-primary-foreground gap-2">
+                      <Award className="w-4 h-4" /> Ver Certificado ({existingCert!.code})
+                    </Button>
+                  </Link>
+                </>
+              )}
+              {certPending && (
+                <>
+                  <Badge variant="secondary" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Em processamento</Badge>
+                  <span className="text-xs text-muted-foreground">Seu certificado está sendo emitido. Atualize a página em instantes.</span>
+                </>
+              )}
+              {!existingCert && (
+                <>
+                  {eligible ? (
+                    <Badge variant="outline" className="border-primary text-primary">Elegível</Badge>
+                  ) : (
+                    <Badge variant="outline">Não elegível</Badge>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={handleGenerateCertificate}
+                    disabled={!eligible || generatingCert}
+                    className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
+                  >
+                    {generatingCert ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
+                    {generatingCert ? "Gerando..." : "Gerar Certificado"}
+                  </Button>
+                  {!eligible && (
+                    <span className="text-xs text-muted-foreground">
+                      Conclua 100% do curso ou atinja média mínima de 70% nas avaliações para liberar o certificado.
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
       </motion.div>
 
       {/* ========== MODULES & LESSONS ========== */}
