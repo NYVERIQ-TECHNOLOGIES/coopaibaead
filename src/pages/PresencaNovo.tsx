@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,22 +9,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft } from "lucide-react";
 
-const TIPOS = ["reuniao", "assembleia", "curso", "treinamento", "evento", "palestra", "oficina", "acao"];
+const TIPOS = ["dia_de_campo", "reuniao", "assembleia", "curso", "treinamento", "evento", "palestra", "oficina", "acao"];
 
 export default function PresencaNovo() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [form, setForm] = useState({
     nome: "",
-    tipo: "reuniao",
+    tipo: "dia_de_campo",
     descricao: "",
     data: new Date().toISOString().slice(0, 10),
     horario: "",
     local: "",
     responsavel: "",
     expected_count: "",
+    course_id: "",
   });
+
+  useEffect(() => {
+    supabase.from("courses").select("id, title").order("title").then(({ data }) => {
+      setCourses((data as any) || []);
+    });
+  }, []);
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -43,6 +51,7 @@ export default function PresencaNovo() {
         local: form.local || null,
         responsavel: form.responsavel || null,
         expected_count: form.expected_count ? parseInt(form.expected_count) : null,
+        course_id: form.course_id || null,
         created_by: user?.id,
       } as any)
       .select()
@@ -62,8 +71,8 @@ export default function PresencaNovo() {
         <ArrowLeft className="w-4 h-4" /> Voltar
       </button>
       <div>
-        <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Novo Evento</h1>
-        <p className="text-muted-foreground mt-1">Crie um evento e gere a lista de presença digital.</p>
+        <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Novo Dia de Campo</h1>
+        <p className="text-muted-foreground mt-1">Crie um evento, vincule a um curso e gere a lista de presença digital.</p>
       </div>
 
       <form onSubmit={onSubmit} className="bg-card border border-border rounded-xl p-6 space-y-4">
@@ -76,7 +85,15 @@ export default function PresencaNovo() {
             <Label>Tipo</Label>
             <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm capitalize"
               value={form.tipo} onChange={(e) => update("tipo", e.target.value)}>
-              {TIPOS.map((t) => <option key={t} value={t} className="capitalize">{t}</option>)}
+              {TIPOS.map((t) => <option key={t} value={t} className="capitalize">{t.replace(/_/g, " ")}</option>)}
+            </select>
+          </div>
+          <div>
+            <Label>Curso vinculado</Label>
+            <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+              value={form.course_id} onChange={(e) => update("course_id", e.target.value)}>
+              <option value="">Nenhum</option>
+              {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
           </div>
           <div>
