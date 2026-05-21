@@ -44,7 +44,7 @@ export default function Certificates() {
         .select("*, courses(title), profiles!certificates_user_id_fkey(full_name)")
         .order("created_at", { ascending: false });
       if (!isAdmin && user) {
-        query = query.eq("user_id", user.id).eq("status", "emitido");
+        query = query.eq("user_id", user.id).in("status", ["disponivel_retirada", "emitido", "retirado", "pendente"]);
       }
       const { data } = await query;
       return data ?? [];
@@ -152,9 +152,9 @@ export default function Certificates() {
       setGenerateOpen(false);
       setSelectedStudent("");
       setSelectedCourse("");
-      toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code}` });
-      // Open PDF in new tab
-      if (data.pdf_url) window.open(data.pdf_url, "_blank");
+      toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code} — disponível para retirada presencial.` });
+      // Admin pode abrir o PDF para impressão; alunos nunca recebem URL.
+      if (isAdmin && data.pdf_url) window.open(data.pdf_url, "_blank");
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
@@ -383,25 +383,47 @@ function CertificatesTable({ search, setSearch, filtered, isLoading }: {
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Data</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
+                  <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
-                ) : filtered.map((cert, i) => (
-                  <motion.tr key={cert.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                    className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                    <td className="py-3 px-4 text-sm font-mono text-primary font-medium">{cert.code}</td>
-                    <td className="py-3 px-4 text-sm text-card-foreground">{cert.profiles?.full_name ?? "—"}</td>
-                    <td className="py-3 px-4 text-sm text-card-foreground">{cert.courses?.title ?? "—"}</td>
-                    <td className="py-3 px-4 text-sm text-muted-foreground">{new Date(cert.created_at).toLocaleDateString("pt-BR")}</td>
-                    <td className="py-3 px-4">
-                      <span className={`text-xs font-medium ${cert.status === "emitido" ? "text-success" : "text-warning"}`}>
-                        {cert.status === "emitido" ? "Emitido" : "Pendente"}
-                      </span>
-                    </td>
-                  </motion.tr>
-                ))}
+                  <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+                ) : filtered.map((cert, i) => {
+                  const labels: Record<string, string> = {
+                    pendente: "Em processamento",
+                    emitido: "Disponível para retirada",
+                    disponivel_retirada: "Disponível para retirada",
+                    retirado: "Retirado",
+                    cancelado: "Cancelado",
+                  };
+                  const styles: Record<string, string> = {
+                    pendente: "text-warning",
+                    emitido: "text-primary",
+                    disponivel_retirada: "text-primary",
+                    retirado: "text-success",
+                    cancelado: "text-destructive",
+                  };
+                  return (
+                    <motion.tr key={cert.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
+                      className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                      <td className="py-3 px-4 text-sm font-mono text-primary font-medium">{cert.code}</td>
+                      <td className="py-3 px-4 text-sm text-card-foreground">{cert.profiles?.full_name ?? "—"}</td>
+                      <td className="py-3 px-4 text-sm text-card-foreground">{cert.courses?.title ?? "—"}</td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground">{new Date(cert.created_at).toLocaleDateString("pt-BR")}</td>
+                      <td className="py-3 px-4">
+                        <span className={`text-xs font-medium ${styles[cert.status] || "text-muted-foreground"}`}>
+                          {labels[cert.status] || cert.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <a href={`/certificates/${cert.code}/retirada`} className="text-xs text-primary hover:underline">
+                          Informações para retirada
+                        </a>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

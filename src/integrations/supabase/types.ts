@@ -130,6 +130,36 @@ export type Database = {
         }
         Relationships: []
       }
+      certificate_audit_log: {
+        Row: {
+          action: string
+          actor_name: string | null
+          actor_user_id: string | null
+          certificate_id: string
+          created_at: string
+          details: Json
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          actor_user_id?: string | null
+          certificate_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          actor_user_id?: string | null
+          certificate_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+        }
+        Relationships: []
+      }
       certificate_templates: {
         Row: {
           active: boolean
@@ -162,32 +192,83 @@ export type Database = {
       }
       certificates: {
         Row: {
+          available_at: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           code: string
+          completed_at: string | null
+          course_duration_snapshot: string | null
           course_id: string
+          course_title_snapshot: string | null
           created_at: string
           id: string
           issued_at: string | null
+          pdf_path: string | null
+          pickup_attendant_name: string | null
+          pickup_document_presented: string | null
+          pickup_observations: string | null
+          pickup_registered_at: string | null
+          pickup_registered_by: string | null
+          pickup_signature_url: string | null
+          reissued_from: string | null
           status: string
+          student_cpf_snapshot: string | null
+          student_name_snapshot: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          available_at?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           code?: string
+          completed_at?: string | null
+          course_duration_snapshot?: string | null
           course_id: string
+          course_title_snapshot?: string | null
           created_at?: string
           id?: string
           issued_at?: string | null
+          pdf_path?: string | null
+          pickup_attendant_name?: string | null
+          pickup_document_presented?: string | null
+          pickup_observations?: string | null
+          pickup_registered_at?: string | null
+          pickup_registered_by?: string | null
+          pickup_signature_url?: string | null
+          reissued_from?: string | null
           status?: string
+          student_cpf_snapshot?: string | null
+          student_name_snapshot?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          available_at?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           code?: string
+          completed_at?: string | null
+          course_duration_snapshot?: string | null
           course_id?: string
+          course_title_snapshot?: string | null
           created_at?: string
           id?: string
           issued_at?: string | null
+          pdf_path?: string | null
+          pickup_attendant_name?: string | null
+          pickup_document_presented?: string | null
+          pickup_observations?: string | null
+          pickup_registered_at?: string | null
+          pickup_registered_by?: string | null
+          pickup_signature_url?: string | null
+          reissued_from?: string | null
           status?: string
+          student_cpf_snapshot?: string | null
+          student_name_snapshot?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -197,6 +278,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_reissued_from_fkey"
+            columns: ["reissued_from"]
+            isOneToOne: false
+            referencedRelation: "certificates"
             referencedColumns: ["id"]
           },
         ]
@@ -908,6 +996,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          read_at?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       presenca_assinaturas: {
         Row: {
           assinatura_tipo: string
@@ -1506,6 +1627,10 @@ export type Database = {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
+      cancel_certificate: {
+        Args: { _certificate_id: string; _reason: string }
+        Returns: undefined
+      }
       get_admin_reports: { Args: never; Returns: Json }
       get_duplicate_enrollments: {
         Args: never
@@ -1610,8 +1735,22 @@ export type Database = {
         }[]
       }
       log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }
+      mark_certificate_available: {
+        Args: { _certificate_id: string }
+        Returns: undefined
+      }
       mark_lesson_access: {
         Args: { _course_id: string; _lesson_id: string }
+        Returns: undefined
+      }
+      register_certificate_pickup: {
+        Args: {
+          _attendant_name: string
+          _certificate_id: string
+          _document_presented: string
+          _observations: string
+          _signature_url: string
+        }
         Returns: undefined
       }
       registrar_presenca: {
