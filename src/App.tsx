@@ -50,6 +50,10 @@ import PresencaEvento from "@/pages/PresencaEvento";
 import PresencaRelatorios from "@/pages/PresencaRelatorios";
 import PresencaAssinar from "@/pages/PresencaAssinar";
 import Hub from "@/pages/Hub";
+import CooperadosEventuaisList from "@/pages/CooperadosEventuaisList";
+import CooperadosEventuaisDetalhe from "@/pages/CooperadosEventuaisDetalhe";
+import AdminCampanhas from "@/pages/admin/AdminCampanhas";
+import AdminCampanhaDetalhe from "@/pages/admin/AdminCampanhaDetalhe";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
