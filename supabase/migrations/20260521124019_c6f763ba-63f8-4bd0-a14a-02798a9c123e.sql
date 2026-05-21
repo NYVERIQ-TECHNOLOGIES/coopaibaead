@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone text;
+COMMENT ON COLUMN public.profiles.phone IS 'Telefone/WhatsApp do cooperado em formato internacional (ex: 5575999999999) para notificações.';
