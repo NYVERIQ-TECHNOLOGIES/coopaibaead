@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CreditCard, Users, Building2, DollarSign, TrendingUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StatCard from "@/components/StatCard";
+import AdminPlans from "@/pages/AdminPlans";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
