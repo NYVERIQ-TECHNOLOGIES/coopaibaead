@@ -229,6 +229,11 @@ export default function Courses() {
                       <Lock className="w-3 h-3" /> Cooperado
                     </span>
                   )}
+                  {(course as any).eventual && (
+                    <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-xs px-2 py-1 rounded-full">
+                      Eventual
+                    </span>
+                  )}
                 </div>
               </Link>
               <div className="p-4">
