@@ -500,6 +500,12 @@ export default function Certificates() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CertificateAuditDialog
+        certificateId={auditCert?.id ?? null}
+        certificateCode={auditCert?.code}
+        onClose={() => setAuditCert(null)}
+      />
     </div>
   );
 }
