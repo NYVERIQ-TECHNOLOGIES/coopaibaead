@@ -677,17 +677,20 @@ function CertificatesTable({
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Cooperado</th>
               {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">CPF</th>}
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Data</th>
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emissão</th>
+              {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emitido por</th>}
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
               <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Ações</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={isStaff ? 7 : 6} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+              <tr><td colSpan={isStaff ? 8 : 6} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
             ) : filtered.map((cert, i) => {
               const name = cert.profiles?.full_name ?? cert.student_name_snapshot ?? "—";
               const cpf = cert.profiles?.cpf ?? cert.student_cpf_snapshot ?? "—";
+              const issuedRef = cert.issued_at || cert.created_at;
+              const issuedDate = new Date(issuedRef);
               return (
                 <motion.tr key={cert.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
                   className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
@@ -695,7 +698,13 @@ function CertificatesTable({
                   <td className="py-3 px-4 text-sm text-card-foreground">{name}</td>
                   {isStaff && <td className="py-3 px-4 text-xs text-muted-foreground font-mono">{cpf}</td>}
                   <td className="py-3 px-4 text-sm text-card-foreground">{cert.courses?.title ?? cert.course_title_snapshot ?? "—"}</td>
-                  <td className="py-3 px-4 text-sm text-muted-foreground">{new Date(cert.issued_at || cert.created_at).toLocaleDateString("pt-BR")}</td>
+                  <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">
+                    <div>{issuedDate.toLocaleDateString("pt-BR")}</div>
+                    <div className="text-xs opacity-70">{issuedDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
+                  </td>
+                  {isStaff && (
+                    <td className="py-3 px-4 text-xs text-muted-foreground">{cert.issued_by_name ?? "—"}</td>
+                  )}
                   <td className="py-3 px-4">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${CERT_STATUS_STYLE[cert.status] || "text-muted-foreground"}`}>
                       {CERT_STATUS_LABEL[cert.status] || cert.status}
