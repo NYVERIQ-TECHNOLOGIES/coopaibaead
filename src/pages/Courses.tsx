@@ -278,6 +278,8 @@ export default function Courses() {
           </motion.div>
         ))}
       </div>
+      </div>
+
 
       {!isLoading && filtered.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
