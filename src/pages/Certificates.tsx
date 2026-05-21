@@ -558,11 +558,12 @@ function AdminFilters(props: {
 
 function CertificatesTable({
   filtered, isLoading, isStaff, isAdmin,
-  onPickup, onPrint, onReissue, onCancel,
+  onPickup, onPrint, onReissue, onCancel, onAudit,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
   onPickup?: (c: any) => void; onPrint?: (c: any) => void;
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
+  onAudit?: (c: any) => void;
 }) {
   if (isLoading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
   return (
@@ -617,6 +618,9 @@ function CertificatesTable({
                           )}
                           <DropdownMenuItem onClick={() => onPrint?.(cert)} className="gap-2" disabled={!cert.pdf_path}>
                             <Printer className="w-4 h-4" /> Imprimir PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onAudit?.(cert)} className="gap-2">
+                            <History className="w-4 h-4" /> Histórico
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {cert.status !== "cancelado" && (
