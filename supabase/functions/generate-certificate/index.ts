@@ -527,6 +527,16 @@ function formatCpf(cpf: string): string {
   return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 
+function sanitizeName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")  // strip diacritics
+    .replace(/[^A-Za-z0-9\s]/g, " ")  // strip special chars
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+}
+
 function wrapText(text: string, font: any, size: number, maxWidth: number): string[] {
   const words = text.split(/\s+/);
   const lines: string[] = [];
