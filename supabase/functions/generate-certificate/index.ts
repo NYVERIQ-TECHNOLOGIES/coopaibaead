@@ -190,7 +190,7 @@ Deno.serve(async (req) => {
       details: { code: certCode, reissued_from: reissue_of || null },
     });
 
-    // Notify the student
+    // Notify the student (in-platform)
     await supabaseAdmin.from("notifications").insert({
       user_id: user_id!,
       type: "certificate_available",
@@ -198,6 +198,31 @@ Deno.serve(async (req) => {
       message: `Seu certificado do curso ${courseTitle} está disponível para retirada presencial na Cooperativa Coopaíba.`,
       link: `/certificates/${certCode}/retirada`,
     });
+
+    // WhatsApp informational notification (best-effort, never blocks issuance)
+    try {
+      const waMessage =
+        `Olá, ${studentName}! 🎓\n\n` +
+        `Seu certificado do curso *${courseTitle}* já está pronto e disponível para retirada presencial na sede da Cooperativa Coopaíba.\n\n` +
+        `Código de validação: ${certCode}\n\n` +
+        `Compareça em nosso horário de atendimento com um documento oficial com foto. ` +
+        `Por motivos de segurança e validação de identidade, *o certificado não é enviado por download nem por e-mail*.\n\n` +
+        `Mais informações: https://coopaiba.com.br/certificates/${certCode}/retirada`;
+
+      const waResp = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user_id!,
+          message: waMessage,
+          internal_token: serviceKey,
+        }),
+      });
+      const waData = await waResp.json().catch(() => ({}));
+      console.log("WhatsApp notification result:", waResp.status, waData);
+    } catch (waErr) {
+      console.error("WhatsApp notification failed (non-blocking):", waErr);
+    }
 
     // Only admins receive the pdf_url back (for printing). Students never get a download URL.
     let pdf_url: string | null = null;
