@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CreditCard, Users, Building2, DollarSign, TrendingUp, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import StatCard from "@/components/StatCard";
+import AdminPlans from "@/pages/AdminPlans";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +55,9 @@ const statusVariant = (s: string): "default" | "secondary" | "destructive" | "ou
 };
 
 export default function AdminSubscriptions() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "subscriptions";
+  const [tab, setTab] = useState(initialTab);
   const [loading, setLoading] = useState(true);
   const [subs, setSubs] = useState<Sub[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
@@ -60,6 +65,12 @@ export default function AdminSubscriptions() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [courses, setCourses] = useState<Record<string, Course>>({});
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && t !== tab) setTab(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     (async () => {
@@ -210,11 +221,20 @@ export default function AdminSubscriptions() {
         />
       </div>
 
-      <Tabs defaultValue="subscriptions">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          setTab(v);
+          const next = new URLSearchParams(searchParams);
+          next.set("tab", v);
+          setSearchParams(next, { replace: true });
+        }}
+      >
         <TabsList>
           <TabsTrigger value="subscriptions">Assinaturas ({filteredSubs.length})</TabsTrigger>
           <TabsTrigger value="purchases">Pagamentos ({filteredPurchases.length})</TabsTrigger>
           <TabsTrigger value="cooperativas">Cooperativas ({coopBreakdown.length})</TabsTrigger>
+          <TabsTrigger value="plans">Planos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="subscriptions">
@@ -341,6 +361,12 @@ export default function AdminSubscriptions() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="plans">
+          <div className="-mx-6">
+            <AdminPlans />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
