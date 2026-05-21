@@ -656,6 +656,10 @@ export default function CourseDetail() {
   // ---- Generate certificate (student self-issue at 100%) ----
   const handleGenerateCertificate = async () => {
     if (!user || !courseId) return;
+    if (existingCert) {
+      toast({ title: "Certificado já existente", description: "Este curso já possui um certificado vinculado à sua conta." });
+      return;
+    }
     setGeneratingCert(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-certificate", {
