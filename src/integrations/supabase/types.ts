@@ -207,6 +207,8 @@ export type Database = {
           enrollment_number_snapshot: string | null
           id: string
           issued_at: string | null
+          issued_by: string | null
+          issued_by_name: string | null
           pdf_path: string | null
           pickup_attendant_name: string | null
           pickup_document_presented: string | null
@@ -237,6 +239,8 @@ export type Database = {
           enrollment_number_snapshot?: string | null
           id?: string
           issued_at?: string | null
+          issued_by?: string | null
+          issued_by_name?: string | null
           pdf_path?: string | null
           pickup_attendant_name?: string | null
           pickup_document_presented?: string | null
@@ -267,6 +271,8 @@ export type Database = {
           enrollment_number_snapshot?: string | null
           id?: string
           issued_at?: string | null
+          issued_by?: string | null
+          issued_by_name?: string | null
           pdf_path?: string | null
           pickup_attendant_name?: string | null
           pickup_document_presented?: string | null
