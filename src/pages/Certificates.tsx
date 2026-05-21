@@ -150,16 +150,25 @@ export default function Certificates() {
     return json;
   };
 
-  const openPdfSafely = async (signedUrl: string, title = "certificado.pdf") => {
-    const printWindow = window.open("about:blank", "_blank");
+  const openPdfSafely = async (code: string, { download = false }: { download?: boolean } = {}) => {
+    const filename = `${code}.pdf`;
+    const printWindow = !download ? window.open("about:blank", "_blank") : null;
     if (printWindow) {
       printWindow.document.write("<p style='font-family: sans-serif; padding: 24px'>Preparando certificado...</p>");
     }
 
     try {
-      const response = await fetch(signedUrl);
-      if (!response.ok) throw new Error("Não foi possível carregar o PDF");
-      const blobUrl = URL.createObjectURL(await response.blob());
+      const { data: { session } } = await supabase.auth.getSession();
+      const proxyUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-certificate?code=${encodeURIComponent(code)}${download ? "&download=1" : ""}`;
+      const response = await fetch(proxyUrl, {
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+      });
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || "Não foi possível carregar o PDF");
+      }
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
 
       if (printWindow) {
         printWindow.location.href = blobUrl;
@@ -168,16 +177,16 @@ export default function Certificates() {
         link.href = blobUrl;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.download = title;
+        link.download = filename;
         document.body.appendChild(link);
         link.click();
         link.remove();
       }
 
       setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
-    } catch (error) {
+    } catch (error: any) {
       printWindow?.close();
-      toast({ title: "Erro ao abrir certificado", description: "Tente usar o botão de impressão novamente.", variant: "destructive" });
+      toast({ title: "Erro ao abrir certificado", description: error?.message || "Tente novamente.", variant: "destructive" });
     }
   };
 
@@ -190,7 +199,7 @@ export default function Certificates() {
       qc.invalidateQueries({ queryKey: ["certificates"] });
       setGenerateOpen(false); setSelectedStudent(""); setSelectedCourse("");
       toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code} — disponível para retirada presencial.` });
-      if (isAdmin && data.pdf_url) openPdfSafely(data.pdf_url, `${data.certificate.code}.pdf`);
+      if (isAdmin) openPdfSafely(data.certificate.code);
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
@@ -208,7 +217,7 @@ export default function Certificates() {
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["certificates"] });
       toast({ title: "Certificado reemitido", description: `Novo código: ${data.certificate.code}` });
-      if (data.pdf_url) openPdfSafely(data.pdf_url, `${data.certificate.code}.pdf`);
+      openPdfSafely(data.certificate.code);
     },
     onError: (e: any) => toast({ title: "Erro ao reemitir", description: e.message, variant: "destructive" }),
   });
@@ -235,13 +244,9 @@ export default function Certificates() {
       toast({ title: "PDF indisponível", description: "Este certificado não possui PDF arquivado.", variant: "destructive" });
       return;
     }
-    const { data, error } = await supabase.storage.from("media").createSignedUrl(cert.pdf_path, 300);
-    if (error || !data?.signedUrl) {
-      toast({ title: "Erro ao gerar link", variant: "destructive" });
-      return;
-    }
-    openPdfSafely(data.signedUrl, `${cert.code}.pdf`);
+    openPdfSafely(cert.code);
   };
+
 
   const emitted = certificates.filter((c) => c.status === "emitido" || c.status === "disponivel_retirada").length;
   const pending = certificates.filter((c) => c.status === "pendente").length;
