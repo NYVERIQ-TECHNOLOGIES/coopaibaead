@@ -213,6 +213,7 @@ export default function Courses() {
       )}
 
       {/* Grid */}
+      <div className="rounded-xl border border-border bg-card/30 max-h-[calc(100vh-280px)] overflow-y-auto sidebar-scroll p-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {filtered.map((course, i) => (
           <motion.div key={course.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
