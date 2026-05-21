@@ -354,6 +354,15 @@ export default function Certificates() {
                 <Upload className="w-4 h-4" /> Enviar Modelo
               </Button>
             )}
+            {isAdmin && (
+              <>
+                <input ref={logoRef} type="file" accept="image/png,image/jpeg" className="hidden" onChange={onLogoSelected} />
+                <Button variant="outline" className="gap-2" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
+                  {uploadingLogo ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileImage className="w-4 h-4" />}
+                  {uploadingLogo ? "Enviando..." : "Logo COOPAIBA"}
+                </Button>
+              </>
+            )}
             <Button asChild variant="outline" className="gap-2">
               <Link to="/certificates/relatorios"><BarChart3 className="w-4 h-4" /> Relatórios</Link>
             </Button>
