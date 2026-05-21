@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardCheck, BarChart3, Library,
   Award, Settings, Shield, Upload, MessageSquare, Activity, Headphones,
-  UserX, CreditCard, User, Compass,
+  UserX, CreditCard, User, Compass, Sparkles,
 } from "lucide-react";
 
 type Item = {
