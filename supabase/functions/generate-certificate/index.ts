@@ -333,8 +333,8 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
     page.drawRectangle({ x: 18, y: 18, width: pageWidth - 36, height: pageHeight - 36, borderColor: green, borderWidth: 4 });
     page.drawRectangle({ x: 28, y: 28, width: pageWidth - 56, height: pageHeight - 56, borderColor: blue, borderWidth: 1 });
 
-    // Top bar
-    page.drawRectangle({ x: 28, y: pageHeight - 78, width: pageWidth - 56, height: 50, color: green });
+    // Top bar (white with subtle border) to highlight the logo
+    page.drawRectangle({ x: 28, y: pageHeight - 78, width: pageWidth - 56, height: 50, color: rgb(1, 1, 1), borderColor: green, borderWidth: 1 });
     // Yellow accent stripe under top bar
     page.drawRectangle({ x: 28, y: pageHeight - 84, width: pageWidth - 56, height: 6, color: yellow });
 
@@ -364,20 +364,21 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
       } catch { /* ignore */ }
     } else {
       page.drawText("COOPAIBA", {
-        x: 48, y: headerCenterY - 8, size: 22, font: fontBold, color: rgb(1, 1, 1),
+        x: 48, y: headerCenterY - 8, size: 22, font: fontBold, color: green,
       });
     }
 
     const headerRight = "Cooperativa dos Agricultores Familiares e dos Empreendimentos Solidários";
     const hrw = fontRegular.widthOfTextAtSize(headerRight, 9);
     page.drawText(headerRight, {
-      x: pageWidth - 48 - hrw, y: headerCenterY - 2, size: 9, font: fontRegular, color: rgb(1, 1, 1),
+      x: pageWidth - 48 - hrw, y: headerCenterY - 2, size: 9, font: fontRegular, color: green,
     });
     const pec = "Programa de Educação Cooperativa — PEC";
     const pw = fontItalic.widthOfTextAtSize(pec, 8);
     page.drawText(pec, {
-      x: pageWidth - 48 - pw, y: headerCenterY - 14, size: 8, font: fontItalic, color: rgb(1, 1, 1),
+      x: pageWidth - 48 - pw, y: headerCenterY - 14, size: 8, font: fontItalic, color: blue,
     });
+
   }
 
   const centerX = pageWidth / 2;
@@ -453,7 +454,7 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   }
 
   // City/date line
-  const cityDate = `Itapetinga — BA, ${data.dateStr}.`;
+  const cityDate = `Piaçabuçu — AL, ${data.dateStr}.`;
   const cdw = fontItalic.widthOfTextAtSize(cityDate, 11);
   page.drawText(cityDate, { x: centerX - cdw / 2, y: 150, size: 11, font: fontItalic, color: ink });
 
