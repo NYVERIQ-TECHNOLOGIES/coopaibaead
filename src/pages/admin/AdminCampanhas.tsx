@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Sparkles, ExternalLink } from "lucide-react";
+import { Plus, Sparkles, ExternalLink, Archive, ArchiveRestore } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminCampanhas() {
