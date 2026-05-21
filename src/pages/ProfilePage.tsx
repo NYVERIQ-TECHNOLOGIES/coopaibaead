@@ -17,6 +17,7 @@ export default function ProfilePage() {
   const [cooperativa, setCooperativa] = useState(profile?.cooperativa || "");
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
   const [enrollmentNumber, setEnrollmentNumber] = useState<string>("");
+  const [phone, setPhone] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -25,10 +26,13 @@ export default function ProfilePage() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("enrollment_number")
+      .select("enrollment_number, phone")
       .eq("user_id", user.id)
       .single()
-      .then(({ data }) => setEnrollmentNumber(data?.enrollment_number || ""));
+      .then(({ data }) => {
+        setEnrollmentNumber(data?.enrollment_number || "");
+        setPhone((data as any)?.phone || "");
+      });
   }, [user]);
 
   const initials = fullName
@@ -60,7 +64,7 @@ export default function ProfilePage() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName, cooperativa })
+      .update({ full_name: fullName, cooperativa, phone: phone.trim() || null } as any)
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
@@ -120,6 +124,18 @@ export default function ProfilePage() {
           <div className="sm:col-span-2">
             <Label>Cooperativa</Label>
             <Input value={cooperativa} onChange={(e) => setCooperativa(e.target.value)} placeholder="Nome da cooperativa" />
+          </div>
+          <div className="sm:col-span-2">
+            <Label>WhatsApp / Celular</Label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(75) 99999-9999"
+              type="tel"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Usado para notificar quando seu certificado estiver disponível para retirada.
+            </p>
           </div>
         </div>
 
