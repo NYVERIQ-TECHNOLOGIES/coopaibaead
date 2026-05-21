@@ -27,6 +27,7 @@ interface Course {
   image: string | null;
   duration: string | null;
   cooperado_only: boolean;
+  eventual?: boolean;
   is_paid: boolean;
   price: number | null;
   promotional_price: number | null;
@@ -43,6 +44,7 @@ const emptyForm = {
   duration: "",
   intro_video_url: "",
   cooperado_only: false,
+  eventual: false,
   is_paid: false,
   price: "" as string,
   promotional_price: "" as string,
