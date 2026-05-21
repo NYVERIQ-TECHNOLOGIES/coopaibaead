@@ -216,6 +216,8 @@ Deno.serve(async (req) => {
         enrollment_number_snapshot: profile.enrollment_number || null,
         cooperativa_snapshot: profile.cooperativa || null,
         reissued_from: reissue_of || null,
+        issued_by: user.id,
+        issued_by_name: issuerName,
       })
       .select()
       .single();
