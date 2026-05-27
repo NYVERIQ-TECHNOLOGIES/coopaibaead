@@ -198,42 +198,6 @@ export default function CourseDetail() {
     !paidAccess.purchased &&
     !paidAccess.subscribed;
 
-  // ---- Check enrollment for current user ----
-  const { data: myEnrollment } = useQuery({
-    enabled: !!user && !!courseId && !isAdmin,
-    queryKey: ["my-enrollment", courseId, user?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("enrollments")
-        .select("id, status")
-        .eq("user_id", user!.id)
-        .eq("course_id", courseId!)
-        .maybeSingle();
-      return data;
-    },
-  });
-  const isEnrolled = isAdmin || (!!myEnrollment && myEnrollment.status === "ativo");
-
-  const enrollMut = useMutation({
-    mutationFn: async () => {
-      if (!user || !courseId) throw new Error("Não autenticado");
-      const { error } = await supabase
-        .from("enrollments")
-        .insert({ user_id: user.id, course_id: courseId, status: "ativo", progress: 0 });
-      if (error) throw error;
-    },
-    onSuccess: async () => {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ["my-enrollment", courseId, user?.id] }),
-        qc.invalidateQueries({ queryKey: ["my-enrollments", user?.id] }),
-        qc.invalidateQueries({ queryKey: ["course_modules", courseId] }),
-        qc.invalidateQueries({ queryKey: ["course_evaluations", courseId] }),
-        qc.invalidateQueries({ queryKey: ["course_books", courseId] }),
-      ]);
-      toast({ title: "Matrícula realizada!", description: "Você já pode acessar o conteúdo do curso." });
-    },
-    onError: (e: any) => toast({ title: "Erro ao iniciar curso", description: e.message, variant: "destructive" }),
-  });
 
   // ---- Dialog state ----
   const [moduleDialogOpen, setModuleDialogOpen] = useState(false);
