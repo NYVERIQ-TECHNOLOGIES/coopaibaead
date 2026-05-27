@@ -817,6 +817,26 @@ export default function CourseDetail() {
         />
       )}
 
+      {!isAdmin && !needsPurchase && !isEnrolled && user && (
+        <div className="bg-card border border-border rounded-xl p-5 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-heading font-semibold text-card-foreground">Inicie este curso para liberar o conteúdo</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Você ainda não está matriculado. Clique em "Iniciar curso" para acessar módulos, aulas, atividades, avaliações e materiais de apoio.
+            </p>
+          </div>
+          <Button
+            onClick={() => enrollMut.mutate()}
+            disabled={enrollMut.isPending}
+            className="gradient-primary text-primary-foreground gap-2 shrink-0"
+          >
+            {enrollMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            {enrollMut.isPending ? "Matriculando..." : "Iniciar curso"}
+          </Button>
+        </div>
+      )}
+
+
       {/* Progress */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="bg-card rounded-xl p-5 shadow-card border border-border">
