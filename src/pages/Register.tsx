@@ -47,14 +47,17 @@ const PASSWORD_CHECKS: PasswordCheck[] = [
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [userType, setUserType] = useState<"aluno" | "cooperado">("aluno");
+  const [userType, setUserType] = useState<"aluno" | "cooperado" | "eventual">("aluno");
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [cooperativa, setCooperativa] = useState("");
+  const [phone, setPhone] = useState("");
+  const [endereco, setEndereco] = useState("");
   const [cooperativasList, setCooperativasList] = useState<{ id: string; name: string }[]>([]);
+
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
