@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { cpf, password, full_name, cooperativa, email } = await req.json();
+    const { cpf, password, full_name, cooperativa, email, phone, endereco, tipo } = await req.json();
 
     const cleanCpf = String(cpf || "").replace(/\D/g, "");
     if (cleanCpf.length !== 11) {
@@ -133,6 +133,27 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const tipoFinal = tipo === "eventual" ? "eventual" : "cooperado";
+    const cleanPhone = phone ? String(phone).replace(/\D/g, "").slice(0, 15) : null;
+    const cleanEndereco = endereco ? String(endereco).trim().slice(0, 300) : null;
+
+    if (tipoFinal === "eventual") {
+      if (!cleanPhone || cleanPhone.length < 10) {
+        return new Response(JSON.stringify({ error: "Telefone obrigatório" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!cleanEndereco || cleanEndereco.length < 5) {
+        return new Response(JSON.stringify({ error: "Endereço obrigatório" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+
 
     // CPF cannot already exist as approved profile or pending registration
     const { data: existingProfile } = await admin
@@ -164,9 +185,13 @@ Deno.serve(async (req) => {
       cpf: cleanCpf,
       email: email ? String(email).trim().toLowerCase() : null,
       cooperativa: cooperativa || null,
+      phone: cleanPhone,
+      endereco: cleanEndereco,
+      tipo: tipoFinal,
       password_hash: passwordHash,
       status: "pending",
     });
+
     if (insErr) {
       return new Response(JSON.stringify({ error: insErr.message }), {
         status: 400,
