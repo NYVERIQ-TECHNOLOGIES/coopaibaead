@@ -169,8 +169,8 @@ export default function AdminCampanhaDetalhe() {
                     <TableHead>Protocolo</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>CPF</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Cidade/UF</TableHead>
+                    <TableHead>Número</TableHead>
+                    <TableHead>Endereço</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead></TableHead>
