@@ -60,34 +60,31 @@ export default function CooperadosEventuaisDetalhe() {
   }, [id, user?.id]);
 
   useEffect(() => {
-    if (profile && !form.nome) {
-      setForm((f) => ({ ...f, nome: profile.full_name || "", cpf: (profile as any).cpf ? maskCPF((profile as any).cpf) : "" }));
+    if (profile) {
+      setForm((f) => ({
+        ...f,
+        nome: f.nome || profile.full_name || "",
+        cpf: f.cpf || ((profile as any).cpf ? maskCPF((profile as any).cpf) : ""),
+      }));
     }
-    if (user?.email && !form.email) setForm((f) => ({ ...f, email: user.email || "" }));
     // eslint-disable-next-line
-  }, [profile, user]);
+  }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.termo) return toast.error("Confirme o termo de participação");
-    if (!isValidCPF(form.cpf)) return toast.error("CPF inválido");
     if (form.nome.trim().length < 2) return toast.error("Informe seu nome completo");
-    if (!form.rg.trim()) return toast.error("Informe o RG");
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) return toast.error("E-mail inválido");
+    if (!isValidCPF(form.cpf)) return toast.error("CPF inválido");
     if (onlyDigits(form.telefone).length < 10) return toast.error("Telefone inválido");
-    if (!form.cidade.trim()) return toast.error("Informe a cidade");
-    if (!form.estado) return toast.error("Selecione o estado");
+    if (form.endereco.trim().length < 5) return toast.error("Informe o endereço completo");
 
     setSubmitting(true);
     const { data, error } = await supabase.rpc("inscrever_cooperado_eventual", {
       _campanha_id: id!,
       _nome: form.nome,
       _cpf: onlyDigits(form.cpf),
-      _rg: form.rg,
-      _email: form.email,
       _telefone: form.telefone,
-      _cidade: form.cidade,
-      _estado: form.estado,
+      _endereco: form.endereco,
     });
     setSubmitting(false);
     if (error) {
