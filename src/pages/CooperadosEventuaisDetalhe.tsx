@@ -211,29 +211,18 @@ export default function CooperadosEventuaisDetalhe() {
                 <Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} required placeholder="000.000.000-00" />
               </div>
               <div>
-                <Label>RG *</Label>
-                <Input value={form.rg} onChange={(e) => setForm({ ...form, rg: e.target.value })} required />
-              </div>
-              <div>
-                <Label>E-mail *</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-              </div>
-              <div>
                 <Label>Telefone / WhatsApp *</Label>
                 <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: maskPhone(e.target.value) })} required placeholder="(00) 00000-0000" />
               </div>
-              <div>
-                <Label>Cidade *</Label>
-                <Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} required />
-              </div>
-              <div>
-                <Label>Estado *</Label>
-                <Select value={form.estado} onValueChange={(v) => setForm({ ...form, estado: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {ESTADOS_BR.map((e) => <SelectItem key={e.uf} value={e.uf}>{e.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <div className="md:col-span-2">
+                <Label>Endereço *</Label>
+                <Textarea
+                  value={form.endereco}
+                  onChange={(e) => setForm({ ...form, endereco: e.target.value })}
+                  required
+                  rows={3}
+                  placeholder="Rua, número, bairro, cidade - UF, CEP"
+                />
               </div>
               <div className="md:col-span-2 flex items-start gap-2 pt-2">
                 <Checkbox id="termo" checked={form.termo} onCheckedChange={(v) => setForm({ ...form, termo: !!v })} />
