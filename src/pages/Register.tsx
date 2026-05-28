@@ -13,9 +13,6 @@ import {
   IdCard,
   Check,
   X,
-  Phone,
-  MapPin,
-  Sparkles,
 } from "lucide-react";
 
 import logoImg from "@/assets/logo-coopaiba.png";
