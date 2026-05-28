@@ -169,8 +169,8 @@ export default function AdminCampanhaDetalhe() {
                     <TableHead>Protocolo</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>CPF</TableHead>
-                    <TableHead>E-mail</TableHead>
-                    <TableHead>Cidade/UF</TableHead>
+                    <TableHead>Número</TableHead>
+                    <TableHead>Endereço</TableHead>
                     <TableHead>Data</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead></TableHead>
@@ -182,8 +182,8 @@ export default function AdminCampanhaDetalhe() {
                       <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
                       <TableCell>{i.nome_completo}</TableCell>
                       <TableCell>{maskCPF(i.cpf)}</TableCell>
-                      <TableCell className="text-xs">{i.email}</TableCell>
-                      <TableCell>{i.cidade}/{i.estado}</TableCell>
+                      <TableCell className="text-xs">{i.telefone}</TableCell>
+                      <TableCell className="text-xs max-w-xs truncate" title={i.endereco}>{i.endereco}</TableCell>
                       <TableCell className="text-xs">{new Date(i.data_inscricao).toLocaleString("pt-BR")}</TableCell>
                       <TableCell><Badge variant={i.status === "aprovada" ? "default" : i.status === "cancelada" ? "destructive" : "secondary"}>{i.status}</Badge></TableCell>
                       <TableCell>
