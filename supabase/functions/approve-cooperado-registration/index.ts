@@ -84,9 +84,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Approve: create the cooperado account
+    // Approve: create the account
     const cpf = pending.cpf as string;
-    const syntheticEmail = `cpf${cpf}@cooperado.coopaiba.com.br`;
+    const tipo = (pending as { tipo?: string }).tipo === "eventual" ? "eventual" : "cooperado";
+    const syntheticEmail =
+      tipo === "eventual"
+        ? `cpf${cpf}@eventual.coopaiba.com.br`
+        : `cpf${cpf}@cooperado.coopaiba.com.br`;
     const tempPassword = randomPassword();
 
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
@@ -97,7 +101,7 @@ Deno.serve(async (req) => {
         full_name: pending.full_name,
         cpf,
         cooperativa: pending.cooperativa ?? null,
-        user_type: "cooperado",
+        user_type: tipo,
       },
     });
     if (createErr || !created?.user) {
@@ -112,9 +116,16 @@ Deno.serve(async (req) => {
       full_name: pending.full_name,
       cpf,
       cooperativa: pending.cooperativa ?? null,
+      phone: (pending as { phone?: string | null }).phone ?? null,
+      endereco: (pending as { endereco?: string | null }).endereco ?? null,
     }).eq("user_id", userId);
     await admin.from("user_roles").delete().eq("user_id", userId);
-    await admin.from("user_roles").insert({ user_id: userId, role: "cooperado" });
+    // Eventual users get the standard 'aluno' role; campaign access is managed separately.
+    await admin.from("user_roles").insert({
+      user_id: userId,
+      role: tipo === "eventual" ? "aluno" : "cooperado",
+    });
+
 
     await admin.from("cooperado_pending_registrations")
       .update({
