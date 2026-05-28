@@ -345,7 +345,7 @@ export default function Register() {
           </p>
 
           {/* Type selector */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               type="button"
               onClick={() => setUserType("aluno")}
