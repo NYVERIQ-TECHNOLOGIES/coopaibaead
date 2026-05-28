@@ -386,30 +386,8 @@ export default function Register() {
               </p>
               <p className="text-xs text-muted-foreground mt-1">Acesso completo + exclusivos</p>
             </button>
-            <button
-              type="button"
-              onClick={() => setUserType("eventual")}
-              className={`p-4 rounded-xl border-2 transition-all text-center ${
-                userType === "eventual"
-                  ? "border-accent bg-accent/10"
-                  : "border-border hover:border-muted-foreground"
-              }`}
-            >
-              <Sparkles
-                className={`w-6 h-6 mx-auto mb-2 ${
-                  userType === "eventual" ? "text-accent-foreground" : "text-muted-foreground"
-                }`}
-              />
-              <p
-                className={`text-sm font-semibold ${
-                  userType === "eventual" ? "text-accent-foreground" : "text-card-foreground"
-                }`}
-              >
-                Cooperado Eventual
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Acesso por campanha</p>
-            </button>
           </div>
+
 
 
           <form className="space-y-4" onSubmit={handleRegister} noValidate>
