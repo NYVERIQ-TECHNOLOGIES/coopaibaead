@@ -147,20 +147,10 @@ export default function Register() {
   const emailRequired = userType === "aluno";
   const emailOk = !emailRequired || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const cooperativaOk = userType !== "cooperado" || !!cooperativa;
-  const phoneDigits = phone.replace(/\D/g, "");
-  const phoneOk = userType !== "eventual" || phoneDigits.length >= 10;
-  const enderecoOk = userType !== "eventual" || endereco.trim().length >= 5;
 
   const formValid =
-    nameOk && cpfOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk && phoneOk && enderecoOk;
+    nameOk && cpfOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk;
 
-  const formatPhone = (v: string) => {
-    const d = v.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 10) {
-      return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d{1,4})$/, "$1-$2");
-    }
-    return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d{1,4})$/, "$1-$2");
-  };
 
 
   const handleRegister = async (e: React.FormEvent) => {
