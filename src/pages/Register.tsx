@@ -13,9 +13,6 @@ import {
   IdCard,
   Check,
   X,
-  Phone,
-  MapPin,
-  Sparkles,
 } from "lucide-react";
 
 import logoImg from "@/assets/logo-coopaiba.png";
@@ -47,15 +44,13 @@ const PASSWORD_CHECKS: PasswordCheck[] = [
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [userType, setUserType] = useState<"aluno" | "cooperado" | "eventual">("aluno");
+  const [userType, setUserType] = useState<"aluno" | "cooperado">("aluno");
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [cooperativa, setCooperativa] = useState("");
-  const [phone, setPhone] = useState("");
-  const [endereco, setEndereco] = useState("");
   const [cooperativasList, setCooperativasList] = useState<{ id: string; name: string }[]>([]);
 
   const [agreed, setAgreed] = useState(false);
@@ -152,20 +147,10 @@ export default function Register() {
   const emailRequired = userType === "aluno";
   const emailOk = !emailRequired || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const cooperativaOk = userType !== "cooperado" || !!cooperativa;
-  const phoneDigits = phone.replace(/\D/g, "");
-  const phoneOk = userType !== "eventual" || phoneDigits.length >= 10;
-  const enderecoOk = userType !== "eventual" || endereco.trim().length >= 5;
 
   const formValid =
-    nameOk && cpfOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk && phoneOk && enderecoOk;
+    nameOk && cpfOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk;
 
-  const formatPhone = (v: string) => {
-    const d = v.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 10) {
-      return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{4})(\d{1,4})$/, "$1-$2");
-    }
-    return d.replace(/(\d{2})(\d)/, "($1) $2").replace(/(\d{5})(\d{1,4})$/, "$1-$2");
-  };
 
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -218,15 +203,14 @@ export default function Register() {
 
     const cleanCpf = cpf.replace(/\D/g, "");
 
-    // ====== Fluxo COOPERADO ou COOPERADO EVENTUAL (via edge function + e-mail sintético) ======
-    if (userType === "cooperado" || userType === "eventual") {
+    // ====== Fluxo COOPERADO (via edge function + e-mail sintético) ======
+    if (userType === "cooperado") {
       try {
         let avatar_url: string | undefined;
 
         if (photoFile) {
           const ext = photoFile.name.split(".").pop();
-          const prefix = userType === "eventual" ? "eventual" : "cooperado";
-          const path = `${prefix}-${cleanCpf}/${Date.now()}.${ext}`;
+          const path = `cooperado-${cleanCpf}/${Date.now()}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from("avatars")
             .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
@@ -241,11 +225,8 @@ export default function Register() {
             cpf: cleanCpf,
             password,
             full_name: trimmedName,
-            cooperativa: userType === "cooperado" ? cooperativa : null,
+            cooperativa,
             avatar_url,
-            tipo: userType,
-            phone: userType === "eventual" ? phoneDigits : null,
-            endereco: userType === "eventual" ? endereco.trim() : null,
           },
         });
 
@@ -259,9 +240,7 @@ export default function Register() {
         toast({
           title: "Solicitação enviada para análise",
           description:
-            userType === "eventual"
-              ? "Seu cadastro de cooperado eventual será revisado pela administração. Você receberá acesso após a aprovação."
-              : "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
+            "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
         });
         navigate("/login");
         setLoading(false);
@@ -276,6 +255,7 @@ export default function Register() {
         return;
       }
     }
+
 
 
     // ====== Fluxo ALUNO: signup padrão com e-mail real ======
@@ -365,7 +345,7 @@ export default function Register() {
           </p>
 
           {/* Type selector */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-2 gap-3 mb-6">
             <button
               type="button"
               onClick={() => setUserType("aluno")}
@@ -406,30 +386,8 @@ export default function Register() {
               </p>
               <p className="text-xs text-muted-foreground mt-1">Acesso completo + exclusivos</p>
             </button>
-            <button
-              type="button"
-              onClick={() => setUserType("eventual")}
-              className={`p-4 rounded-xl border-2 transition-all text-center ${
-                userType === "eventual"
-                  ? "border-accent bg-accent/10"
-                  : "border-border hover:border-muted-foreground"
-              }`}
-            >
-              <Sparkles
-                className={`w-6 h-6 mx-auto mb-2 ${
-                  userType === "eventual" ? "text-accent-foreground" : "text-muted-foreground"
-                }`}
-              />
-              <p
-                className={`text-sm font-semibold ${
-                  userType === "eventual" ? "text-accent-foreground" : "text-card-foreground"
-                }`}
-              >
-                Cooperado Eventual
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">Acesso por campanha</p>
-            </button>
           </div>
+
 
 
           <form className="space-y-4" onSubmit={handleRegister} noValidate>
@@ -519,56 +477,8 @@ export default function Register() {
               </div>
             )}
 
-            {userType === "eventual" && (
-              <>
-                <div>
-                  <label htmlFor="phone" className="text-sm font-medium text-card-foreground mb-1.5 block">
-                    Número de telefone *
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <input
-                      id="phone"
-                      type="tel"
-                      inputMode="tel"
-                      placeholder="(00) 00000-0000"
-                      value={phone}
-                      onChange={(e) => setPhone(formatPhone(e.target.value))}
-                      required
-                      autoComplete="tel"
-                      maxLength={16}
-                      className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </div>
-                  {phone.length > 0 && !phoneOk && (
-                    <p className="text-xs text-destructive mt-1">Telefone inválido.</p>
-                  )}
-                </div>
 
-                <div>
-                  <label htmlFor="endereco" className="text-sm font-medium text-card-foreground mb-1.5 block">
-                    Endereço *
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <textarea
-                      id="endereco"
-                      placeholder="Rua, número, bairro, cidade - UF"
-                      value={endereco}
-                      onChange={(e) => setEndereco(e.target.value)}
-                      required
-                      maxLength={300}
-                      rows={2}
-                      autoComplete="street-address"
-                      className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                    />
-                  </div>
-                  {endereco.length > 0 && !enderecoOk && (
-                    <p className="text-xs text-destructive mt-1">Informe um endereço completo.</p>
-                  )}
-                </div>
-              </>
-            )}
+
 
 
             {/* E-mail (apenas para alunos) */}
