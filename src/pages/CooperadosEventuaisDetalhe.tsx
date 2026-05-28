@@ -26,7 +26,7 @@ export default function CooperadosEventuaisDetalhe() {
   const [protocoloGerado, setProtocoloGerado] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    nome: "", cpf: "", rg: "", email: "", telefone: "", cidade: "", estado: "", termo: false,
+    nome: "", cpf: "", telefone: "", endereco: "", termo: false,
   });
 
   const load = async () => {
