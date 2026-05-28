@@ -185,9 +185,13 @@ Deno.serve(async (req) => {
       cpf: cleanCpf,
       email: email ? String(email).trim().toLowerCase() : null,
       cooperativa: cooperativa || null,
+      phone: cleanPhone,
+      endereco: cleanEndereco,
+      tipo: tipoFinal,
       password_hash: passwordHash,
       status: "pending",
     });
+
     if (insErr) {
       return new Response(JSON.stringify({ error: insErr.message }), {
         status: 400,
