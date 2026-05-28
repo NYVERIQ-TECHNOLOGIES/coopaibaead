@@ -439,18 +439,19 @@ export type Database = {
           campanha_id: string
           cancelado_em: string | null
           cancelado_por: string | null
-          cidade: string
+          cidade: string | null
           cpf: string
           created_at: string
           data_aprovacao: string | null
           data_inscricao: string
           email: string
-          estado: string
+          endereco: string | null
+          estado: string | null
           id: string
           motivo_cancelamento: string | null
           nome_completo: string
           protocolo: string
-          rg: string
+          rg: string | null
           status: string
           telefone: string
           updated_at: string
@@ -461,18 +462,19 @@ export type Database = {
           campanha_id: string
           cancelado_em?: string | null
           cancelado_por?: string | null
-          cidade: string
+          cidade?: string | null
           cpf: string
           created_at?: string
           data_aprovacao?: string | null
           data_inscricao?: string
           email: string
-          estado: string
+          endereco?: string | null
+          estado?: string | null
           id?: string
           motivo_cancelamento?: string | null
           nome_completo: string
           protocolo: string
-          rg: string
+          rg?: string | null
           status?: string
           telefone: string
           updated_at?: string
@@ -483,18 +485,19 @@ export type Database = {
           campanha_id?: string
           cancelado_em?: string | null
           cancelado_por?: string | null
-          cidade?: string
+          cidade?: string | null
           cpf?: string
           created_at?: string
           data_aprovacao?: string | null
           data_inscricao?: string
           email?: string
-          estado?: string
+          endereco?: string | null
+          estado?: string | null
           id?: string
           motivo_cancelamento?: string | null
           nome_completo?: string
           protocolo?: string
-          rg?: string
+          rg?: string | null
           status?: string
           telefone?: string
           updated_at?: string
@@ -1910,12 +1913,9 @@ export type Database = {
       inscrever_cooperado_eventual: {
         Args: {
           _campanha_id: string
-          _cidade: string
           _cpf: string
-          _email: string
-          _estado: string
+          _endereco: string
           _nome: string
-          _rg: string
           _telefone: string
         }
         Returns: Json

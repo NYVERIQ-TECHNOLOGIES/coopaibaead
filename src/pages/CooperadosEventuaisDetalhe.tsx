@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ESTADOS_BR, maskPhone } from "@/lib/estados-br";
+import { maskPhone } from "@/lib/estados-br";
 import { maskCPF, isValidCPF, onlyDigits } from "@/lib/cpf";
 import { Sparkles, CheckCircle2, ArrowLeft } from "lucide-react";
 
@@ -26,7 +26,7 @@ export default function CooperadosEventuaisDetalhe() {
   const [protocoloGerado, setProtocoloGerado] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    nome: "", cpf: "", rg: "", email: "", telefone: "", cidade: "", estado: "", termo: false,
+    nome: "", cpf: "", telefone: "", endereco: "", termo: false,
   });
 
   const load = async () => {
@@ -60,34 +60,31 @@ export default function CooperadosEventuaisDetalhe() {
   }, [id, user?.id]);
 
   useEffect(() => {
-    if (profile && !form.nome) {
-      setForm((f) => ({ ...f, nome: profile.full_name || "", cpf: (profile as any).cpf ? maskCPF((profile as any).cpf) : "" }));
+    if (profile) {
+      setForm((f) => ({
+        ...f,
+        nome: f.nome || profile.full_name || "",
+        cpf: f.cpf || ((profile as any).cpf ? maskCPF((profile as any).cpf) : ""),
+      }));
     }
-    if (user?.email && !form.email) setForm((f) => ({ ...f, email: user.email || "" }));
     // eslint-disable-next-line
-  }, [profile, user]);
+  }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.termo) return toast.error("Confirme o termo de participação");
-    if (!isValidCPF(form.cpf)) return toast.error("CPF inválido");
     if (form.nome.trim().length < 2) return toast.error("Informe seu nome completo");
-    if (!form.rg.trim()) return toast.error("Informe o RG");
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) return toast.error("E-mail inválido");
+    if (!isValidCPF(form.cpf)) return toast.error("CPF inválido");
     if (onlyDigits(form.telefone).length < 10) return toast.error("Telefone inválido");
-    if (!form.cidade.trim()) return toast.error("Informe a cidade");
-    if (!form.estado) return toast.error("Selecione o estado");
+    if (form.endereco.trim().length < 5) return toast.error("Informe o endereço completo");
 
     setSubmitting(true);
     const { data, error } = await supabase.rpc("inscrever_cooperado_eventual", {
       _campanha_id: id!,
       _nome: form.nome,
       _cpf: onlyDigits(form.cpf),
-      _rg: form.rg,
-      _email: form.email,
       _telefone: form.telefone,
-      _cidade: form.cidade,
-      _estado: form.estado,
+      _endereco: form.endereco,
     });
     setSubmitting(false);
     if (error) {
@@ -214,29 +211,18 @@ export default function CooperadosEventuaisDetalhe() {
                 <Input value={form.cpf} onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })} required placeholder="000.000.000-00" />
               </div>
               <div>
-                <Label>RG *</Label>
-                <Input value={form.rg} onChange={(e) => setForm({ ...form, rg: e.target.value })} required />
-              </div>
-              <div>
-                <Label>E-mail *</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-              </div>
-              <div>
                 <Label>Telefone / WhatsApp *</Label>
                 <Input value={form.telefone} onChange={(e) => setForm({ ...form, telefone: maskPhone(e.target.value) })} required placeholder="(00) 00000-0000" />
               </div>
-              <div>
-                <Label>Cidade *</Label>
-                <Input value={form.cidade} onChange={(e) => setForm({ ...form, cidade: e.target.value })} required />
-              </div>
-              <div>
-                <Label>Estado *</Label>
-                <Select value={form.estado} onValueChange={(v) => setForm({ ...form, estado: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {ESTADOS_BR.map((e) => <SelectItem key={e.uf} value={e.uf}>{e.nome}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <div className="md:col-span-2">
+                <Label>Endereço *</Label>
+                <Textarea
+                  value={form.endereco}
+                  onChange={(e) => setForm({ ...form, endereco: e.target.value })}
+                  required
+                  rows={3}
+                  placeholder="Rua, número, bairro, cidade - UF, CEP"
+                />
               </div>
               <div className="md:col-span-2 flex items-start gap-2 pt-2">
                 <Checkbox id="termo" checked={form.termo} onCheckedChange={(v) => setForm({ ...form, termo: !!v })} />
