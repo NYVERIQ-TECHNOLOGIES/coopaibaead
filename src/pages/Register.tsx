@@ -203,15 +203,14 @@ export default function Register() {
 
     const cleanCpf = cpf.replace(/\D/g, "");
 
-    // ====== Fluxo COOPERADO ou COOPERADO EVENTUAL (via edge function + e-mail sintético) ======
-    if (userType === "cooperado" || userType === "eventual") {
+    // ====== Fluxo COOPERADO (via edge function + e-mail sintético) ======
+    if (userType === "cooperado") {
       try {
         let avatar_url: string | undefined;
 
         if (photoFile) {
           const ext = photoFile.name.split(".").pop();
-          const prefix = userType === "eventual" ? "eventual" : "cooperado";
-          const path = `${prefix}-${cleanCpf}/${Date.now()}.${ext}`;
+          const path = `cooperado-${cleanCpf}/${Date.now()}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from("avatars")
             .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
@@ -226,11 +225,8 @@ export default function Register() {
             cpf: cleanCpf,
             password,
             full_name: trimmedName,
-            cooperativa: userType === "cooperado" ? cooperativa : null,
+            cooperativa,
             avatar_url,
-            tipo: userType,
-            phone: userType === "eventual" ? phoneDigits : null,
-            endereco: userType === "eventual" ? endereco.trim() : null,
           },
         });
 
@@ -244,9 +240,7 @@ export default function Register() {
         toast({
           title: "Solicitação enviada para análise",
           description:
-            userType === "eventual"
-              ? "Seu cadastro de cooperado eventual será revisado pela administração. Você receberá acesso após a aprovação."
-              : "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
+            "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
         });
         navigate("/login");
         setLoading(false);
@@ -261,6 +255,7 @@ export default function Register() {
         return;
       }
     }
+
 
 
     // ====== Fluxo ALUNO: signup padrão com e-mail real ======
