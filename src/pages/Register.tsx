@@ -218,16 +218,15 @@ export default function Register() {
 
     const cleanCpf = cpf.replace(/\D/g, "");
 
-    // ====== Fluxo COOPERADO: cria via edge function (e-mail sintético + auto-confirm) ======
-    if (userType === "cooperado") {
+    // ====== Fluxo COOPERADO ou COOPERADO EVENTUAL (via edge function + e-mail sintético) ======
+    if (userType === "cooperado" || userType === "eventual") {
       try {
         let avatar_url: string | undefined;
 
-        // Upload da foto antes (opcional) usando bucket público "avatars"
-        // Como ainda não temos user_id, geramos um path temporário pelo CPF
         if (photoFile) {
           const ext = photoFile.name.split(".").pop();
-          const path = `cooperado-${cleanCpf}/${Date.now()}.${ext}`;
+          const prefix = userType === "eventual" ? "eventual" : "cooperado";
+          const path = `${prefix}-${cleanCpf}/${Date.now()}.${ext}`;
           const { error: upErr } = await supabase.storage
             .from("avatars")
             .upload(path, photoFile, { upsert: true, contentType: photoFile.type });
@@ -242,8 +241,11 @@ export default function Register() {
             cpf: cleanCpf,
             password,
             full_name: trimmedName,
-            cooperativa,
+            cooperativa: userType === "cooperado" ? cooperativa : null,
             avatar_url,
+            tipo: userType,
+            phone: userType === "eventual" ? phoneDigits : null,
+            endereco: userType === "eventual" ? endereco.trim() : null,
           },
         });
 
@@ -257,7 +259,9 @@ export default function Register() {
         toast({
           title: "Solicitação enviada para análise",
           description:
-            "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
+            userType === "eventual"
+              ? "Seu cadastro de cooperado eventual será revisado pela administração. Você receberá acesso após a aprovação."
+              : "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
         });
         navigate("/login");
         setLoading(false);
@@ -272,6 +276,7 @@ export default function Register() {
         return;
       }
     }
+
 
     // ====== Fluxo ALUNO: signup padrão com e-mail real ======
     const { data: signUpData, error } = await supabase.auth.signUp({
