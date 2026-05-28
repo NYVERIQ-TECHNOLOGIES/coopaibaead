@@ -310,16 +310,13 @@ export type Database = {
           cpf: string
           created_at: string
           email: string | null
-          endereco: string | null
           full_name: string
           id: string
           password_hash: string
-          phone: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
           status: string
-          tipo: string
           updated_at: string
         }
         Insert: {
@@ -327,16 +324,13 @@ export type Database = {
           cpf: string
           created_at?: string
           email?: string | null
-          endereco?: string | null
           full_name: string
           id?: string
           password_hash: string
-          phone?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
-          tipo?: string
           updated_at?: string
         }
         Update: {
@@ -344,16 +338,13 @@ export type Database = {
           cpf?: string
           created_at?: string
           email?: string | null
-          endereco?: string | null
           full_name?: string
           id?: string
           password_hash?: string
-          phone?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: string
-          tipo?: string
           updated_at?: string
         }
         Relationships: []
@@ -1339,7 +1330,6 @@ export type Database = {
           cpf: string | null
           created_at: string
           deactivated_at: string | null
-          endereco: string | null
           enrollment_number: string | null
           full_name: string
           id: string
@@ -1354,7 +1344,6 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           deactivated_at?: string | null
-          endereco?: string | null
           enrollment_number?: string | null
           full_name?: string
           id?: string
@@ -1369,7 +1358,6 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           deactivated_at?: string | null
-          endereco?: string | null
           enrollment_number?: string | null
           full_name?: string
           id?: string
