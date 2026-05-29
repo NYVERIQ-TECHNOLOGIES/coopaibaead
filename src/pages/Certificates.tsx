@@ -208,21 +208,24 @@ export default function Certificates() {
 
   const reissueCert = useMutation({
     mutationFn: async (cert: Cert) => {
-      // Cancel current
-      const { error: cErr } = await supabase.rpc("cancel_certificate", {
-        _certificate_id: cert.id,
-        _reason: "Reemissão — substituído por novo certificado",
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reissue-certificate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ certificate_id: cert.id }),
       });
-      if (cErr) throw cErr;
-      return callGenerate({ user_id: cert.user_id, course_id: cert.course_id, reissue_of: cert.id });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erro ao reemitir certificado");
+      return json;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["certificates"] });
-      toast({ title: "Certificado reemitido", description: `Novo código: ${data.certificate.code}` });
+      toast({ title: "Certificado reemitido", description: `Código preservado: ${data.certificate.code} (reemissão #${data.certificate.reissue_count})` });
       openPdfSafely(data.certificate.code);
     },
     onError: (e: any) => toast({ title: "Erro ao reemitir", description: e.message, variant: "destructive" }),
   });
+
 
   const cancelCertMut = useMutation({
     mutationFn: async () => {
@@ -634,9 +637,12 @@ function AdminFilters(props: {
           <SelectContent>
             <SelectItem value="todos">Todos os status</SelectItem>
             <SelectItem value="pendente">Em processamento</SelectItem>
+            <SelectItem value="emitido">Disponível para download</SelectItem>
             <SelectItem value="disponivel_retirada">Disponível para retirada</SelectItem>
             <SelectItem value="retirado">Retirado</SelectItem>
             <SelectItem value="cancelado">Cancelado</SelectItem>
+            <SelectItem value="erro">Erro na emissão</SelectItem>
+
           </SelectContent>
         </Select>
         <Select value={props.filterCourse} onValueChange={props.setFilterCourse}>
@@ -747,11 +753,26 @@ function CertificatesTable({
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    ) : cert.delivery_mode === "download" && (cert.status === "emitido" || cert.status === "retirado") ? (
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => onPrint?.(cert)} className="gap-1">
+                          <Printer className="w-3.5 h-3.5" /> Visualizar
+                        </Button>
+                        <Button size="sm" onClick={() => onDownload?.(cert)} className="gap-1">
+                          <Download className="w-3.5 h-3.5" /> Baixar PDF
+                        </Button>
+
+                      </div>
+                    ) : cert.status === "pendente" ? (
+                      <span className="text-xs text-warning">Em processamento…</span>
+                    ) : cert.status === "erro" ? (
+                      <span className="text-xs text-destructive">Erro na emissão</span>
                     ) : (
                       <Link to={`/certificates/${cert.code}/retirada`} className="text-xs text-primary hover:underline">
                         Informações para retirada
                       </Link>
                     )}
+
                   </td>
                 </motion.tr>
               );

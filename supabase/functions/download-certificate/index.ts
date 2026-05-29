@@ -49,9 +49,10 @@ Deno.serve(async (req) => {
 
     const { data: cert, error: certErr } = await supabaseAdmin
       .from("certificates")
-      .select("id, code, user_id, pdf_path, status")
+      .select("id, code, user_id, pdf_path, status, delivery_mode")
       .eq("code", code)
       .maybeSingle();
+
 
     if (certErr || !cert || !cert.pdf_path) {
       return new Response(JSON.stringify({ error: "Certificado não encontrado" }), {
@@ -75,6 +76,19 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Cooperados / cooperados eventuais must pick up the certificate in person.
+    // Staff (admin/moderador) can always view/print the PDF from the admin panel.
+    if (cert.delivery_mode === "retirada" && !isStaff) {
+      return new Response(JSON.stringify({
+        error: "Este certificado deve ser retirado presencialmente na Cooperativa Coopaíba. Download não disponível.",
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
 
     const { data: file, error: dlErr } = await supabaseAdmin.storage
       .from("media")
