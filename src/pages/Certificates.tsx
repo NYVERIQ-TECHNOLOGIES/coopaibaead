@@ -208,21 +208,24 @@ export default function Certificates() {
 
   const reissueCert = useMutation({
     mutationFn: async (cert: Cert) => {
-      // Cancel current
-      const { error: cErr } = await supabase.rpc("cancel_certificate", {
-        _certificate_id: cert.id,
-        _reason: "Reemissão — substituído por novo certificado",
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reissue-certificate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ certificate_id: cert.id }),
       });
-      if (cErr) throw cErr;
-      return callGenerate({ user_id: cert.user_id, course_id: cert.course_id, reissue_of: cert.id });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erro ao reemitir certificado");
+      return json;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["certificates"] });
-      toast({ title: "Certificado reemitido", description: `Novo código: ${data.certificate.code}` });
+      toast({ title: "Certificado reemitido", description: `Código preservado: ${data.certificate.code} (reemissão #${data.certificate.reissue_count})` });
       openPdfSafely(data.certificate.code);
     },
     onError: (e: any) => toast({ title: "Erro ao reemitir", description: e.message, variant: "destructive" }),
   });
+
 
   const cancelCertMut = useMutation({
     mutationFn: async () => {
