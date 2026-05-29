@@ -252,6 +252,14 @@ export default function Certificates() {
     openPdfSafely(cert.code);
   };
 
+  const downloadCert = async (cert: Cert) => {
+    if (!cert.pdf_path) {
+      toast({ title: "PDF indisponível", description: "Este certificado não possui PDF arquivado.", variant: "destructive" });
+      return;
+    }
+    openPdfSafely(cert.code, { download: true });
+  };
+
   const printReceipt = async (cert: Cert, { download = false }: { download?: boolean } = {}) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -490,6 +498,8 @@ export default function Certificates() {
           isLoading={isLoading}
           isStaff={isStaff}
           isAdmin={false}
+          onPrint={printCert}
+          onDownload={downloadCert}
         />
       )}
 
@@ -663,13 +673,14 @@ function AdminFilters(props: {
 
 function CertificatesTable({
   filtered, isLoading, isStaff, isAdmin,
-  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit,
+  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit, onDownload,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
   onPickup?: (c: any) => void; onPrint?: (c: any) => void;
   onReceipt?: (c: any) => void;
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
   onAudit?: (c: any) => void;
+  onDownload?: (c: any) => void;
 }) {
   if (isLoading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
   return (
