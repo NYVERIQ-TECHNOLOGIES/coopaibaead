@@ -252,6 +252,14 @@ export default function Certificates() {
     openPdfSafely(cert.code);
   };
 
+  const downloadCert = async (cert: Cert) => {
+    if (!cert.pdf_path) {
+      toast({ title: "PDF indisponível", description: "Este certificado não possui PDF arquivado.", variant: "destructive" });
+      return;
+    }
+    openPdfSafely(cert.code, { download: true });
+  };
+
   const printReceipt = async (cert: Cert, { download = false }: { download?: boolean } = {}) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
