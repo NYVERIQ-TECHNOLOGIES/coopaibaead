@@ -197,13 +197,33 @@ Deno.serve(async (req) => {
       .from("media").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
     if (uploadError) throw uploadError;
 
+    // Determine delivery mode and final status based on the certificate owner's profile.
+    //   Aluno (sem cooperado e sem campanha eventual) → download → status 'emitido'
+    //   Cooperado / Cooperado Eventual → retirada presencial → status 'disponivel_retirada'
+    const { data: ownerRoles } = await supabaseAdmin
+      .from("user_roles").select("role").eq("user_id", user_id!);
+    const ownerRoleList = (ownerRoles || []).map((r: any) => r.role);
+    const isCooperado = ownerRoleList.includes("cooperado");
+
+    let isEventual = false;
+    if (!isCooperado) {
+      const { data: eventualOk } = await supabaseAdmin
+        .rpc("tem_acesso_curso_eventual", { _user_id: user_id!, _course_id: course_id });
+      isEventual = !!eventualOk;
+    }
+
+    const requiresPickup = isCooperado || isEventual;
+    const deliveryMode = requiresPickup ? "retirada" : "download";
+    const finalStatus = requiresPickup ? "disponivel_retirada" : "emitido";
+
     const { data: cert, error: certError } = await supabaseAdmin
       .from("certificates")
       .insert({
         user_id: user_id!,
         course_id,
         code: certCode,
-        status: "disponivel_retirada",
+        status: finalStatus,
+        delivery_mode: deliveryMode,
         issued_at: nowIso,
         available_at: nowIso,
         completed_at: nowIso,
@@ -228,27 +248,35 @@ Deno.serve(async (req) => {
       certificate_id: cert.id,
       action: reissue_of ? "reemitido" : "emitido",
       actor_user_id: user.id,
-      details: { code: certCode, reissued_from: reissue_of || null },
+      details: { code: certCode, reissued_from: reissue_of || null, delivery_mode: deliveryMode },
     });
 
-    // Notify the student (in-platform)
+    // In-platform notification — wording depends on delivery mode
     await supabaseAdmin.from("notifications").insert({
       user_id: user_id!,
-      type: "certificate_available",
-      title: "Certificado disponível para retirada",
-      message: `Seu certificado do curso ${courseTitle} está disponível para retirada presencial na Cooperativa Coopaíba.`,
-      link: `/certificates/${certCode}/retirada`,
+      type: requiresPickup ? "certificate_available" : "certificate_download",
+      title: requiresPickup
+        ? "Certificado disponível para retirada"
+        : "Certificado disponível para download",
+      message: requiresPickup
+        ? `Seu certificado do curso ${courseTitle} está disponível para retirada presencial na Cooperativa Coopaíba.`
+        : `Seu certificado do curso ${courseTitle} já está disponível para download em "Meus Certificados".`,
+      link: requiresPickup ? `/certificates/${certCode}/retirada` : `/certificates`,
     });
 
     // WhatsApp informational notification (best-effort, never blocks issuance)
     try {
-      const waMessage =
-        `Olá, ${studentName}! 🎓\n\n` +
-        `Seu certificado do curso *${courseTitle}* já está pronto e disponível para retirada presencial na sede da Cooperativa Coopaíba.\n\n` +
-        `Código de validação: ${certCode}\n\n` +
-        `Compareça em nosso horário de atendimento com um documento oficial com foto. ` +
-        `Por motivos de segurança e validação de identidade, *o certificado não é enviado por download nem por e-mail*.\n\n` +
-        `Mais informações: https://coopaiba.com.br/certificates/${certCode}/retirada`;
+      const waMessage = requiresPickup
+        ? (`Olá, ${studentName}! 🎓\n\n` +
+           `Seu certificado do curso *${courseTitle}* já está pronto e disponível para retirada presencial na sede da Cooperativa Coopaíba.\n\n` +
+           `Código de validação: ${certCode}\n\n` +
+           `Compareça em nosso horário de atendimento com um documento oficial com foto. ` +
+           `Por motivos de segurança e validação de identidade, *o certificado não é enviado por download nem por e-mail*.\n\n` +
+           `Mais informações: https://coopaiba.com.br/certificates/${certCode}/retirada`)
+        : (`Olá, ${studentName}! 🎓\n\n` +
+           `Seu certificado do curso *${courseTitle}* já está disponível para download em sua área de aluno.\n\n` +
+           `Código de validação: ${certCode}\n\n` +
+           `Acesse: https://coopaiba.com.br/certificates`);
 
       const waResp = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
         method: "POST",
