@@ -498,6 +498,8 @@ export default function Certificates() {
           isLoading={isLoading}
           isStaff={isStaff}
           isAdmin={false}
+          onPrint={printCert}
+          onDownload={downloadCert}
         />
       )}
 
