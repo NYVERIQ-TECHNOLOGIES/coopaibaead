@@ -77,6 +77,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Cooperados / cooperados eventuais must pick up the certificate in person.
+    // Staff (admin/moderador) can always view/print the PDF from the admin panel.
+    if (cert.delivery_mode === "retirada" && !isStaff) {
+      return new Response(JSON.stringify({
+        error: "Este certificado deve ser retirado presencialmente na Cooperativa Coopaíba. Download não disponível.",
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
+
     const { data: file, error: dlErr } = await supabaseAdmin.storage
       .from("media")
       .download(cert.pdf_path);
