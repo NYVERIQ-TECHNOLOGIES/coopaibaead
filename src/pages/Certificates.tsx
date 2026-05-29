@@ -753,11 +753,25 @@ function CertificatesTable({
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    ) : cert.delivery_mode === "download" && (cert.status === "emitido" || cert.status === "retirado") ? (
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => onPrint?.(cert)} className="gap-1">
+                          <Printer className="w-3.5 h-3.5" /> Visualizar
+                        </Button>
+                        <Button size="sm" onClick={() => onReceipt && onPrint?.(cert)} className="gap-1">
+                          <Download className="w-3.5 h-3.5" /> Baixar PDF
+                        </Button>
+                      </div>
+                    ) : cert.status === "pendente" ? (
+                      <span className="text-xs text-warning">Em processamento…</span>
+                    ) : cert.status === "erro" ? (
+                      <span className="text-xs text-destructive">Erro na emissão</span>
                     ) : (
                       <Link to={`/certificates/${cert.code}/retirada`} className="text-xs text-primary hover:underline">
                         Informações para retirada
                       </Link>
                     )}
+
                   </td>
                 </motion.tr>
               );
