@@ -204,11 +204,15 @@ export type Database = {
           course_started_at_snapshot: string | null
           course_title_snapshot: string | null
           created_at: string
+          delivery_mode: string
           enrollment_number_snapshot: string | null
+          error_message: string | null
           id: string
           issued_at: string | null
           issued_by: string | null
           issued_by_name: string | null
+          last_reissued_at: string | null
+          last_reissued_by: string | null
           pdf_path: string | null
           pickup_attendant_name: string | null
           pickup_document_presented: string | null
@@ -216,6 +220,7 @@ export type Database = {
           pickup_registered_at: string | null
           pickup_registered_by: string | null
           pickup_signature_url: string | null
+          reissue_count: number
           reissued_from: string | null
           status: string
           student_cpf_snapshot: string | null
@@ -236,11 +241,15 @@ export type Database = {
           course_started_at_snapshot?: string | null
           course_title_snapshot?: string | null
           created_at?: string
+          delivery_mode?: string
           enrollment_number_snapshot?: string | null
+          error_message?: string | null
           id?: string
           issued_at?: string | null
           issued_by?: string | null
           issued_by_name?: string | null
+          last_reissued_at?: string | null
+          last_reissued_by?: string | null
           pdf_path?: string | null
           pickup_attendant_name?: string | null
           pickup_document_presented?: string | null
@@ -248,6 +257,7 @@ export type Database = {
           pickup_registered_at?: string | null
           pickup_registered_by?: string | null
           pickup_signature_url?: string | null
+          reissue_count?: number
           reissued_from?: string | null
           status?: string
           student_cpf_snapshot?: string | null
@@ -268,11 +278,15 @@ export type Database = {
           course_started_at_snapshot?: string | null
           course_title_snapshot?: string | null
           created_at?: string
+          delivery_mode?: string
           enrollment_number_snapshot?: string | null
+          error_message?: string | null
           id?: string
           issued_at?: string | null
           issued_by?: string | null
           issued_by_name?: string | null
+          last_reissued_at?: string | null
+          last_reissued_by?: string | null
           pdf_path?: string | null
           pickup_attendant_name?: string | null
           pickup_document_presented?: string | null
@@ -280,6 +294,7 @@ export type Database = {
           pickup_registered_at?: string | null
           pickup_registered_by?: string | null
           pickup_signature_url?: string | null
+          reissue_count?: number
           reissued_from?: string | null
           status?: string
           student_cpf_snapshot?: string | null
@@ -1938,6 +1953,10 @@ export type Database = {
         Args: { _certificate_id: string }
         Returns: undefined
       }
+      mark_certificate_error: {
+        Args: { _certificate_id: string; _message: string }
+        Returns: undefined
+      }
       mark_lesson_access: {
         Args: { _course_id: string; _lesson_id: string }
         Returns: undefined
@@ -1950,6 +1969,10 @@ export type Database = {
           _observations: string
           _signature_url: string
         }
+        Returns: undefined
+      }
+      register_certificate_reissue: {
+        Args: { _certificate_id: string }
         Returns: undefined
       }
       registrar_presenca: {
