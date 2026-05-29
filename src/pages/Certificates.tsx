@@ -637,9 +637,12 @@ function AdminFilters(props: {
           <SelectContent>
             <SelectItem value="todos">Todos os status</SelectItem>
             <SelectItem value="pendente">Em processamento</SelectItem>
+            <SelectItem value="emitido">Disponível para download</SelectItem>
             <SelectItem value="disponivel_retirada">Disponível para retirada</SelectItem>
             <SelectItem value="retirado">Retirado</SelectItem>
             <SelectItem value="cancelado">Cancelado</SelectItem>
+            <SelectItem value="erro">Erro na emissão</SelectItem>
+
           </SelectContent>
         </Select>
         <Select value={props.filterCourse} onValueChange={props.setFilterCourse}>
