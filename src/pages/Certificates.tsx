@@ -671,13 +671,14 @@ function AdminFilters(props: {
 
 function CertificatesTable({
   filtered, isLoading, isStaff, isAdmin,
-  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit,
+  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit, onDownload,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
   onPickup?: (c: any) => void; onPrint?: (c: any) => void;
   onReceipt?: (c: any) => void;
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
   onAudit?: (c: any) => void;
+  onDownload?: (c: any) => void;
 }) {
   if (isLoading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
   return (
