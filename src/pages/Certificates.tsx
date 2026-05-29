@@ -758,9 +758,10 @@ function CertificatesTable({
                         <Button size="sm" variant="outline" onClick={() => onPrint?.(cert)} className="gap-1">
                           <Printer className="w-3.5 h-3.5" /> Visualizar
                         </Button>
-                        <Button size="sm" onClick={() => onReceipt && onPrint?.(cert)} className="gap-1">
+                        <Button size="sm" onClick={() => onDownload?.(cert)} className="gap-1">
                           <Download className="w-3.5 h-3.5" /> Baixar PDF
                         </Button>
+
                       </div>
                     ) : cert.status === "pendente" ? (
                       <span className="text-xs text-warning">Em processamento…</span>
