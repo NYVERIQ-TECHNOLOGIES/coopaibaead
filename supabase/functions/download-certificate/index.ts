@@ -49,9 +49,10 @@ Deno.serve(async (req) => {
 
     const { data: cert, error: certErr } = await supabaseAdmin
       .from("certificates")
-      .select("id, code, user_id, pdf_path, status")
+      .select("id, code, user_id, pdf_path, status, delivery_mode")
       .eq("code", code)
       .maybeSingle();
+
 
     if (certErr || !cert || !cert.pdf_path) {
       return new Response(JSON.stringify({ error: "Certificado não encontrado" }), {
