@@ -1,88 +1,89 @@
+# Atualização do Sistema de Certificados — Coopaíba EAD
 
-# Plano: Módulo "Cooperados Eventuais"
+Mantém 100% do modelo, layout, código, QR Code e informações atuais do certificado. Apenas adiciona regras, status, controles e telas administrativas em volta do fluxo existente.
 
-Funcionalidade nova e isolada para gerenciar campanhas de vagas pagas/gratuitas em cursos. Não altera matrículas, cursos ou fluxos atuais — apenas adiciona uma camada de inscrição que libera acesso aos cursos vinculados.
+## 1. Banco de dados (migração)
 
-## Banco de dados (migration)
+Adicionar à tabela `certificates`:
+- `delivery_mode` text — `download` (Aluno) ou `retirada` (Cooperado / Cooperado Eventual). Definido na geração com base no role do usuário.
+- `reissue_count` int default 0 — quantidade de reemissões.
+- `last_reissued_at` timestamptz — última reemissão.
+- `last_reissued_by` uuid — quem fez a última reemissão.
+- `error_message` text — preenchido quando status = `erro`.
 
-Três tabelas novas no schema `public`:
+Status já existentes continuam: `pendente`, `emitido`, `disponivel_retirada`, `retirado`, `cancelado`. Adicionar suporte ao status `erro`.
 
-**`cooperados_eventuais_campanhas`**
-- `id` uuid PK, `nome` text, `descricao` text
-- `data_inicio` date, `data_fim` date
-- `limite_vagas` int, `vagas_ocupadas` int default 0
-- `status` text check in (`ativa`, `encerrada`, `arquivada`) default `ativa`
-- `manter_acesso_cursos` boolean default true
-- `aprovacao_automatica` boolean default true
-- `created_by` uuid, `created_at`, `updated_at`
+Trigger `certificates_protect_issuance`:
+- Impede alteração de `code`, `issued_at` e `created_at` após emissão (somente service_role / admin via função pode contornar em casos extremos — neste fluxo, ninguém altera).
 
-**`cooperados_eventuais_cursos`** (vinculação N:N campanha↔curso)
-- `id`, `campanha_id` (FK), `curso_id` (FK courses), unique(campanha_id, curso_id)
+Novas funções SQL (SECURITY DEFINER):
+- `reissue_certificate(_certificate_id uuid)` — regenera o PDF mantendo code/issued_at/QR, incrementa `reissue_count`, grava `last_reissued_at` + `last_reissued_by`, escreve log `reemitido` em `certificate_audit_log`.
+- `auto_issue_certificate_on_completion(_course_id uuid)` — chamada pelo cliente quando o aluno conclui o curso (progress=100). Cria o certificado se ainda não existir e dispara a edge function de PDF.
+  - Se role = `aluno` (sem ser cooperado) → `delivery_mode = 'download'`, status final `emitido`.
+  - Se role = `cooperado` OU acesso via campanha eventual → `delivery_mode = 'retirada'`, status final `disponivel_retirada` + notificação automática.
 
-**`cooperados_eventuais_inscricoes`**
-- `id`, `protocolo` text unique (formato `CPB-YYYY-NNNNNN`)
-- `campanha_id`, `usuario_id` (uuid, ref auth.users, null se anônimo — mas neste fluxo sempre logado)
-- `nome_completo`, `cpf`, `rg`, `email`, `telefone`, `cidade`, `estado` (UF)
-- `status` text (`pendente`, `aprovada`, `cancelada`) default `aprovada`
-- `data_inscricao` timestamptz default now()
-- `data_aprovacao`, `aprovado_por` uuid
-- `motivo_cancelamento` text, `cancelado_por`, `cancelado_em`
-- `created_at`, `updated_at`
-- Unique(campanha_id, cpf) — bloqueia duplicidade na mesma campanha
+## 2. Edge functions
 
-**RLS**
-- Campanhas: SELECT autenticados (apenas `ativa`/`encerrada`); admin manage all
-- Cursos vinculados: SELECT autenticados; admin manage
-- Inscrições: usuário vê as próprias; admin/moderador veem todas; INSERT via RPC `inscrever_cooperado_eventual` (SECURITY DEFINER) que valida vagas/CPF/datas e gera protocolo de forma atômica
+- **`generate-certificate`** (existente): ajustar para
+  - Detectar perfil (aluno vs cooperado/eventual) e setar `delivery_mode` + status final correto.
+  - Em caso de falha, gravar status `erro` + `error_message` e log de auditoria.
+- **`reissue-certificate`** (nova): regera o PDF para um certificado existente preservando `code`, `issued_at` e QR Code. Incrementa contador. Apenas admin.
+- **`download-certificate`** (existente): bloquear download quando `delivery_mode = 'retirada'` e usuário não for staff (cooperado deve retirar presencialmente).
 
-**Função `usuario_tem_acesso_curso_eventual(_user_id, _course_id)`** — retorna true se há inscrição aprovada em campanha ativa vinculada ao curso (ou encerrada com `manter_acesso_cursos=true`). Usada para estender `can_access_course` (via OR adicional em policies de leitura de curso/módulos/lições) — implementado atualizando a função `can_access_course` para considerar também o acesso eventual.
+## 3. Frontend — Aluno (`/certificates` e `/certificates/:code/...`)
 
-**Trigger** em inscrições para incrementar/decrementar `vagas_ocupadas` na campanha.
+- Card por certificado mostrando o status com mensagem automática:
+  - `pendente` → "Seu certificado está sendo emitido. Atualize a página em instantes."
+  - `emitido` (aluno) → "Seu certificado já está disponível para download." + botões **Visualizar** e **Baixar PDF**.
+  - `disponivel_retirada` (cooperado) → "Disponível para retirada na cooperativa..." + botão **Ver instruções de retirada** (página já existe).
+  - `retirado` → confirmação com data.
+  - `erro` → "Ocorreu um erro na emissão... Entre em contato."
+- Botão **Reemitir** disponível para o próprio aluno apenas quando `delivery_mode = 'download'` e status final.
 
-**Realtime** habilitado em `cooperados_eventuais_campanhas` e `cooperados_eventuais_inscricoes` para a barra de progresso ao vivo.
+## 4. Frontend — Admin (`/admin/certificates` ou seção em Certificates para staff)
 
-## Frontend
+Tabela administrativa com colunas:
+Nome, CPF, Perfil, Curso, Status, Data de conclusão, Data de emissão, Última reemissão, Nº de reemissões, Emitido por.
 
-**Rotas novas** em `src/App.tsx`:
-- `/cooperados-eventuais` (aluno/cooperado/admin/moderador) — lista campanhas ativas + inscrição
-- `/cooperados-eventuais/:id` — detalhe da campanha + formulário
-- `/admin/cooperados-eventuais` (admin) — lista/CRUD campanhas
-- `/admin/cooperados-eventuais/:id` (admin) — gestão de uma campanha (cursos vinculados, inscritos, dashboard)
+Ações por linha:
+- **Emitir Certificado** (quando ainda não existe / status `erro`)
+- **Reemitir Certificado**
+- **Visualizar Certificado** (abre PDF inline)
+- **Baixar PDF**
+- **Confirmar Retirada** (apenas para `disponivel_retirada`, abre o dialog já existente de pickup)
+- **Visualizar Histórico** (abre `CertificateAuditDialog` existente; agora também lista `reemitido`)
 
-**Hub** (`src/pages/Hub.tsx`): novo card "Cooperados Eventuais" visível a admin/moderador/aluno/cooperado.
+Filtros por status, perfil e curso. Busca por nome/CPF/código.
 
-**Páginas**:
-- `CooperadosEventuaisList.tsx` — banner + lista de campanhas ativas com painel de vagas (total/inscritos/disponíveis) e barra de progresso realtime.
-- `CooperadosEventuaisDetalhe.tsx` — banner, painel de vagas, formulário (zod + react-hook-form): nome, CPF (mask + `isValidCPF`), RG, email, telefone (mask), cidade, UF (select com 27 estados), checkbox termo. Submete via RPC; mostra protocolo e botão "Acessar Cursos Disponíveis". Se vagas=0 ou status≠ativa: exibe "Inscrições Encerradas".
-- `AdminCampanhas.tsx` — tabela de campanhas com criar/editar/arquivar/reabrir.
-- `AdminCampanhaDetalhe.tsx` — abas: Inscritos (tabela com filtros/ordenação/paginação/cancelar, exportações CSV/Excel/PDF usando libs já existentes), Cursos vinculados (multi-select de `courses`), Dashboard (gráficos Recharts: inscrições/dia, por cidade, por estado, ocupação), Configurações (manter_acesso_cursos, aprovação automática, datas, vagas).
+## 5. Auditoria e segurança
 
-**Liberação de cursos**: a página `/courses` continua usando RLS; com `can_access_course` estendida, os cursos vinculados aparecem automaticamente para inscritos. Em `CooperadosEventuaisDetalhe` também há atalho listando os cursos vinculados após inscrição.
+- Cada emissão, reemissão, disponibilização e retirada grava em `certificate_audit_log` (já existente). Adicionar ação `reemitido` ao mapa de labels do `CertificateAuditDialog`.
+- QR Code do PDF continua apontando para `/validate/:code` (já existente, `validate_certificate` RPC).
+- Trigger protege `code` e `issued_at` contra alteração.
+- RLS mantida: aluno vê só seu certificado; admin/moderador veem tudo.
 
-## Detalhes técnicos
+## 6. O que NÃO muda
 
-- Protocolo: sequência por ano via função plpgsql que conta inscrições do ano + 1, formato `CPB-{YYYY}-{NNNNNN}`.
-- Encerramento automático: função/trigger que marca `status='encerrada'` quando `vagas_ocupadas >= limite_vagas` ou `data_fim < CURRENT_DATE` (verificado no SELECT via view ou na RPC de inscrição).
-- Cancelamento: RPC `cancelar_inscricao_eventual(_id, _motivo)` admin-only, decrementa vagas, grava auditoria.
-- Exportações: CSV nativo, Excel via `xlsx` (já no projeto), PDF via `jspdf` (já no projeto para certificados).
-- Estados brasileiros: array constante.
-- LGPD: dados sensíveis (CPF/RG) só legíveis pelo próprio usuário e admin/moderador via RLS.
+- Template visual do certificado (HTML/PDF gerado pela função `generate-certificate`).
+- Código de emissão (`CERT-xxxxxxxx`).
+- QR Code e URL de validação.
+- Tabela `certificates` (apenas adições de colunas, nenhuma remoção).
+- Páginas públicas de validação e de retirada.
 
-## Arquivos a criar/editar
+---
 
-Criar:
-- `supabase/migrations/<novo>.sql` (tabelas, RLS, RPCs, triggers, realtime, extensão de `can_access_course`)
-- `src/pages/CooperadosEventuaisList.tsx`
-- `src/pages/CooperadosEventuaisDetalhe.tsx`
-- `src/pages/admin/AdminCampanhas.tsx`
-- `src/pages/admin/AdminCampanhaDetalhe.tsx`
-- `src/lib/estados-br.ts`
+## Detalhes técnicos resumidos
 
-Editar:
-- `src/App.tsx` (rotas)
-- `src/pages/Hub.tsx` (card)
-- `src/components/AppSidebar.tsx` (item de menu para aluno e admin)
+Arquivos a criar:
+- `supabase/migrations/<ts>_certificates_reissue_and_delivery.sql`
+- `supabase/functions/reissue-certificate/index.ts`
+- `src/pages/admin/AdminCertificates.tsx` (ou ampliar `src/pages/Certificates.tsx` quando staff)
 
-## Confirmação
+Arquivos a editar:
+- `supabase/functions/generate-certificate/index.ts` — delivery_mode + tratamento de erro.
+- `supabase/functions/download-certificate/index.ts` — bloqueio para `retirada`.
+- `src/pages/Certificates.tsx` — mensagens automáticas por status + botão reemitir aluno.
+- `src/components/CertificateAuditDialog.tsx` — label `reemitido` já existe; sem mudança real.
+- `src/App.tsx` — rota admin se for página separada.
 
-Posso aplicar o plano? Após aprovação, executo a migration e implemento as páginas em sequência.
+Posso seguir com a implementação?
