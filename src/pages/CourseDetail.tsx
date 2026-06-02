@@ -1140,7 +1140,7 @@ export default function CourseDetail() {
         </button>
 
         {expandedSections.books && (
-          <div className="border-t border-border">
+          <div className="border-t border-border max-h-[600px] overflow-y-auto">
             {isAdmin && (
               <div className="p-3 border-b border-border bg-muted/10">
                 <Button size="sm" onClick={openNewBook} className="gradient-primary text-primary-foreground gap-1">
