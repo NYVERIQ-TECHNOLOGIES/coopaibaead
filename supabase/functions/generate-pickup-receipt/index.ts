@@ -68,6 +68,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Determine the holder's profile type (aluno / cooperado / cooperado eventual)
+    let holderLabel = "Cooperado";
+    if (cert.user_id) {
+      const { data: holderRoles } = await supabaseAdmin
+        .from("user_roles").select("role").eq("user_id", cert.user_id);
+      const rs = (holderRoles || []).map((r: any) => r.role);
+      const priority = ["cooperado", "cooperado_eventual", "aluno"];
+      const primary = priority.find((p) => rs.includes(p));
+      if (primary === "aluno") holderLabel = "Aluno";
+      else if (primary === "cooperado_eventual") holderLabel = "Cooperado Eventual";
+      else if (primary === "cooperado") holderLabel = "Cooperado";
+    }
+
     // Logo (optional)
     let logoUrl: string | null = null;
     try {
@@ -110,7 +123,9 @@ Deno.serve(async (req) => {
       logoUrl,
       savedSignatureUrl,
       status: cert.status,
+      holderLabel,
     });
+
 
     const filename = `comprovante-retirada-${cert.code}.pdf`;
     return new Response(pdfBytes, {
