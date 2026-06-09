@@ -892,9 +892,10 @@ function PickupDialog({ cert, onClose, onSuccess }: { cert: any | null; onClose:
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Registrar retirada presencial</DialogTitle>
-          <DialogDescription>
-            Confirme a identidade do cooperado e capture a assinatura no comprovante de retirada.
-          </DialogDescription>
+            <DialogDescription>
+              Confirme a identidade do cooperado para registrar a retirada do certificado.
+            </DialogDescription>
+
         </DialogHeader>
         {cert && (
           <div className="space-y-4">
