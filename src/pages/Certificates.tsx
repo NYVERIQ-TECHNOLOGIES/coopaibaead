@@ -74,6 +74,48 @@ export default function Certificates() {
     enabled: isStaff || !!user,
   });
 
+  // Enrich with requester role labels (issued_by → role)
+  const issuerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of certificates as any[]) if (c.issued_by) ids.add(c.issued_by);
+    return Array.from(ids);
+  }, [certificates]);
+
+  const { data: issuerRoles = {} } = useQuery<Record<string, string[]>>({
+    queryKey: ["cert-issuer-roles", issuerIds],
+    enabled: issuerIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", issuerIds);
+      const map: Record<string, string[]> = {};
+      for (const r of (data || []) as any[]) {
+        if (!map[r.user_id]) map[r.user_id] = [];
+        map[r.user_id].push(r.role);
+      }
+      return map;
+    },
+  });
+
+  const ROLE_LABEL: Record<string, string> = {
+    admin: "Administrador",
+    moderador: "Moderador",
+    cooperado: "Cooperado",
+    cooperado_eventual: "Cooperado eventual",
+    aluno: "Aluno",
+  };
+  const formatIssuerProfile = (cert: any): string => {
+    const roles: string[] = (cert.issued_by && (issuerRoles as Record<string, string[]>)[cert.issued_by]) || [];
+    if (roles.length === 0) {
+      return cert.issued_by && cert.issued_by === cert.user_id ? "Aluno (auto-solicitação)" : "—";
+    }
+    const priority = ["admin", "moderador", "cooperado", "cooperado_eventual", "aluno"];
+    const primary = priority.find((r) => roles.includes(r)) || roles[0];
+    const label = ROLE_LABEL[primary] || primary;
+    return cert.issued_by === cert.user_id ? `${label} (auto-solicitação)` : label;
+  };
+
   const { data: templates = [] } = useQuery({
     queryKey: ["certificate-templates"],
     queryFn: async () => {
@@ -427,6 +469,7 @@ export default function Certificates() {
               isLoading={isLoading}
               isStaff={isStaff}
               isAdmin={isAdmin}
+              formatIssuerProfile={formatIssuerProfile}
               onPickup={(c) => setPickupCert(c)}
               onPrint={printCert}
               onReceipt={(c) => printReceipt(c)}
@@ -498,6 +541,7 @@ export default function Certificates() {
           isLoading={isLoading}
           isStaff={isStaff}
           isAdmin={false}
+          formatIssuerProfile={formatIssuerProfile}
           onPrint={printCert}
           onDownload={downloadCert}
         />
@@ -672,10 +716,11 @@ function AdminFilters(props: {
 }
 
 function CertificatesTable({
-  filtered, isLoading, isStaff, isAdmin,
+  filtered, isLoading, isStaff, isAdmin, formatIssuerProfile,
   onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit, onDownload,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
+  formatIssuerProfile?: (c: any) => string;
   onPickup?: (c: any) => void; onPrint?: (c: any) => void;
   onReceipt?: (c: any) => void;
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
@@ -695,7 +740,7 @@ function CertificatesTable({
               {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">CPF</th>}
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emissão</th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emitido por</th>
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Solicitado por</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
               <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Ações</th>
             </tr>
@@ -719,7 +764,12 @@ function CertificatesTable({
                     <div>{issuedDate.toLocaleDateString("pt-BR")}</div>
                     <div className="text-xs opacity-70">{issuedDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
                   </td>
-                  <td className="py-3 px-4 text-xs text-muted-foreground">{cert.issued_by_name ?? "—"}</td>
+                  <td className="py-3 px-4 text-xs text-muted-foreground">
+                    <div className="text-card-foreground">{cert.issued_by_name ?? "—"}</div>
+                    {formatIssuerProfile && (
+                      <div className="text-[10px] uppercase tracking-wide opacity-70">{formatIssuerProfile(cert)}</div>
+                    )}
+                  </td>
                   <td className="py-3 px-4">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${CERT_STATUS_STYLE[cert.status] || "text-muted-foreground"}`}>
                       {CERT_STATUS_LABEL[cert.status] || cert.status}
