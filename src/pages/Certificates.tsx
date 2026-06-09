@@ -852,7 +852,6 @@ function CertificatesTable({
 
 function PickupDialog({ cert, onClose, onSuccess }: { cert: any | null; onClose: () => void; onSuccess: () => void }) {
   const { toast } = useToast();
-  const sigRef = useRef<SignaturePadHandle>(null);
   const [attendant, setAttendant] = useState("");
   const [doc, setDoc] = useState("");
   const [obs, setObs] = useState("");
@@ -860,29 +859,22 @@ function PickupDialog({ cert, onClose, onSuccess }: { cert: any | null; onClose:
 
   // Reset when opening
   useMemo(() => {
-    if (cert) { setAttendant(""); setDoc(""); setObs(""); setTimeout(() => sigRef.current?.clear(), 50); }
+    if (cert) { setAttendant(""); setDoc(""); setObs(""); }
   }, [cert?.id]);
 
   const submit = async () => {
     if (!cert) return;
     if (attendant.trim().length < 2) return toast({ title: "Informe o nome do atendente", variant: "destructive" });
     if (doc.trim().length < 2) return toast({ title: "Informe o documento apresentado", variant: "destructive" });
-    if (sigRef.current?.isEmpty()) return toast({ title: "Capture a assinatura do cooperado", variant: "destructive" });
 
     setSubmitting(true);
     try {
-      const dataUrl = sigRef.current!.toDataURL();
-      const bytes = Uint8Array.from(atob(dataUrl.split(",")[1]), (c) => c.charCodeAt(0));
-      const path = `certificate-pickups/${cert.code}-${Date.now()}.png`;
-      const { error: upErr } = await supabase.storage.from("media").upload(path, bytes, { contentType: "image/png", upsert: true });
-      if (upErr) throw upErr;
-
       const { error } = await supabase.rpc("register_certificate_pickup", {
         _certificate_id: cert.id,
         _attendant_name: attendant.trim(),
         _document_presented: doc.trim(),
         _observations: obs.trim() || null,
-        _signature_url: path,
+        _signature_url: null,
       });
       if (error) throw error;
       toast({ title: "Retirada registrada com sucesso" });
@@ -894,14 +886,16 @@ function PickupDialog({ cert, onClose, onSuccess }: { cert: any | null; onClose:
     }
   };
 
+
   return (
     <Dialog open={!!cert} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Registrar retirada presencial</DialogTitle>
-          <DialogDescription>
-            Confirme a identidade do cooperado e capture a assinatura no comprovante de retirada.
-          </DialogDescription>
+            <DialogDescription>
+              Confirme a identidade do cooperado para registrar a retirada do certificado.
+            </DialogDescription>
+
         </DialogHeader>
         {cert && (
           <div className="space-y-4">
@@ -924,10 +918,6 @@ function PickupDialog({ cert, onClose, onSuccess }: { cert: any | null; onClose:
             <div>
               <Label>Observações (opcional)</Label>
               <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} maxLength={500} />
-            </div>
-            <div>
-              <Label>Assinatura do cooperado</Label>
-              <SignaturePad ref={sigRef} />
             </div>
           </div>
         )}
