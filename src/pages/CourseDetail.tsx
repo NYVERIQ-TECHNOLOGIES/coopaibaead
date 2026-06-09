@@ -842,7 +842,7 @@ export default function CourseDetail() {
                   )}
                   <Button
                     size="sm"
-                    onClick={handleGenerateCertificate}
+                    onClick={() => handleGenerateCertificate()}
                     disabled={!eligible || generatingCert}
                     className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
                   >
