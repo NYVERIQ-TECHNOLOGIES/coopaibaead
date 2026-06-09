@@ -66,7 +66,7 @@ export default function Certificates() {
         .select("*, courses(title), profiles!certificates_user_id_fkey(full_name, cpf)")
         .order("created_at", { ascending: false });
       if (!isStaff && user) {
-        query = query.eq("user_id", user.id).in("status", ["disponivel_retirada", "emitido", "retirado", "pendente"]);
+        query = query.eq("user_id", user.id);
       }
       const { data } = await query;
       return data ?? [];
