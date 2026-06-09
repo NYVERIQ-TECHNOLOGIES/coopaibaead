@@ -469,6 +469,7 @@ export default function Certificates() {
               isLoading={isLoading}
               isStaff={isStaff}
               isAdmin={isAdmin}
+              formatIssuerProfile={formatIssuerProfile}
               onPickup={(c) => setPickupCert(c)}
               onPrint={printCert}
               onReceipt={(c) => printReceipt(c)}
