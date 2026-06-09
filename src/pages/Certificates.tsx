@@ -680,35 +680,42 @@ function AdminFilters(props: {
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        <div className="lg:col-span-2 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="sm:col-span-2 lg:col-span-2 relative min-w-0">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input value={props.search} onChange={(e) => props.setSearch(e.target.value)}
-            placeholder="Nome, CPF, curso ou código…" className="pl-9" />
+            placeholder="Nome, CPF, curso ou código…" className="pl-9 w-full" />
         </div>
-        <Select value={props.filterStatus} onValueChange={props.setFilterStatus}>
-          <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os status</SelectItem>
-            <SelectItem value="pendente">Em processamento</SelectItem>
-            <SelectItem value="emitido">Disponível para download</SelectItem>
-            <SelectItem value="disponivel_retirada">Disponível para retirada</SelectItem>
-            <SelectItem value="retirado">Retirado</SelectItem>
-            <SelectItem value="cancelado">Cancelado</SelectItem>
-            <SelectItem value="erro">Erro na emissão</SelectItem>
-
-          </SelectContent>
-        </Select>
-        <Select value={props.filterCourse} onValueChange={props.setFilterCourse}>
-          <SelectTrigger><SelectValue placeholder="Curso" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos os cursos</SelectItem>
-            {props.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <div className="flex gap-2">
-          <Input type="date" value={props.filterDateFrom} onChange={(e) => props.setFilterDateFrom(e.target.value)} />
-          <Input type="date" value={props.filterDateTo} onChange={(e) => props.setFilterDateTo(e.target.value)} />
+        <div className="min-w-0">
+          <Select value={props.filterStatus} onValueChange={props.setFilterStatus}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="pendente">Em processamento</SelectItem>
+              <SelectItem value="emitido">Disponível para download</SelectItem>
+              <SelectItem value="disponivel_retirada">Disponível para retirada</SelectItem>
+              <SelectItem value="retirado">Retirado</SelectItem>
+              <SelectItem value="cancelado">Cancelado</SelectItem>
+              <SelectItem value="erro">Erro na emissão</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-0">
+          <Select value={props.filterCourse} onValueChange={props.setFilterCourse}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Curso" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os cursos</SelectItem>
+              {props.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-w-0">
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">De</Label>
+          <Input type="date" className="w-full" value={props.filterDateFrom} onChange={(e) => props.setFilterDateFrom(e.target.value)} />
+        </div>
+        <div className="min-w-0">
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Até</Label>
+          <Input type="date" className="w-full" value={props.filterDateTo} onChange={(e) => props.setFilterDateTo(e.target.value)} />
         </div>
       </div>
     </div>
