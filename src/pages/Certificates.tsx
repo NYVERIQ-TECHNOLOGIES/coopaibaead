@@ -541,6 +541,7 @@ export default function Certificates() {
           isLoading={isLoading}
           isStaff={isStaff}
           isAdmin={false}
+          formatIssuerProfile={formatIssuerProfile}
           onPrint={printCert}
           onDownload={downloadCert}
         />
