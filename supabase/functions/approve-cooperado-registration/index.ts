@@ -76,7 +76,6 @@ Deno.serve(async (req) => {
           reviewed_by: callerId,
           reviewed_at: new Date().toISOString(),
           rejection_reason: rejection_reason ?? null,
-          password_hash: "discarded",
         })
         .eq("id", registration_id);
       return new Response(JSON.stringify({ success: true, status: "rejected" }), {
@@ -123,7 +122,6 @@ Deno.serve(async (req) => {
         status: "approved",
         reviewed_by: callerId,
         reviewed_at: new Date().toISOString(),
-        password_hash: "discarded",
       })
       .eq("id", registration_id);
 

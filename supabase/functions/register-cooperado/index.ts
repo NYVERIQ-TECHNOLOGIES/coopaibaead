@@ -157,14 +157,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    const passwordHash = await hashPassword(String(password));
+    // Password is intentionally NOT stored. A temporary password is generated
+    // at approval time by the admin-approval edge function.
+    void password;
 
     const { error: insErr } = await admin.from("cooperado_pending_registrations").insert({
       full_name: name,
       cpf: cleanCpf,
       email: email ? String(email).trim().toLowerCase() : null,
       cooperativa: cooperativa || null,
-      password_hash: passwordHash,
       status: "pending",
     });
 
