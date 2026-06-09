@@ -719,9 +719,7 @@ function CertificatesTable({
                     <div>{issuedDate.toLocaleDateString("pt-BR")}</div>
                     <div className="text-xs opacity-70">{issuedDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
                   </td>
-                  {isStaff && (
-                    <td className="py-3 px-4 text-xs text-muted-foreground">{cert.issued_by_name ?? "—"}</td>
-                  )}
+                  <td className="py-3 px-4 text-xs text-muted-foreground">{cert.issued_by_name ?? "—"}</td>
                   <td className="py-3 px-4">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${CERT_STATUS_STYLE[cert.status] || "text-muted-foreground"}`}>
                       {CERT_STATUS_LABEL[cert.status] || cert.status}
