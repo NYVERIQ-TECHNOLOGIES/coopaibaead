@@ -310,11 +310,14 @@ Deno.serve(async (req) => {
 
       const waResp = await fetch(`${supabaseUrl}/functions/v1/send-whatsapp-notification`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+          "x-internal-call": "1",
+        },
         body: JSON.stringify({
           user_id: user_id!,
           message: waMessage,
-          internal_token: serviceKey,
         }),
       });
       const waData = await waResp.json().catch(() => ({}));

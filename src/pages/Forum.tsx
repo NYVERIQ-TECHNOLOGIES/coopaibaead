@@ -50,13 +50,21 @@ export default function Forum() {
   });
 
   // Fetch profiles for author names (uses safe RPC: only name + avatar)
+  // Use scoped get_public_profiles with explicit user IDs from topics/replies
+  // to avoid enumerating all platform members.
   const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles_forum"],
+    queryKey: ["profiles_forum", topics?.map((t: any) => t.user_id).join(","), replies?.map((r: any) => r.user_id).join(",")],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("list_public_profiles");
+      const ids = Array.from(new Set([
+        ...((topics ?? []).map((t: any) => t.user_id)),
+        ...((replies ?? []).map((r: any) => r.user_id)),
+      ].filter(Boolean)));
+      if (ids.length === 0) return [];
+      const { data, error } = await supabase.rpc("get_public_profiles", { _user_ids: ids });
       if (error) throw error;
       return data ?? [];
     },
+    enabled: (topics?.length ?? 0) > 0 || (replies?.length ?? 0) > 0,
   });
 
   // Fetch replies for selected topic
