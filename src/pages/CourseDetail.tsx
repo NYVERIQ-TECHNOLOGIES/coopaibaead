@@ -164,7 +164,7 @@ export default function CourseDetail() {
       if (!user) return null;
       const { data } = await supabase
         .from("certificates")
-        .select("id, code, status, issued_at")
+        .select("id, code, status, issued_at, created_at")
         .eq("user_id", user.id)
         .eq("course_id", courseId!)
         .order("created_at", { ascending: false })
