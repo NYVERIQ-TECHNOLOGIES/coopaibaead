@@ -348,7 +348,6 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
-          password_hash: string
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -362,7 +361,6 @@ export type Database = {
           email?: string | null
           full_name: string
           id?: string
-          password_hash: string
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -376,7 +374,6 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
-          password_hash?: string
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
