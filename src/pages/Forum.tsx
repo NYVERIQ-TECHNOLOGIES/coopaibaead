@@ -49,24 +49,6 @@ export default function Forum() {
     },
   });
 
-  // Fetch profiles for author names (uses safe RPC: only name + avatar)
-  // Use scoped get_public_profiles with explicit user IDs from topics/replies
-  // to avoid enumerating all platform members.
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles_forum", topics?.map((t: any) => t.user_id).join(","), replies?.map((r: any) => r.user_id).join(",")],
-    queryFn: async () => {
-      const ids = Array.from(new Set([
-        ...((topics ?? []).map((t: any) => t.user_id)),
-        ...((replies ?? []).map((r: any) => r.user_id)),
-      ].filter(Boolean)));
-      if (ids.length === 0) return [];
-      const { data, error } = await supabase.rpc("get_public_profiles", { _user_ids: ids });
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: (topics?.length ?? 0) > 0 || (replies?.length ?? 0) > 0,
-  });
-
   // Fetch replies for selected topic
   const { data: replies = [] } = useQuery({
     queryKey: ["forum_replies", selectedTopic],
@@ -93,6 +75,27 @@ export default function Forum() {
       data.forEach((r) => { counts[r.topic_id] = (counts[r.topic_id] || 0) + 1; });
       return counts;
     },
+  });
+
+  // Fetch profiles for author names (scoped to IDs present in topics/replies
+  // to avoid enumerating all platform members).
+  const { data: profiles = [] } = useQuery({
+    queryKey: [
+      "profiles_forum",
+      topics?.map((t: any) => t.user_id).join(","),
+      replies?.map((r: any) => r.user_id).join(","),
+    ],
+    queryFn: async () => {
+      const ids = Array.from(new Set([
+        ...((topics ?? []).map((t: any) => t.user_id)),
+        ...((replies ?? []).map((r: any) => r.user_id)),
+      ].filter(Boolean)));
+      if (ids.length === 0) return [];
+      const { data, error } = await supabase.rpc("get_public_profiles", { _user_ids: ids });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: (topics?.length ?? 0) > 0 || (replies?.length ?? 0) > 0,
   });
 
   const profileMap = new Map(profiles.map((p) => [p.user_id, p]));
