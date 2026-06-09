@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
-  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks, XCircle
+  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks, XCircle, RefreshCw
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
