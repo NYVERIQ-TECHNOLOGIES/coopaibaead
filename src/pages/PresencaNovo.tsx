@@ -51,6 +51,8 @@ export default function PresencaNovo() {
         descricao: form.descricao || null,
         data: form.data,
         horario: form.horario || null,
+        data_fim: form.data_fim || null,
+        horario_fim: form.horario_fim || null,
         local: form.local || null,
         responsavel: form.responsavel || null,
         expected_count: form.expected_count ? parseInt(form.expected_count) : null,
@@ -60,6 +62,7 @@ export default function PresencaNovo() {
       .select()
       .single();
     setLoading(false);
+
     if (error) {
       toast({ title: "Erro ao criar evento", description: error.message, variant: "destructive" });
       return;
