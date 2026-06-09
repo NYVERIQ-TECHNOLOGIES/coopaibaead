@@ -275,7 +275,7 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   }
 
   const legal =
-    "Fundamentação legal: Lei nº 9.394/96 (LDB), art. 39, § 2º, Inciso I, art. 41, 42 e 43, " +
+    "Certificado emitido com base na lei: Lei nº 9.394/96 (LDB), art. 39, § 2º, Inciso I, art. 41, 42 e 43, " +
     "Incisos VII e VIII; Lei nº 11.741/08, art. 1º; Decreto nº 5.154/04 e Decreto nº 8.268/14.";
   const legalLines = wrapText(legal, fontItalic, 8, pageWidth - 200);
   let ly = 188;
