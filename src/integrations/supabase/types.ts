@@ -1307,9 +1307,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           data: string
+          data_fim: string | null
           descricao: string | null
           expected_count: number | null
           horario: string | null
+          horario_fim: string | null
           id: string
           local: string | null
           nome: string
@@ -1324,9 +1326,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data?: string
+          data_fim?: string | null
           descricao?: string | null
           expected_count?: number | null
           horario?: string | null
+          horario_fim?: string | null
           id?: string
           local?: string | null
           nome: string
@@ -1341,9 +1345,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           data?: string
+          data_fim?: string | null
           descricao?: string | null
           expected_count?: number | null
           horario?: string | null
+          horario_fim?: string | null
           id?: string
           local?: string | null
           nome?: string
@@ -1856,6 +1862,7 @@ export type Database = {
         Args: { _id: string; _motivo: string }
         Returns: undefined
       }
+      encerrar_eventos_vencidos: { Args: never; Returns: number }
       get_admin_reports: { Args: never; Returns: Json }
       get_duplicate_enrollments: {
         Args: never

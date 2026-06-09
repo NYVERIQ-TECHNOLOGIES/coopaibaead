@@ -22,11 +22,14 @@ export default function PresencaNovo() {
     descricao: "",
     data: new Date().toISOString().slice(0, 10),
     horario: "",
+    data_fim: "",
+    horario_fim: "",
     local: "",
     responsavel: "",
     expected_count: "",
     course_id: "",
   });
+
 
   useEffect(() => {
     supabase.from("courses").select("id, title").order("title").then(({ data }) => {
@@ -48,6 +51,8 @@ export default function PresencaNovo() {
         descricao: form.descricao || null,
         data: form.data,
         horario: form.horario || null,
+        data_fim: form.data_fim || null,
+        horario_fim: form.horario_fim || null,
         local: form.local || null,
         responsavel: form.responsavel || null,
         expected_count: form.expected_count ? parseInt(form.expected_count) : null,
@@ -57,6 +62,7 @@ export default function PresencaNovo() {
       .select()
       .single();
     setLoading(false);
+
     if (error) {
       toast({ title: "Erro ao criar evento", description: error.message, variant: "destructive" });
       return;
@@ -101,13 +107,23 @@ export default function PresencaNovo() {
             <Input value={form.responsavel} onChange={(e) => update("responsavel", e.target.value)} />
           </div>
           <div>
-            <Label>Data *</Label>
+            <Label>Data de início *</Label>
             <Input type="date" value={form.data} onChange={(e) => update("data", e.target.value)} required />
           </div>
           <div>
-            <Label>Horário</Label>
+            <Label>Horário de início</Label>
             <Input type="time" value={form.horario} onChange={(e) => update("horario", e.target.value)} />
           </div>
+          <div>
+            <Label>Data de término</Label>
+            <Input type="date" value={form.data_fim} onChange={(e) => update("data_fim", e.target.value)} />
+          </div>
+          <div>
+            <Label>Horário de término</Label>
+            <Input type="time" value={form.horario_fim} onChange={(e) => update("horario_fim", e.target.value)} />
+            <p className="text-xs text-muted-foreground mt-1">O evento será encerrado automaticamente ao atingir esse horário.</p>
+          </div>
+
           <div className="sm:col-span-2">
             <Label>Local</Label>
             <Input value={form.local} onChange={(e) => update("local", e.target.value)} />

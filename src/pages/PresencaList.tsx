@@ -13,6 +13,8 @@ export default function PresencaList() {
   const { data: eventos = [], isLoading } = useQuery({
     queryKey: ["presenca_eventos"],
     queryFn: async () => {
+      // auto-encerra eventos cujo horário de término já passou
+      await supabase.rpc("encerrar_eventos_vencidos" as any);
       const { data, error } = await supabase
         .from("presenca_eventos")
         .select("*, presenca_assinaturas(count)")
@@ -20,7 +22,9 @@ export default function PresencaList() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 60_000,
   });
+
 
   const filtered = eventos.filter((e: any) =>
     e.nome.toLowerCase().includes(q.toLowerCase()) ||
@@ -77,7 +81,14 @@ export default function PresencaList() {
                   </div>
                   <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> {new Date(e.data).toLocaleDateString("pt-BR")} {e.horario ? `· ${e.horario.slice(0,5)}` : ""}</div>
+                    {(e.data_fim || e.horario_fim) && (
+                      <div className="flex items-center gap-2 pl-5 text-xs">
+                        até {e.data_fim ? new Date(e.data_fim).toLocaleDateString("pt-BR") : new Date(e.data).toLocaleDateString("pt-BR")}
+                        {e.horario_fim ? ` · ${e.horario_fim.slice(0,5)}` : ""}
+                      </div>
+                    )}
                     {e.local && <div className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> {e.local}</div>}
+
                   </div>
                   <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">Código</span>

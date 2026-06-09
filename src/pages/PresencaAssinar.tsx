@@ -24,6 +24,8 @@ export default function PresencaAssinar() {
 
   useEffect(() => {
     (async () => {
+      // Tenta encerrar eventos vencidos antes de ler
+      try { await supabase.rpc("encerrar_eventos_vencidos" as any); } catch {}
       const { data, error } = await supabase.rpc("get_evento_publico", { _codigo: codigo! });
       if (error || !data || (Array.isArray(data) && data.length === 0)) {
         setEvento(null);
@@ -33,6 +35,7 @@ export default function PresencaAssinar() {
       setLoading(false);
     })();
   }, [codigo]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
