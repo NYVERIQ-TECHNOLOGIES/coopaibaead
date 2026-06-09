@@ -655,20 +655,23 @@ export default function CourseDetail() {
   };
 
   // ---- Generate certificate (student self-issue at 100%) ----
-  const handleGenerateCertificate = async () => {
+  const handleGenerateCertificate = async (opts: { retry?: boolean } = {}) => {
     if (!user || !courseId) return;
-    if (existingCert) {
+    if (existingCert && !opts.retry) {
       toast({ title: "Certificado já existente", description: "Este curso já possui um certificado vinculado à sua conta." });
       return;
     }
     setGeneratingCert(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-certificate", {
-        body: { course_id: courseId },
+        body: { course_id: courseId, retry: opts.retry === true },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast({ title: "Certificado gerado!", description: "Veja em 'Certificados'." });
+      toast({
+        title: opts.retry ? "Solicitação reenviada!" : "Certificado gerado!",
+        description: "Veja em 'Certificados'.",
+      });
       qc.invalidateQueries({ queryKey: ["my_course_cert", courseId, user.id] });
       qc.invalidateQueries({ queryKey: ["my-cert-count", user.id] });
     } catch (e: any) {
