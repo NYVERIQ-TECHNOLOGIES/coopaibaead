@@ -740,7 +740,7 @@ function CertificatesTable({
               {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">CPF</th>}
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emissão</th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emitido por</th>
+              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Solicitado por</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
               <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Ações</th>
             </tr>
