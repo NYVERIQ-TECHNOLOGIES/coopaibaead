@@ -63,7 +63,59 @@ Deno.serve(async (req) => {
 
     if (!isAdmin) {
       user_id = user.id;
-...
+
+      const { data: mods } = await supabaseAdmin
+        .from("course_modules").select("id").eq("course_id", course_id);
+      const moduleIds = (mods || []).map((m: any) => m.id);
+      let totalLessons = 0;
+      let lessonIds: string[] = [];
+      if (moduleIds.length > 0) {
+        const { data: lessons } = await supabaseAdmin
+          .from("course_lessons").select("id").in("module_id", moduleIds);
+        lessonIds = (lessons || []).map((l: any) => l.id);
+        totalLessons = lessonIds.length;
+      }
+      let completedLessons = 0;
+      if (lessonIds.length > 0) {
+        const { count } = await supabaseAdmin
+          .from("lesson_completions")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .in("lesson_id", lessonIds);
+        completedLessons = count ?? 0;
+      }
+      const fullyCompleted = totalLessons > 0 && completedLessons >= totalLessons;
+
+      let avgScoreOk = false;
+      const { data: pubEvals } = await supabaseAdmin
+        .from("course_evaluations").select("id")
+        .eq("course_id", course_id).eq("status", "publicada");
+      const pubEvalIds = (pubEvals || []).map((e: any) => e.id);
+      if (pubEvalIds.length > 0) {
+        const { data: attempts } = await supabaseAdmin
+          .from("exam_attempts").select("evaluation_id, score")
+          .eq("user_id", user.id).in("evaluation_id", pubEvalIds);
+        const best = new Map<string, number>();
+        for (const a of (attempts || []) as any[]) {
+          const prev = best.get(a.evaluation_id) ?? 0;
+          if (Number(a.score) > prev) best.set(a.evaluation_id, Number(a.score));
+        }
+        if (best.size === pubEvalIds.length) {
+          const avg = Array.from(best.values()).reduce((s, v) => s + v, 0) / best.size;
+          avgScoreOk = avg >= 70;
+        }
+      }
+
+      if (!fullyCompleted && !avgScoreOk) {
+        return new Response(JSON.stringify({ error: "Conclua 100% do curso ou atinja média mínima de 70% nas avaliações para gerar o certificado." }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (!user_id) {
+      return new Response(JSON.stringify({ error: "user_id required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     // Prevent duplicates (unless explicit reissue/retry)
     if (!reissue_of) {
       const { data: existing } = await supabaseAdmin
