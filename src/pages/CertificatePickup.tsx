@@ -16,7 +16,7 @@ export default function CertificatePickup() {
     queryFn: async () => {
       const q = supabase
         .from("certificates")
-        .select("*, courses(title, duration), profiles!certificates_user_id_fkey(full_name, cpf)")
+        .select("*, courses(title, duration), profiles!certificates_user_id_profiles_fkey(full_name, cpf)")
         .eq("code", code!)
         .maybeSingle();
       const { data } = await q;
