@@ -671,7 +671,7 @@ function AdminFilters(props: {
 }) {
   const hasFilters = props.search || props.filterStatus !== "todos" || props.filterCourse !== "todos" || props.filterDateFrom || props.filterDateTo;
   return (
-    <div className="bg-card rounded-xl border border-border p-4 space-y-3">
+    <div className="bg-card rounded-xl border border-border p-4 space-y-3 overflow-hidden">
       <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
         <Filter className="w-4 h-4" /> Filtros
         {hasFilters && (
@@ -680,8 +680,8 @@ function AdminFilters(props: {
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="sm:col-span-2 lg:col-span-2 relative min-w-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 w-full">
+        <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2 relative min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input value={props.search} onChange={(e) => props.setSearch(e.target.value)}
             placeholder="Nome, CPF, curso ou código…" className="pl-9 w-full" />
