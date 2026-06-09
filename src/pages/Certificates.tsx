@@ -74,6 +74,48 @@ export default function Certificates() {
     enabled: isStaff || !!user,
   });
 
+  // Enrich with requester role labels (issued_by → role)
+  const issuerIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const c of certificates as any[]) if (c.issued_by) ids.add(c.issued_by);
+    return Array.from(ids);
+  }, [certificates]);
+
+  const { data: issuerRoles = {} } = useQuery<Record<string, string[]>>({
+    queryKey: ["cert-issuer-roles", issuerIds],
+    enabled: issuerIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", issuerIds);
+      const map: Record<string, string[]> = {};
+      for (const r of (data || []) as any[]) {
+        if (!map[r.user_id]) map[r.user_id] = [];
+        map[r.user_id].push(r.role);
+      }
+      return map;
+    },
+  });
+
+  const ROLE_LABEL: Record<string, string> = {
+    admin: "Administrador",
+    moderador: "Moderador",
+    cooperado: "Cooperado",
+    cooperado_eventual: "Cooperado eventual",
+    aluno: "Aluno",
+  };
+  const formatIssuerProfile = (cert: any): string => {
+    const roles: string[] = (cert.issued_by && (issuerRoles as Record<string, string[]>)[cert.issued_by]) || [];
+    if (roles.length === 0) {
+      return cert.issued_by && cert.issued_by === cert.user_id ? "Aluno (auto-solicitação)" : "—";
+    }
+    const priority = ["admin", "moderador", "cooperado", "cooperado_eventual", "aluno"];
+    const primary = priority.find((r) => roles.includes(r)) || roles[0];
+    const label = ROLE_LABEL[primary] || primary;
+    return cert.issued_by === cert.user_id ? `${label} (auto-solicitação)` : label;
+  };
+
   const { data: templates = [] } = useQuery({
     queryKey: ["certificate-templates"],
     queryFn: async () => {
