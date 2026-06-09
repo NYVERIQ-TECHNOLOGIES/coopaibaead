@@ -68,6 +68,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Determine the holder's profile type (aluno / cooperado / cooperado eventual)
+    let holderLabel = "Cooperado";
+    if (cert.user_id) {
+      const { data: holderRoles } = await supabaseAdmin
+        .from("user_roles").select("role").eq("user_id", cert.user_id);
+      const rs = (holderRoles || []).map((r: any) => r.role);
+      const priority = ["cooperado", "cooperado_eventual", "aluno"];
+      const primary = priority.find((p) => rs.includes(p));
+      if (primary === "aluno") holderLabel = "Aluno";
+      else if (primary === "cooperado_eventual") holderLabel = "Cooperado Eventual";
+      else if (primary === "cooperado") holderLabel = "Cooperado";
+    }
+
     // Logo (optional)
     let logoUrl: string | null = null;
     try {
@@ -110,7 +123,9 @@ Deno.serve(async (req) => {
       logoUrl,
       savedSignatureUrl,
       status: cert.status,
+      holderLabel,
     });
+
 
     const filename = `comprovante-retirada-${cert.code}.pdf`;
     return new Response(pdfBytes, {
@@ -145,6 +160,7 @@ interface ReceiptData {
   logoUrl: string | null;
   savedSignatureUrl: string | null;
   status: string;
+  holderLabel: string;
 }
 
 async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
@@ -195,7 +211,7 @@ async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
   let y = H - 130;
 
   // Section: Identificação do cooperado
-  y = drawSection(page, fontB, fontR, "1. Identificação do Cooperado", y, blue, ink);
+  y = drawSection(page, fontB, fontR, `1. Identificação do ${d.holderLabel}`, y, blue, ink);
   y = drawField(page, fontB, fontR, "Nome:", d.studentName, y, ink, muted);
   if (d.studentCpf) y = drawField(page, fontB, fontR, "CPF:", formatCpf(d.studentCpf), y, ink, muted);
   if (d.enrollmentNumber) y = drawField(page, fontB, fontR, "Matrícula:", d.enrollmentNumber, y, ink, muted);
@@ -240,7 +256,7 @@ async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
   // Cooperado
   const lx = W * 0.28;
   page.drawLine({ start: { x: lx - sigLen / 2, y }, end: { x: lx + sigLen / 2, y }, thickness: 0.8, color: ink });
-  const ln1 = "Assinatura do Cooperado";
+  const ln1 = `Assinatura do ${d.holderLabel}`;
   const ln1w = fontR.widthOfTextAtSize(ln1, 9);
   page.drawText(ln1, { x: lx - ln1w / 2, y: y - 12, size: 9, font: fontR, color: muted });
 
