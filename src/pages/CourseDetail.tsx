@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   ArrowLeft, Clock, Users, BookOpen, Star, Play, FileText, CheckCircle,
   Lock, Award, Plus, Trash2, Edit, Video, Headphones,
-  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks, XCircle
+  ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks, XCircle, RefreshCw
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -164,7 +164,7 @@ export default function CourseDetail() {
       if (!user) return null;
       const { data } = await supabase
         .from("certificates")
-        .select("id, code, status, issued_at")
+        .select("id, code, status, issued_at, created_at")
         .eq("user_id", user.id)
         .eq("course_id", courseId!)
         .order("created_at", { ascending: false })
@@ -655,20 +655,23 @@ export default function CourseDetail() {
   };
 
   // ---- Generate certificate (student self-issue at 100%) ----
-  const handleGenerateCertificate = async () => {
+  const handleGenerateCertificate = async (opts: { retry?: boolean } = {}) => {
     if (!user || !courseId) return;
-    if (existingCert) {
+    if (existingCert && !opts.retry) {
       toast({ title: "Certificado já existente", description: "Este curso já possui um certificado vinculado à sua conta." });
       return;
     }
     setGeneratingCert(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-certificate", {
-        body: { course_id: courseId },
+        body: { course_id: courseId, retry: opts.retry === true },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      toast({ title: "Certificado gerado!", description: "Veja em 'Certificados'." });
+      toast({
+        title: opts.retry ? "Solicitação reenviada!" : "Certificado gerado!",
+        description: "Veja em 'Certificados'.",
+      });
       qc.invalidateQueries({ queryKey: ["my_course_cert", courseId, user.id] });
       qc.invalidateQueries({ queryKey: ["my-cert-count", user.id] });
     } catch (e: any) {
@@ -824,12 +827,29 @@ export default function CourseDetail() {
                   </Link>
                 </>
               )}
-              {certPending && (
-                <>
-                  <Badge variant="secondary" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Em processamento</Badge>
-                  <span className="text-xs text-muted-foreground">Seu certificado está sendo emitido. Atualize a página em instantes.</span>
-                </>
-              )}
+              {certPending && (() => {
+                const createdMs = existingCert?.created_at ? new Date(existingCert.created_at as any).getTime() : Date.now();
+                const hoursSince = (Date.now() - createdMs) / 3_600_000;
+                const canResend = hoursSince >= 48;
+                const hoursRemaining = Math.max(0, Math.ceil(48 - hoursSince));
+                return (
+                  <>
+                    <Badge variant="secondary" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Em processamento</Badge>
+                    <span className="text-xs text-muted-foreground">Seu certificado está sendo emitido. Atualize a página em instantes.</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleGenerateCertificate({ retry: true })}
+                      disabled={!canResend || generatingCert}
+                      className="gap-2"
+                      title={canResend ? "Reenviar solicitação de certificado" : `Disponível em ${hoursRemaining}h`}
+                    >
+                      {generatingCert ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      {canResend ? "Reenviar solicitação" : `Reenviar em ${hoursRemaining}h`}
+                    </Button>
+                  </>
+                );
+              })()}
               {!existingCert && (
                 <>
                   {eligible ? (
@@ -839,7 +859,7 @@ export default function CourseDetail() {
                   )}
                   <Button
                     size="sm"
-                    onClick={handleGenerateCertificate}
+                    onClick={() => handleGenerateCertificate()}
                     disabled={!eligible || generatingCert}
                     className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
                   >

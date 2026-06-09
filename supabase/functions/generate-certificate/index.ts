@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
     const isAdmin = !!roleData;
 
     const body = await req.json();
-    let { user_id, course_id, reissue_of } = body as { user_id?: string; course_id?: string; reissue_of?: string };
+    let { user_id, course_id, reissue_of, retry } = body as { user_id?: string; course_id?: string; reissue_of?: string; retry?: boolean };
     if (!course_id) {
       return new Response(JSON.stringify({ error: "course_id required" }), {
         status: 400,
@@ -116,18 +116,48 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Prevent duplicates (unless explicit reissue)
+    // Prevent duplicates (unless explicit reissue/retry)
     if (!reissue_of) {
       const { data: existing } = await supabaseAdmin
-        .from("certificates").select("id, status")
+        .from("certificates").select("id, status, created_at")
         .eq("user_id", user_id!).eq("course_id", course_id)
         .not("status", "in", "(cancelado)")
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
+
       if (existing) {
-        return new Response(JSON.stringify({ error: "Já existe um certificado vigente para este curso." }), {
-          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        if (!retry) {
+          return new Response(JSON.stringify({ error: "Já existe um certificado vigente para este curso." }), {
+            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Retry flow: only allow when previous request is pendente or erro
+        if (!["pendente", "erro"].includes(existing.status)) {
+          return new Response(JSON.stringify({ error: "Este certificado já foi emitido. Use a opção de reemissão." }), {
+            status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Enforce 48h cooldown server-side
+        const created = new Date(existing.created_at).getTime();
+        const hours = (Date.now() - created) / 3_600_000;
+        if (hours < 48) {
+          const remaining = Math.ceil(48 - hours);
+          return new Response(JSON.stringify({
+            error: `Aguarde ${remaining}h para reenviar a solicitação (limite de 48h entre tentativas).`,
+            cooldown_hours_remaining: remaining,
+          }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        // Cancel the stuck/errored request so a fresh one can be generated
+        await supabaseAdmin
+          .from("certificates")
+          .update({ status: "cancelado", error_message: "Cancelado automaticamente para reenvio de solicitação." })
+          .eq("id", existing.id);
       }
     }
 
