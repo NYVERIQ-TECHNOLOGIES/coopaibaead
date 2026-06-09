@@ -211,7 +211,7 @@ async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
   let y = H - 130;
 
   // Section: Identificação do cooperado
-  y = drawSection(page, fontB, fontR, "1. Identificação do Cooperado", y, blue, ink);
+  y = drawSection(page, fontB, fontR, `1. Identificação do ${d.holderLabel}`, y, blue, ink);
   y = drawField(page, fontB, fontR, "Nome:", d.studentName, y, ink, muted);
   if (d.studentCpf) y = drawField(page, fontB, fontR, "CPF:", formatCpf(d.studentCpf), y, ink, muted);
   if (d.enrollmentNumber) y = drawField(page, fontB, fontR, "Matrícula:", d.enrollmentNumber, y, ink, muted);
