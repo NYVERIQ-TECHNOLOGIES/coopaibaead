@@ -26,7 +26,7 @@ export default function CertificateReports() {
     queryFn: async () => {
       const { data } = await supabase
         .from("certificates")
-        .select("*, courses(title), profiles!certificates_user_id_fkey(full_name, cpf, enrollment_number, cooperativa)")
+        .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf, enrollment_number, cooperativa)")
         .order("created_at", { ascending: false });
       return data ?? [];
     },

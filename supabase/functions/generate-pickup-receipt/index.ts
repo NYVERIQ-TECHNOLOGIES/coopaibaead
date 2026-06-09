@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
 
     const { data: cert } = await supabaseAdmin
       .from("certificates")
-      .select("*, courses(title), profiles!certificates_user_id_fkey(full_name, cpf, enrollment_number, cooperativa)")
+      .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf, enrollment_number, cooperativa)")
       .eq("code", code).maybeSingle();
 
     if (!cert) {
