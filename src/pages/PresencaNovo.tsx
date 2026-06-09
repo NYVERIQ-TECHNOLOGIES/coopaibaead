@@ -22,11 +22,14 @@ export default function PresencaNovo() {
     descricao: "",
     data: new Date().toISOString().slice(0, 10),
     horario: "",
+    data_fim: "",
+    horario_fim: "",
     local: "",
     responsavel: "",
     expected_count: "",
     course_id: "",
   });
+
 
   useEffect(() => {
     supabase.from("courses").select("id, title").order("title").then(({ data }) => {
