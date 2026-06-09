@@ -256,7 +256,7 @@ async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
   // Cooperado
   const lx = W * 0.28;
   page.drawLine({ start: { x: lx - sigLen / 2, y }, end: { x: lx + sigLen / 2, y }, thickness: 0.8, color: ink });
-  const ln1 = "Assinatura do Cooperado";
+  const ln1 = `Assinatura do ${d.holderLabel}`;
   const ln1w = fontR.widthOfTextAtSize(ln1, 9);
   page.drawText(ln1, { x: lx - ln1w / 2, y: y - 12, size: 9, font: fontR, color: muted });
 
