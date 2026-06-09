@@ -85,7 +85,7 @@ export default function StudentDashboard() {
   const { data: allCourses = [] } = useQuery({
     queryKey: ["all-courses-student"],
     queryFn: async () => {
-      const { data } = await supabase.from("courses").select("id, title, description, image, duration").order("created_at", { ascending: false });
+      const { data } = await supabase.from("courses").select("id, title, description, image, duration").eq("eventual", false).order("created_at", { ascending: false });
       return data ?? [];
     },
   });
