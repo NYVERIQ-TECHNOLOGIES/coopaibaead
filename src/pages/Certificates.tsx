@@ -919,10 +919,6 @@ function PickupDialog({ cert, onClose, onSuccess }: { cert: any | null; onClose:
               <Label>Observações (opcional)</Label>
               <Textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} maxLength={500} />
             </div>
-            <div>
-              <Label>Assinatura do cooperado</Label>
-              <SignaturePad ref={sigRef} />
-            </div>
           </div>
         )}
         <DialogFooter>
