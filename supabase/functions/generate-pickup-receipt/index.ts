@@ -160,6 +160,7 @@ interface ReceiptData {
   logoUrl: string | null;
   savedSignatureUrl: string | null;
   status: string;
+  holderLabel: string;
 }
 
 async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
