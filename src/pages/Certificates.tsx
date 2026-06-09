@@ -702,7 +702,7 @@ function CertificatesTable({
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={isStaff ? 8 : 6} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+              <tr><td colSpan={isStaff ? 8 : 7} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
             ) : filtered.map((cert, i) => {
               const name = cert.profiles?.full_name ?? cert.student_name_snapshot ?? "—";
               const cpf = cert.profiles?.cpf ?? cert.student_cpf_snapshot ?? "—";
