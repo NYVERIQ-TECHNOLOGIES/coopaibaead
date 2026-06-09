@@ -20,12 +20,15 @@ export default function PresencaEvento() {
   const { data: evento } = useQuery({
     queryKey: ["presenca_evento", id],
     queryFn: async () => {
+      await supabase.rpc("encerrar_eventos_vencidos" as any);
       const { data, error } = await supabase.from("presenca_eventos").select("*").eq("id", id!).single();
       if (error) throw error;
       return data;
     },
     enabled: !!id,
+    refetchInterval: 60_000,
   });
+
 
   const { data: assinaturas = [] } = useQuery({
     queryKey: ["presenca_assinaturas", id],
