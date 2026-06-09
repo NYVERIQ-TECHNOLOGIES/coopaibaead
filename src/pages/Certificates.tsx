@@ -63,7 +63,7 @@ export default function Certificates() {
     queryFn: async () => {
       let query = supabase
         .from("certificates")
-        .select("*, courses(title), profiles!certificates_user_id_fkey(full_name, cpf)")
+        .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf)")
         .order("created_at", { ascending: false });
       if (!isStaff && user) {
         query = query.eq("user_id", user.id);
