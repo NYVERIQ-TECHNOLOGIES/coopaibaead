@@ -180,9 +180,8 @@ async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
   const ink = rgb(BRAND.ink.r, BRAND.ink.g, BRAND.ink.b);
   const muted = rgb(BRAND.muted.r, BRAND.muted.g, BRAND.muted.b);
 
-  // Header bar
-  page.drawRectangle({ x: 0, y: H - 90, width: W, height: 90, color: green });
-  page.drawRectangle({ x: 0, y: H - 96, width: W, height: 6, color: yellow });
+  // Header bar (white background)
+  page.drawRectangle({ x: 0, y: H - 90, width: W, height: 90, color: rgb(1, 1, 1) });
 
   // Logo or text
   if (d.logoUrl) {
@@ -198,15 +197,15 @@ async function buildReceipt(d: ReceiptData): Promise<Uint8Array> {
       }
     } catch {}
   } else {
-    page.drawText("COOPAIBA", { x: 36, y: H - 55, size: 22, font: fontB, color: rgb(1, 1, 1) });
+    page.drawText("COOPAIBA", { x: 36, y: H - 55, size: 22, font: fontB, color: green });
   }
 
   const headRight = "Comprovante de Retirada de Certificado";
   const hrw = fontB.widthOfTextAtSize(headRight, 13);
-  page.drawText(headRight, { x: W - 36 - hrw, y: H - 45, size: 13, font: fontB, color: rgb(1, 1, 1) });
+  page.drawText(headRight, { x: W - 36 - hrw, y: H - 45, size: 13, font: fontB, color: green });
   const sub = "Programa de Educação Cooperativa — PEC";
   const sw = fontI.widthOfTextAtSize(sub, 9);
-  page.drawText(sub, { x: W - 36 - sw, y: H - 60, size: 9, font: fontI, color: rgb(1, 1, 1) });
+  page.drawText(sub, { x: W - 36 - sw, y: H - 60, size: 9, font: fontI, color: green });
 
   let y = H - 130;
 
