@@ -13,6 +13,8 @@ export default function PresencaList() {
   const { data: eventos = [], isLoading } = useQuery({
     queryKey: ["presenca_eventos"],
     queryFn: async () => {
+      // auto-encerra eventos cujo horário de término já passou
+      await supabase.rpc("encerrar_eventos_vencidos" as any);
       const { data, error } = await supabase
         .from("presenca_eventos")
         .select("*, presenca_assinaturas(count)")
@@ -20,7 +22,9 @@ export default function PresencaList() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 60_000,
   });
+
 
   const filtered = eventos.filter((e: any) =>
     e.nome.toLowerCase().includes(q.toLowerCase()) ||
