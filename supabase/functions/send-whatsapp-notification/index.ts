@@ -35,14 +35,17 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { phone, message, user_id, internal_token } = body as {
-      phone?: string; message?: string; user_id?: string; internal_token?: string;
+    const { phone, message, user_id } = body as {
+      phone?: string; message?: string; user_id?: string;
     };
 
-    // Allow internal service-role calls OR admin/moderador authenticated calls
-    const isInternalCall = internal_token && internal_token === serviceKey;
+    // Detect internal service-role call via Authorization header (not body),
+    // avoiding exposure of the service key in logged request payloads.
+    const authHeader = req.headers.get("Authorization") || "";
+    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    const isInternalCall = req.headers.get("x-internal-call") === "1" && bearer === serviceKey;
+
     if (!isInternalCall) {
-      const authHeader = req.headers.get("Authorization");
       if (!authHeader) {
         return new Response(JSON.stringify({ error: "Not authenticated" }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
