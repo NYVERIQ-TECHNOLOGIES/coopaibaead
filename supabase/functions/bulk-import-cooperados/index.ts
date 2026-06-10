@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
 
     // ---- Input validation ----
     const body = await req.json().catch(() => null);
-    const { rows, password } = (body ?? {}) as { rows?: Row[]; password?: string };
-    if (!Array.isArray(rows) || rows.length === 0 || typeof password !== "string" || password.length < 8) {
+    const { rows } = (body ?? {}) as { rows?: Row[] };
+    if (!Array.isArray(rows) || rows.length === 0) {
       return new Response(JSON.stringify({ error: "Payload inválido" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
