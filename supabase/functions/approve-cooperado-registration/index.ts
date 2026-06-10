@@ -125,14 +125,27 @@ Deno.serve(async (req) => {
       })
       .eq("id", registration_id);
 
+    // Generate a one-time recovery link instead of returning a plaintext password
+    let recoveryLink: string | null = null;
+    try {
+      const { data: linkData } = await admin.auth.admin.generateLink({
+        type: "recovery",
+        email: syntheticEmail,
+      });
+      recoveryLink = (linkData as { properties?: { action_link?: string } } | null)
+        ?.properties?.action_link ?? null;
+    } catch (e) {
+      console.error("generateLink failed:", e);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         status: "approved",
         user_id: userId,
         login_email: syntheticEmail,
-        temp_password: tempPassword,
-        note: "Compartilhe a senha temporária com o cooperado. Recomende troca no primeiro acesso.",
+        recovery_link: recoveryLink,
+        note: "Compartilhe o link de recuperação com o cooperado para que ele defina sua senha.",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
