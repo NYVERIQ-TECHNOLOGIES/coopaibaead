@@ -10,7 +10,7 @@ const corsHeaders = {
 // The original PBKDF2 hash submitted by the user is discarded (never converted back).
 
 function randomPassword(): string {
-  const bytes = new Uint8Array(24);
+  const bytes = new Uint8Array(32);
   crypto.getRandomValues(bytes);
   return btoa(String.fromCharCode(...bytes)).replace(/[^A-Za-z0-9]/g, "") + "Aa1!";
 }
