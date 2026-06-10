@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
 
     // ---- Input validation ----
     const body = await req.json().catch(() => null);
-    const { rows, password } = (body ?? {}) as { rows?: Row[]; password?: string };
-    if (!Array.isArray(rows) || rows.length === 0 || typeof password !== "string" || password.length < 8) {
+    const { rows } = (body ?? {}) as { rows?: Row[] };
+    if (!Array.isArray(rows) || rows.length === 0) {
       return new Response(JSON.stringify({ error: "Payload inválido" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -61,7 +61,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const results: Array<{ cpf: string; status: string; error?: string }> = [];
+    function randomPassword(): string {
+      const bytes = new Uint8Array(32);
+      crypto.getRandomValues(bytes);
+      return btoa(String.fromCharCode(...bytes)).replace(/[^A-Za-z0-9]/g, "") + "Aa1!";
+    }
+
+    const results: Array<{ cpf: string; status: string; error?: string; setup_link?: string }> = [];
     for (const r of rows) {
       const cpf = String(r?.cpf || "").replace(/\D/g, "");
       const name = String(r?.full_name || "").trim();
@@ -73,7 +79,7 @@ Deno.serve(async (req) => {
       if (existing) { results.push({ cpf, status: "exists" }); continue; }
       const email = `cpf${cpf}@cooperado.coopaiba.com.br`;
       const { data: created, error: createErr } = await admin.auth.admin.createUser({
-        email, password, email_confirm: true,
+        email, password: randomPassword(), email_confirm: true,
         user_metadata: { full_name: name, cpf, user_type: "cooperado" },
       });
       if (createErr || !created?.user) {
@@ -83,7 +89,16 @@ Deno.serve(async (req) => {
       await admin.from("profiles").update({ full_name: name, cpf, cooperativa: "COOPAIBA" }).eq("user_id", created.user.id);
       await admin.from("user_roles").delete().eq("user_id", created.user.id);
       await admin.from("user_roles").insert({ user_id: created.user.id, role: "cooperado" });
-      results.push({ cpf, status: "created" });
+
+      // Generate a per-user one-time recovery link instead of sharing a single password.
+      let setupLink: string | undefined;
+      try {
+        const { data: linkData } = await admin.auth.admin.generateLink({ type: "recovery", email });
+        setupLink = (linkData as { properties?: { action_link?: string } } | null)
+          ?.properties?.action_link ?? undefined;
+      } catch (_) { /* ignore */ }
+
+      results.push({ cpf, status: "created", setup_link: setupLink });
     }
     const summary = results.reduce<Record<string, number>>((acc, r) => {
       acc[r.status] = (acc[r.status] || 0) + 1; return acc;
