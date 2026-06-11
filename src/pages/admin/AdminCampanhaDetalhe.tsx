@@ -114,7 +114,9 @@ export default function AdminCampanhaDetalhe() {
     if (!id) return;
     const ch = supabase.channel(`adm-camp-${id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "cooperados_eventuais_inscricoes", filter: `campanha_id=eq.${id}` }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "enrollments" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "lesson_completions" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "exam_attempts" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "certificates" }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
     // eslint-disable-next-line
