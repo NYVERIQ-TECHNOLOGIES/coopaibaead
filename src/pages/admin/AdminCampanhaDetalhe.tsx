@@ -29,6 +29,7 @@ export default function AdminCampanhaDetalhe() {
   const [filtro, setFiltro] = useState("");
   const [cancelar, setCancelar] = useState<any>(null);
   const [motivo, setMotivo] = useState("");
+  const [progresso, setProgresso] = useState<Map<string, { pct: number; concluido: boolean }>>(new Map());
 
   const load = async () => {
     if (!id) return;
@@ -42,6 +43,28 @@ export default function AdminCampanhaDetalhe() {
     setInscritos(ins || []);
     setCursosAll(cu || []);
     setVinculados(new Set((vinc || []).map((v: any) => v.curso_id)));
+
+    const cursoIds = (vinc || []).map((v: any) => v.curso_id);
+    const userIds = Array.from(new Set((ins || []).map((i: any) => i.usuario_id).filter(Boolean)));
+    if (cursoIds.length && userIds.length) {
+      const { data: enr } = await supabase
+        .from("enrollments")
+        .select("user_id, course_id, progress, status")
+        .in("course_id", cursoIds)
+        .in("user_id", userIds as string[]);
+      const m = new Map<string, { pct: number; concluido: boolean }>();
+      (userIds as string[]).forEach((u) => {
+        const rows = (enr || []).filter((e: any) => e.user_id === u);
+        const total = cursoIds.length;
+        const soma = rows.reduce((s: number, e: any) => s + (e.progress || 0), 0);
+        const pct = total ? Math.min(100, Math.round(soma / total)) : 0;
+        const concluido = total > 0 && rows.length === total && rows.every((e: any) => e.status === "completed" || (e.progress || 0) >= 100);
+        m.set(u, { pct, concluido });
+      });
+      setProgresso(m);
+    } else {
+      setProgresso(new Map());
+    }
   };
   useEffect(() => {
     load();
