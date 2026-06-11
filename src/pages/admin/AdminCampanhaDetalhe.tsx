@@ -45,21 +45,64 @@ export default function AdminCampanhaDetalhe() {
     setVinculados(new Set((vinc || []).map((v: any) => v.curso_id)));
 
     const cursoIds = (vinc || []).map((v: any) => v.curso_id);
-    const userIds = Array.from(new Set((ins || []).map((i: any) => i.usuario_id).filter(Boolean)));
+    const userIds = Array.from(new Set((ins || []).map((i: any) => i.usuario_id).filter(Boolean))) as string[];
     if (cursoIds.length && userIds.length) {
-      const { data: enr } = await supabase
-        .from("enrollments")
-        .select("user_id, course_id, progress, status")
-        .in("course_id", cursoIds)
-        .in("user_id", userIds as string[]);
+      // Progresso real: aulas concluídas + avaliações aprovadas (>=70) + certificado emitido
+      const [{ data: mods }, { data: evals }, { data: certs }] = await Promise.all([
+        supabase.from("course_modules").select("id, course_id").in("course_id", cursoIds),
+        supabase.from("course_evaluations").select("id, course_id").in("course_id", cursoIds).eq("status", "publicada"),
+        supabase.from("certificates").select("user_id, course_id, status").in("course_id", cursoIds).in("user_id", userIds),
+      ]);
+      const modIds = (mods || []).map((m: any) => m.id);
+      const { data: lessons } = modIds.length
+        ? await supabase.from("course_lessons").select("id, module_id").in("module_id", modIds)
+        : { data: [] as any[] };
+      const lessonIds = (lessons || []).map((l: any) => l.id);
+      const evalIds = (evals || []).map((e: any) => e.id);
+      const [{ data: lcs }, { data: atts }] = await Promise.all([
+        lessonIds.length
+          ? supabase.from("lesson_completions").select("user_id, lesson_id").in("lesson_id", lessonIds).in("user_id", userIds)
+          : Promise.resolve({ data: [] as any[] }),
+        evalIds.length
+          ? supabase.from("exam_attempts").select("user_id, evaluation_id, score").in("evaluation_id", evalIds).in("user_id", userIds)
+          : Promise.resolve({ data: [] as any[] }),
+      ]);
+
+      const modCourse = new Map((mods || []).map((m: any) => [m.id, m.course_id]));
+      const lessonCourse = new Map((lessons || []).map((l: any) => [l.id, modCourse.get(l.module_id)]));
+      const evalCourse = new Map((evals || []).map((e: any) => [e.id, e.course_id]));
+      const unitsPorCurso = new Map<string, number>();
+      cursoIds.forEach((cid: string) => {
+        const nLessons = (lessons || []).filter((l: any) => lessonCourse.get(l.id) === cid).length;
+        const nEvals = (evals || []).filter((e: any) => e.course_id === cid).length;
+        unitsPorCurso.set(cid, nLessons + nEvals);
+      });
+
       const m = new Map<string, { pct: number; concluido: boolean }>();
-      (userIds as string[]).forEach((u) => {
-        const rows = (enr || []).filter((e: any) => e.user_id === u);
-        const total = cursoIds.length;
-        const soma = rows.reduce((s: number, e: any) => s + (e.progress || 0), 0);
-        const pct = total ? Math.min(100, Math.round(soma / total)) : 0;
-        const concluido = total > 0 && rows.length === total && rows.every((e: any) => e.status === "completed" || (e.progress || 0) >= 100);
-        m.set(u, { pct, concluido });
+      userIds.forEach((u) => {
+        const doneLessons = new Set((lcs || []).filter((x: any) => x.user_id === u).map((x: any) => x.lesson_id));
+        const passedEvals = new Set(
+          (atts || []).filter((x: any) => x.user_id === u && Number(x.score) >= 70).map((x: any) => x.evaluation_id)
+        );
+        const userCerts = new Set(
+          (certs || [])
+            .filter((c: any) => c.user_id === u && c.status !== "cancelado" && c.status !== "erro")
+            .map((c: any) => c.course_id)
+        );
+        let somaPct = 0;
+        let cursosConcluidos = 0;
+        cursoIds.forEach((cid: string) => {
+          const units = unitsPorCurso.get(cid) || 0;
+          const done =
+            Array.from(doneLessons).filter((lid) => lessonCourse.get(lid) === cid).length +
+            Array.from(passedEvals).filter((eid) => evalCourse.get(eid) === cid).length;
+          const completo = userCerts.has(cid) || (units > 0 && done >= units);
+          const pctCurso = completo ? 100 : units > 0 ? Math.min(100, Math.round((done / units) * 100)) : 0;
+          somaPct += pctCurso;
+          if (completo) cursosConcluidos++;
+        });
+        const pct = Math.round(somaPct / cursoIds.length);
+        m.set(u, { pct, concluido: cursosConcluidos === cursoIds.length });
       });
       setProgresso(m);
     } else {
