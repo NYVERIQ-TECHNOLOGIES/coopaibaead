@@ -186,41 +186,61 @@ export default function AdminCampanhaDetalhe() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Protocolo</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Endereço</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((i) => (
-                    <TableRow key={i.id}>
-                      <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
-                      <TableCell>{i.nome_completo}</TableCell>
-                      <TableCell>{maskCPF(i.cpf)}</TableCell>
-                      <TableCell className="text-xs">{i.telefone}</TableCell>
-                      <TableCell className="text-xs max-w-xs truncate" title={i.endereco}>{i.endereco}</TableCell>
-                      <TableCell className="text-xs">{new Date(i.data_inscricao).toLocaleString("pt-BR")}</TableCell>
-                      <TableCell><Badge variant={i.status === "aprovada" ? "default" : i.status === "cancelada" ? "destructive" : "secondary"}>{i.status}</Badge></TableCell>
-                      <TableCell>
-                        {i.status !== "cancelada" && (
-                          <Button size="sm" variant="ghost" onClick={() => setCancelar(i)}>Cancelar</Button>
-                        )}
-                      </TableCell>
+              <div className="max-h-[60vh] overflow-y-auto rounded-md border border-border">
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
+                    <TableRow>
+                      <TableHead>Protocolo</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>CPF</TableHead>
+                      <TableHead>Número</TableHead>
+                      <TableHead>Endereço</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead className="min-w-[140px]">Progresso</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                  {filtered.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum inscrito</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((i) => {
+                      const prog = i.usuario_id ? progresso.get(i.usuario_id) : undefined;
+                      return (
+                        <TableRow key={i.id}>
+                          <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
+                          <TableCell>{i.nome_completo}</TableCell>
+                          <TableCell>{maskCPF(i.cpf)}</TableCell>
+                          <TableCell className="text-xs">{i.telefone}</TableCell>
+                          <TableCell className="text-xs max-w-xs truncate" title={i.endereco}>{i.endereco}</TableCell>
+                          <TableCell className="text-xs">{new Date(i.data_inscricao).toLocaleString("pt-BR")}</TableCell>
+                          <TableCell>
+                            {prog ? (
+                              prog.concluido ? (
+                                <Badge className="bg-primary text-primary-foreground">Concluído</Badge>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Progress value={prog.pct} className="h-2 w-20" />
+                                  <span className="text-xs text-muted-foreground">{prog.pct}%</span>
+                                </div>
+                              )
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell><Badge variant={i.status === "aprovada" ? "default" : i.status === "cancelada" ? "destructive" : "secondary"}>{i.status}</Badge></TableCell>
+                          <TableCell>
+                            {i.status !== "cancelada" && (
+                              <Button size="sm" variant="ghost" onClick={() => setCancelar(i)}>Cancelar</Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {filtered.length === 0 && (
+                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum inscrito</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
