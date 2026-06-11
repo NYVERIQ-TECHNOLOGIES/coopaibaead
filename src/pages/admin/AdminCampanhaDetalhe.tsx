@@ -29,6 +29,7 @@ export default function AdminCampanhaDetalhe() {
   const [filtro, setFiltro] = useState("");
   const [cancelar, setCancelar] = useState<any>(null);
   const [motivo, setMotivo] = useState("");
+  const [progresso, setProgresso] = useState<Map<string, { pct: number; concluido: boolean }>>(new Map());
 
   const load = async () => {
     if (!id) return;
@@ -42,6 +43,28 @@ export default function AdminCampanhaDetalhe() {
     setInscritos(ins || []);
     setCursosAll(cu || []);
     setVinculados(new Set((vinc || []).map((v: any) => v.curso_id)));
+
+    const cursoIds = (vinc || []).map((v: any) => v.curso_id);
+    const userIds = Array.from(new Set((ins || []).map((i: any) => i.usuario_id).filter(Boolean)));
+    if (cursoIds.length && userIds.length) {
+      const { data: enr } = await supabase
+        .from("enrollments")
+        .select("user_id, course_id, progress, status")
+        .in("course_id", cursoIds)
+        .in("user_id", userIds as string[]);
+      const m = new Map<string, { pct: number; concluido: boolean }>();
+      (userIds as string[]).forEach((u) => {
+        const rows = (enr || []).filter((e: any) => e.user_id === u);
+        const total = cursoIds.length;
+        const soma = rows.reduce((s: number, e: any) => s + (e.progress || 0), 0);
+        const pct = total ? Math.min(100, Math.round(soma / total)) : 0;
+        const concluido = total > 0 && rows.length === total && rows.every((e: any) => e.status === "completed" || (e.progress || 0) >= 100);
+        m.set(u, { pct, concluido });
+      });
+      setProgresso(m);
+    } else {
+      setProgresso(new Map());
+    }
   };
   useEffect(() => {
     load();
@@ -163,41 +186,61 @@ export default function AdminCampanhaDetalhe() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Protocolo</TableHead>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>CPF</TableHead>
-                    <TableHead>Número</TableHead>
-                    <TableHead>Endereço</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((i) => (
-                    <TableRow key={i.id}>
-                      <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
-                      <TableCell>{i.nome_completo}</TableCell>
-                      <TableCell>{maskCPF(i.cpf)}</TableCell>
-                      <TableCell className="text-xs">{i.telefone}</TableCell>
-                      <TableCell className="text-xs max-w-xs truncate" title={i.endereco}>{i.endereco}</TableCell>
-                      <TableCell className="text-xs">{new Date(i.data_inscricao).toLocaleString("pt-BR")}</TableCell>
-                      <TableCell><Badge variant={i.status === "aprovada" ? "default" : i.status === "cancelada" ? "destructive" : "secondary"}>{i.status}</Badge></TableCell>
-                      <TableCell>
-                        {i.status !== "cancelada" && (
-                          <Button size="sm" variant="ghost" onClick={() => setCancelar(i)}>Cancelar</Button>
-                        )}
-                      </TableCell>
+              <div className="max-h-[60vh] overflow-y-auto rounded-md border border-border">
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-card shadow-sm">
+                    <TableRow>
+                      <TableHead>Protocolo</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>CPF</TableHead>
+                      <TableHead>Número</TableHead>
+                      <TableHead>Endereço</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead className="min-w-[140px]">Progresso</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                  {filtered.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum inscrito</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((i) => {
+                      const prog = i.usuario_id ? progresso.get(i.usuario_id) : undefined;
+                      return (
+                        <TableRow key={i.id}>
+                          <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
+                          <TableCell>{i.nome_completo}</TableCell>
+                          <TableCell>{maskCPF(i.cpf)}</TableCell>
+                          <TableCell className="text-xs">{i.telefone}</TableCell>
+                          <TableCell className="text-xs max-w-xs truncate" title={i.endereco}>{i.endereco}</TableCell>
+                          <TableCell className="text-xs">{new Date(i.data_inscricao).toLocaleString("pt-BR")}</TableCell>
+                          <TableCell>
+                            {prog ? (
+                              prog.concluido ? (
+                                <Badge className="bg-primary text-primary-foreground">Concluído</Badge>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Progress value={prog.pct} className="h-2 w-20" />
+                                  <span className="text-xs text-muted-foreground">{prog.pct}%</span>
+                                </div>
+                              )
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell><Badge variant={i.status === "aprovada" ? "default" : i.status === "cancelada" ? "destructive" : "secondary"}>{i.status}</Badge></TableCell>
+                          <TableCell>
+                            {i.status !== "cancelada" && (
+                              <Button size="sm" variant="ghost" onClick={() => setCancelar(i)}>Cancelar</Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {filtered.length === 0 && (
+                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum inscrito</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
