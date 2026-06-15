@@ -690,26 +690,10 @@ export default function CourseDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressPct, totalUnits, user?.id, courseId, isAdmin]);
 
-  // Auto-issue certificate when student reaches 100% completion OR avg score >= 70%
+  // Certificado NÃO é emitido automaticamente — o aluno precisa solicitar
+  // manualmente pelo botão "Solicitar Certificado" abaixo.
   const autoCertTriedRef = useRef(false);
-  useEffect(() => {
-    if (!user || isAdmin || !courseId) return;
-    if (existingCert || generatingCert || autoCertTriedRef.current) return;
-    const pubEvals = (evaluations as any[]).filter((e: any) => e.status === "publicada");
-    let avgOk = false;
-    if (pubEvals.length > 0) {
-      const scores = pubEvals.map((e: any) => bestScoreByEval.get(e.id));
-      if (scores.every((s) => typeof s === "number")) {
-        const avg = scores.reduce((a: number, b: any) => a + (b as number), 0) / scores.length;
-        avgOk = avg >= PASS_THRESHOLD;
-      }
-    }
-    if (isCourseComplete || avgOk) {
-      autoCertTriedRef.current = true;
-      handleGenerateCertificate();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, isAdmin, courseId, existingCert, isCourseComplete, progressPct, myAttempts.length]);
+
 
   if (loadingCourse || loadingModules) {
     return (
@@ -864,12 +848,13 @@ export default function CourseDetail() {
                     className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
                   >
                     {generatingCert ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
-                    {generatingCert ? "Gerando..." : "Gerar Certificado"}
+                    {generatingCert ? "Solicitando..." : "Solicitar Certificado"}
                   </Button>
                   {!eligible && (
                     <span className="text-xs text-muted-foreground">
-                      Conclua 100% do curso ou atinja média mínima de 70% nas avaliações para liberar o certificado.
+                      Conclua 100% do curso ou atinja média mínima de 70% nas avaliações para solicitar o certificado.
                     </span>
+
                   )}
                 </>
               )}
