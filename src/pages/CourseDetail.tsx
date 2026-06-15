@@ -848,12 +848,13 @@ export default function CourseDetail() {
                     className="gradient-primary text-primary-foreground gap-2 disabled:opacity-50"
                   >
                     {generatingCert ? <Loader2 className="w-4 h-4 animate-spin" /> : <Award className="w-4 h-4" />}
-                    {generatingCert ? "Gerando..." : "Gerar Certificado"}
+                    {generatingCert ? "Solicitando..." : "Solicitar Certificado"}
                   </Button>
                   {!eligible && (
                     <span className="text-xs text-muted-foreground">
-                      Conclua 100% do curso ou atinja média mínima de 70% nas avaliações para liberar o certificado.
+                      Conclua 100% do curso ou atinja média mínima de 70% nas avaliações para solicitar o certificado.
                     </span>
+
                   )}
                 </>
               )}
