@@ -47,11 +47,12 @@ export default function AdminCampanhaDetalhe() {
     const cursoIds = (vinc || []).map((v: any) => v.curso_id);
     const userIds = Array.from(new Set((ins || []).map((i: any) => i.usuario_id).filter(Boolean))) as string[];
     if (cursoIds.length && userIds.length) {
-      // Progresso real: aulas concluídas + avaliações aprovadas (>=70) + certificado emitido
-      const [{ data: mods }, { data: evals }, { data: certs }] = await Promise.all([
+      // Progresso real: matrícula + aulas concluídas + avaliações aprovadas (>=70) + certificado emitido
+      const [{ data: mods }, { data: evals }, { data: certs }, { data: enrolls }] = await Promise.all([
         supabase.from("course_modules").select("id, course_id").in("course_id", cursoIds),
         supabase.from("course_evaluations").select("id, course_id").in("course_id", cursoIds).eq("status", "publicada"),
         supabase.from("certificates").select("user_id, course_id, status").in("course_id", cursoIds).in("user_id", userIds),
+        supabase.from("enrollments").select("user_id, course_id, progress, status").in("course_id", cursoIds).in("user_id", userIds),
       ]);
       const modIds = (mods || []).map((m: any) => m.id);
       const { data: lessons } = modIds.length
@@ -89,15 +90,20 @@ export default function AdminCampanhaDetalhe() {
             .filter((c: any) => c.user_id === u && c.status !== "cancelado" && c.status !== "erro")
             .map((c: any) => c.course_id)
         );
+        const userEnrolls = (enrolls || []).filter((e: any) => e.user_id === u);
         let somaPct = 0;
         let cursosConcluidos = 0;
         cursoIds.forEach((cid: string) => {
+          const enrollment = userEnrolls.find((e: any) => e.course_id === cid);
+          const enrollmentPct = Math.min(100, Number(enrollment?.progress) || 0);
+          const enrollmentDone = enrollment?.status === "concluido" || enrollment?.status === "completed" || enrollmentPct >= 100;
           const units = unitsPorCurso.get(cid) || 0;
           const done =
             Array.from(doneLessons).filter((lid) => lessonCourse.get(lid) === cid).length +
             Array.from(passedEvals).filter((eid) => evalCourse.get(eid) === cid).length;
-          const completo = userCerts.has(cid) || (units > 0 && done >= units);
-          const pctCurso = completo ? 100 : units > 0 ? Math.min(100, Math.round((done / units) * 100)) : 0;
+          const unitPct = units > 0 ? Math.min(100, Math.round((done / units) * 100)) : 0;
+          const completo = userCerts.has(cid) || enrollmentDone || (units > 0 && done >= units);
+          const pctCurso = completo ? 100 : Math.max(unitPct, enrollmentPct);
           somaPct += pctCurso;
           if (completo) cursosConcluidos++;
         });
@@ -114,6 +120,7 @@ export default function AdminCampanhaDetalhe() {
     if (!id) return;
     const ch = supabase.channel(`adm-camp-${id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "cooperados_eventuais_inscricoes", filter: `campanha_id=eq.${id}` }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "enrollments" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "lesson_completions" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "exam_attempts" }, load)
       .on("postgres_changes", { event: "*", schema: "public", table: "certificates" }, load)
