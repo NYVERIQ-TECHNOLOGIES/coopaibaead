@@ -222,6 +222,17 @@ Deno.serve(async (req) => {
       }
     } catch { /* no signature */ }
 
+    // Coordenador (Carlos Henrique) signature image
+    let coordSigUrl: string | null = null;
+    try {
+      const { data: signedSig2 } = await supabaseAdmin.storage
+        .from("media").createSignedUrl("branding/assinatura-carlos.png", 60);
+      if (signedSig2?.signedUrl) {
+        const head = await fetch(signedSig2.signedUrl, { method: "HEAD" });
+        if (head.ok) coordSigUrl = signedSig2.signedUrl;
+      }
+    } catch { /* no signature */ }
+
     const pdfBytes = await buildCertificatePdf({
       studentName, studentCpf,
       enrollmentNumber: profile.enrollment_number || null,
@@ -231,6 +242,7 @@ Deno.serve(async (req) => {
       templateUrl: templateSignedUrl,
       logoUrl: logoSignedUrl,
       presidentSigUrl,
+      coordSigUrl,
       certCode, verifyUrl,
     });
 
@@ -369,6 +381,7 @@ interface CertData {
   templateUrl: string | null;
   logoUrl: string | null;
   presidentSigUrl?: string | null;
+  coordSigUrl?: string | null;
 
   certCode: string;
   verifyUrl: string;
@@ -591,6 +604,23 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   const lt2w = fontRegular.widthOfTextAtSize(lt2, 9);
   page.drawText(ln2, { x: rx - ln2w / 2, y: sigY - 14, size: 11, font: fontBold, color: ink });
   page.drawText(lt2, { x: rx - lt2w / 2, y: sigY - 26, size: 9, font: fontRegular, color: muted });
+  // Coordenador signature image, above the line
+  if (data.coordSigUrl) {
+    try {
+      const resp = await fetch(data.coordSigUrl);
+      if (resp.ok) {
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const ct = resp.headers.get("content-type") || "";
+        const sig = ct.includes("png")
+          ? await pdfDoc.embedPng(bytes)
+          : await pdfDoc.embedJpg(bytes);
+        const targetH = 50;
+        const scale = targetH / sig.height;
+        const targetW = sig.width * scale;
+        page.drawImage(sig, { x: rx - targetW / 2, y: sigY + 2, width: targetW, height: targetH });
+      }
+    } catch { /* ignore */ }
+  }
 
   // QR Code + validation code (bottom-right outside signature area)
   try {
