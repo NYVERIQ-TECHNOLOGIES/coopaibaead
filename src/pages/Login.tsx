@@ -141,7 +141,7 @@ export default function Login() {
           <div className="flex justify-center gap-8 mt-12">
             {[
               { value: "1.200+", label: "Alunos" },
-              { value: "20+", label: "Cursos" },
+              { value: "18+", label: "Cursos" },
               { value: "95%", label: "Satisfação" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
@@ -172,7 +172,9 @@ export default function Login() {
               <h2 className="text-2xl font-heading font-bold text-foreground">Autenticação de 2 fatores</h2>
               <p className="text-muted-foreground mt-1 mb-8">Digite o código de 6 dígitos do seu app autenticador</p>
               <form className="space-y-4" onSubmit={verifyMfa}>
-                <label htmlFor="mfa-code" className="sr-only">Código de verificação</label>
+                <label htmlFor="mfa-code" className="sr-only">
+                  Código de verificação
+                </label>
                 <input
                   id="mfa-code"
                   autoFocus
@@ -210,7 +212,9 @@ export default function Login() {
 
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div>
-                  <label htmlFor="login-identifier" className="text-sm font-medium text-foreground mb-1.5 block">E-mail ou CPF</label>
+                  <label htmlFor="login-identifier" className="text-sm font-medium text-foreground mb-1.5 block">
+                    E-mail ou CPF
+                  </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
@@ -226,7 +230,9 @@ export default function Login() {
                 </div>
 
                 <div>
-                  <label htmlFor="login-password" className="text-sm font-medium text-foreground mb-1.5 block">Senha</label>
+                  <label htmlFor="login-password" className="text-sm font-medium text-foreground mb-1.5 block">
+                    Senha
+                  </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
