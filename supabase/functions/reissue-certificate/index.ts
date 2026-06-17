@@ -83,6 +83,16 @@ Deno.serve(async (req) => {
       }
     } catch { /* no logo */ }
 
+    let presidentSigUrl: string | null = null;
+    try {
+      const { data: signedSig } = await admin.storage
+        .from("media").createSignedUrl("branding/assinatura-antonino.png", 60);
+      if (signedSig?.signedUrl) {
+        const head = await fetch(signedSig.signedUrl, { method: "HEAD" });
+        if (head.ok) presidentSigUrl = signedSig.signedUrl;
+      }
+    } catch { /* no signature */ }
+
     let pdfBytes: Uint8Array;
     try {
       pdfBytes = await buildCertificatePdf({
@@ -90,9 +100,10 @@ Deno.serve(async (req) => {
         enrollmentNumber: cert.enrollment_number_snapshot || profile?.enrollment_number || null,
         cooperativa: cert.cooperativa_snapshot || profile?.cooperativa || null,
         courseTitle, courseDuration, startStr, endStr, dateStr,
-        templateUrl: templateSignedUrl, logoUrl: logoSignedUrl,
+        templateUrl: templateSignedUrl, logoUrl: logoSignedUrl, presidentSigUrl,
         certCode: cert.code, verifyUrl,
       });
+
     } catch (e: any) {
       await admin.rpc("mark_certificate_error", { _certificate_id: cert.id, _message: e?.message || "Falha na reemissão do PDF" });
       return json({ error: "Falha ao gerar o PDF. O certificado foi marcado como erro." }, 500);
