@@ -286,7 +286,11 @@ export default function AdminCampanhaDetalhe() {
                     {filtered.map((i) => {
                       const prog = i.usuario_id ? progresso.get(i.usuario_id) : undefined;
                       return (
-                        <TableRow key={i.id}>
+                        <TableRow
+                          key={i.id}
+                          className="cursor-pointer hover:bg-muted/40"
+                          onClick={() => setDetalhe(i)}
+                        >
                           <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
                           <TableCell>{i.nome_completo}</TableCell>
                           <TableCell>{maskCPF(i.cpf)}</TableCell>
@@ -308,7 +312,7 @@ export default function AdminCampanhaDetalhe() {
                             )}
                           </TableCell>
                           <TableCell><Badge variant={i.status === "aprovada" ? "default" : i.status === "cancelada" ? "destructive" : "secondary"}>{i.status}</Badge></TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             {i.status !== "cancelada" && (
                               <Button size="sm" variant="ghost" onClick={() => setCancelar(i)}>Cancelar</Button>
                             )}
