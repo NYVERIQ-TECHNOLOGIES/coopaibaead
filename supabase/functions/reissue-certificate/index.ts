@@ -312,6 +312,23 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   const lt1w = fontRegular.widthOfTextAtSize(lt1, 9);
   page.drawText(ln1, { x: lx - ln1w / 2, y: sigY - 14, size: 11, font: fontBold, color: ink });
   page.drawText(lt1, { x: lx - lt1w / 2, y: sigY - 26, size: 9, font: fontRegular, color: muted });
+  if (data.presidentSigUrl) {
+    try {
+      const resp = await fetch(data.presidentSigUrl);
+      if (resp.ok) {
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const ct = resp.headers.get("content-type") || "";
+        const sig = ct.includes("png")
+          ? await pdfDoc.embedPng(bytes)
+          : await pdfDoc.embedJpg(bytes);
+        const targetH = 50;
+        const scale = targetH / sig.height;
+        const targetW = sig.width * scale;
+        page.drawImage(sig, { x: lx - targetW / 2, y: sigY + 2, width: targetW, height: targetH });
+      }
+    } catch { /* ignore */ }
+  }
+
   const rx = pageWidth * 0.73;
   page.drawLine({ start: { x: rx - sigLineLen / 2, y: sigY }, end: { x: rx + sigLineLen / 2, y: sigY }, thickness: 0.8, color: ink });
   const ln2 = "Carlos Henrique Silva Santos";
