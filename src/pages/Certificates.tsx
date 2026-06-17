@@ -420,10 +420,37 @@ export default function Certificates() {
               <Link to="/certificates/relatorios"><BarChart3 className="w-4 h-4" /> Relatórios</Link>
             </Button>
             {isAdmin && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={async () => {
+                  if (!confirm("Reemitir TODOS os certificados (aplicando a assinatura atual do presidente)?")) return;
+                  try {
+                    toast({ title: "Reemissão em massa iniciada", description: "Isso pode demorar alguns minutos..." });
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reissue-certificate`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+                      body: JSON.stringify({ bulk: true }),
+                    });
+                    const json = await res.json();
+                    if (!res.ok) throw new Error(json.error || "Erro");
+                    toast({ title: "Reemissão concluída", description: `${json.ok}/${json.total} certificados reemitidos (${json.fail} falhas).` });
+                    qc.invalidateQueries({ queryKey: ["certificates"] });
+                  } catch (e: any) {
+                    toast({ title: "Erro na reemissão em massa", description: e.message, variant: "destructive" });
+                  }
+                }}
+              >
+                <RefreshCw className="w-4 h-4" /> Reemitir todos
+              </Button>
+            )}
+            {isAdmin && (
               <Button asChild variant="outline" className="gap-2">
                 <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
               </Button>
             )}
+
           </div>
         )}
       </div>

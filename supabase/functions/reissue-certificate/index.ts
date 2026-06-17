@@ -37,13 +37,47 @@ Deno.serve(async (req) => {
     if (!isAdminRow) return json({ error: "Apenas administradores podem reemitir certificados." }, 403);
 
     const body = await req.json();
-    const { certificate_id } = body as { certificate_id?: string };
-    if (!certificate_id) return json({ error: "certificate_id required" }, 400);
+    const { certificate_id, bulk } = body as { certificate_id?: string; bulk?: boolean };
 
+    // ── Bulk reissue: regenerate PDFs for ALL non-cancelled certificates ──
+    if (bulk === true) {
+      const { data: allCerts } = await admin
+        .from("certificates").select("id").neq("status", "cancelado");
+      const ids = (allCerts || []).map((c: any) => c.id);
+      let ok = 0, fail = 0;
+      for (const id of ids) {
+        try {
+          await reissueOne(admin, asUser, id);
+          ok++;
+        } catch (e) {
+          console.error("bulk reissue failed for", id, e);
+          fail++;
+        }
+      }
+      return json({ bulk: true, total: ids.length, ok, fail }, 200);
+    }
+
+    if (!certificate_id) return json({ error: "certificate_id required" }, 400);
+    try {
+      const updated = await reissueOne(admin, asUser, certificate_id);
+      return json({ certificate: updated }, 200);
+    } catch (e: any) {
+      const msg = e?.message || "Erro";
+      const status = msg.includes("não encontrado") ? 404 : msg.includes("cancelado") ? 409 : 500;
+      return json({ error: msg }, status);
+    }
+  } catch (err: any) {
+    console.error("reissue-certificate error:", err);
+    return json({ error: "Erro interno ao reemitir o certificado." }, 500);
+  }
+});
+
+async function reissueOne(admin: any, asUser: any, certificate_id: string) {
     const { data: cert, error: certErr } = await admin
       .from("certificates").select("*").eq("id", certificate_id).maybeSingle();
-    if (certErr || !cert) return json({ error: "Certificado não encontrado" }, 404);
-    if (cert.status === "cancelado") return json({ error: "Certificado cancelado não pode ser reemitido." }, 409);
+    if (certErr || !cert) throw new Error("Certificado não encontrado");
+    if (cert.status === "cancelado") throw new Error("Certificado cancelado não pode ser reemitido.");
+
 
     // Re-load fresh course/profile data for snapshots that may have shifted,
     // but ALWAYS reuse the original code, issued_at and pdf_path.
@@ -83,6 +117,16 @@ Deno.serve(async (req) => {
       }
     } catch { /* no logo */ }
 
+    let presidentSigUrl: string | null = null;
+    try {
+      const { data: signedSig } = await admin.storage
+        .from("media").createSignedUrl("branding/assinatura-antonino.png", 60);
+      if (signedSig?.signedUrl) {
+        const head = await fetch(signedSig.signedUrl, { method: "HEAD" });
+        if (head.ok) presidentSigUrl = signedSig.signedUrl;
+      }
+    } catch { /* no signature */ }
+
     let pdfBytes: Uint8Array;
     try {
       pdfBytes = await buildCertificatePdf({
@@ -90,12 +134,13 @@ Deno.serve(async (req) => {
         enrollmentNumber: cert.enrollment_number_snapshot || profile?.enrollment_number || null,
         cooperativa: cert.cooperativa_snapshot || profile?.cooperativa || null,
         courseTitle, courseDuration, startStr, endStr, dateStr,
-        templateUrl: templateSignedUrl, logoUrl: logoSignedUrl,
+        templateUrl: templateSignedUrl, logoUrl: logoSignedUrl, presidentSigUrl,
         certCode: cert.code, verifyUrl,
       });
+
     } catch (e: any) {
       await admin.rpc("mark_certificate_error", { _certificate_id: cert.id, _message: e?.message || "Falha na reemissão do PDF" });
-      return json({ error: "Falha ao gerar o PDF. O certificado foi marcado como erro." }, 500);
+      throw new Error("Falha ao gerar o PDF. O certificado foi marcado como erro.");
     }
 
     // Overwrite the PDF at the same storage path → URL/code/QR unchanged.
@@ -104,7 +149,7 @@ Deno.serve(async (req) => {
       .from("media").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
     if (upErr) {
       await admin.rpc("mark_certificate_error", { _certificate_id: cert.id, _message: upErr.message });
-      return json({ error: "Falha ao salvar o PDF reemitido." }, 500);
+      throw new Error("Falha ao salvar o PDF reemitido.");
     }
 
     if (!cert.pdf_path) {
@@ -113,17 +158,13 @@ Deno.serve(async (req) => {
 
     // Increments reissue counter, updates last_reissued_at/by and logs audit
     const { error: rpcErr } = await asUser.rpc("register_certificate_reissue", { _certificate_id: cert.id });
-    if (rpcErr) return json({ error: rpcErr.message }, 500);
+    if (rpcErr) throw new Error(rpcErr.message);
 
     const { data: updated } = await admin
       .from("certificates").select("*").eq("id", cert.id).maybeSingle();
+    return updated;
+}
 
-    return json({ certificate: updated }, 200);
-  } catch (err: any) {
-    console.error("reissue-certificate error:", err);
-    return json({ error: "Erro interno ao reemitir o certificado." }, 500);
-  }
-});
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -146,6 +187,8 @@ interface CertData {
   dateStr: string;
   templateUrl: string | null;
   logoUrl: string | null;
+  presidentSigUrl?: string | null;
+
   certCode: string;
   verifyUrl: string;
 }
@@ -299,6 +342,23 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   const lt1w = fontRegular.widthOfTextAtSize(lt1, 9);
   page.drawText(ln1, { x: lx - ln1w / 2, y: sigY - 14, size: 11, font: fontBold, color: ink });
   page.drawText(lt1, { x: lx - lt1w / 2, y: sigY - 26, size: 9, font: fontRegular, color: muted });
+  if (data.presidentSigUrl) {
+    try {
+      const resp = await fetch(data.presidentSigUrl);
+      if (resp.ok) {
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const ct = resp.headers.get("content-type") || "";
+        const sig = ct.includes("png")
+          ? await pdfDoc.embedPng(bytes)
+          : await pdfDoc.embedJpg(bytes);
+        const targetH = 50;
+        const scale = targetH / sig.height;
+        const targetW = sig.width * scale;
+        page.drawImage(sig, { x: lx - targetW / 2, y: sigY + 2, width: targetW, height: targetH });
+      }
+    } catch { /* ignore */ }
+  }
+
   const rx = pageWidth * 0.73;
   page.drawLine({ start: { x: rx - sigLineLen / 2, y: sigY }, end: { x: rx + sigLineLen / 2, y: sigY }, thickness: 0.8, color: ink });
   const ln2 = "Carlos Henrique Silva Santos";
