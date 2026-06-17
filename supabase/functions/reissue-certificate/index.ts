@@ -378,6 +378,22 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   const lt2w = fontRegular.widthOfTextAtSize(lt2, 9);
   page.drawText(ln2, { x: rx - ln2w / 2, y: sigY - 14, size: 11, font: fontBold, color: ink });
   page.drawText(lt2, { x: rx - lt2w / 2, y: sigY - 26, size: 9, font: fontRegular, color: muted });
+  if (data.coordSigUrl) {
+    try {
+      const resp = await fetch(data.coordSigUrl);
+      if (resp.ok) {
+        const bytes = new Uint8Array(await resp.arrayBuffer());
+        const ct = resp.headers.get("content-type") || "";
+        const sig = ct.includes("png")
+          ? await pdfDoc.embedPng(bytes)
+          : await pdfDoc.embedJpg(bytes);
+        const targetH = 50;
+        const scale = targetH / sig.height;
+        const targetW = sig.width * scale;
+        page.drawImage(sig, { x: rx - targetW / 2, y: sigY + 2, width: targetW, height: targetH });
+      }
+    } catch { /* ignore */ }
+  }
 
   try {
     const qrDataUrl = await QRCode.toDataURL(data.verifyUrl, { margin: 1, width: 256, color: { dark: "#0057B8", light: "#FFFFFF" } });
