@@ -198,6 +198,7 @@ interface CertData {
   templateUrl: string | null;
   logoUrl: string | null;
   presidentSigUrl?: string | null;
+  coordSigUrl?: string | null;
 
   certCode: string;
   verifyUrl: string;
