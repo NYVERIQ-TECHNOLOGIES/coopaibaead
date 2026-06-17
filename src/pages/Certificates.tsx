@@ -424,18 +424,44 @@ export default function Certificates() {
                 variant="outline"
                 className="gap-2"
                 onClick={async () => {
-                  if (!confirm("Reemitir TODOS os certificados (aplicando a assinatura atual do presidente)?")) return;
+                  if (!confirm("Reemitir TODOS os certificados (aplicando as assinaturas atuais)?")) return;
                   try {
-                    toast({ title: "Reemissão em massa iniciada", description: "Isso pode demorar alguns minutos..." });
+                    const { data: list, error: listErr } = await supabase
+                      .from("certificates").select("id").neq("status", "cancelado");
+                    if (listErr) throw listErr;
+                    const ids = (list || []).map((c: any) => c.id);
+                    if (ids.length === 0) {
+                      toast({ title: "Nada a reemitir" });
+                      return;
+                    }
+                    toast({ title: "Reemissão iniciada", description: `Processando ${ids.length} certificados...` });
                     const { data: { session } } = await supabase.auth.getSession();
-                    const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reissue-certificate`, {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
-                      body: JSON.stringify({ bulk: true }),
+                    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reissue-certificate`;
+                    let ok = 0, fail = 0;
+                    const CONCURRENCY = 3;
+                    let cursor = 0;
+                    const runOne = async (id: string) => {
+                      try {
+                        const res = await fetch(url, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token}` },
+                          body: JSON.stringify({ certificate_id: id }),
+                        });
+                        if (!res.ok) throw new Error(await res.text());
+                        ok++;
+                      } catch (err) {
+                        console.error("reissue failed", id, err);
+                        fail++;
+                      }
+                    };
+                    const workers = Array.from({ length: CONCURRENCY }, async () => {
+                      while (cursor < ids.length) {
+                        const i = cursor++;
+                        await runOne(ids[i]);
+                      }
                     });
-                    const json = await res.json();
-                    if (!res.ok) throw new Error(json.error || "Erro");
-                    toast({ title: "Reemissão concluída", description: `${json.ok}/${json.total} certificados reemitidos (${json.fail} falhas).` });
+                    await Promise.all(workers);
+                    toast({ title: "Reemissão concluída", description: `${ok}/${ids.length} reemitidos (${fail} falhas).` });
                     qc.invalidateQueries({ queryKey: ["certificates"] });
                   } catch (e: any) {
                     toast({ title: "Erro na reemissão em massa", description: e.message, variant: "destructive" });
@@ -445,6 +471,7 @@ export default function Certificates() {
                 <RefreshCw className="w-4 h-4" /> Reemitir todos
               </Button>
             )}
+
             {isAdmin && (
               <Button asChild variant="outline" className="gap-2">
                 <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
