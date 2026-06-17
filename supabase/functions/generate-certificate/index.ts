@@ -222,6 +222,17 @@ Deno.serve(async (req) => {
       }
     } catch { /* no signature */ }
 
+    // Coordenador (Carlos Henrique) signature image
+    let coordSigUrl: string | null = null;
+    try {
+      const { data: signedSig2 } = await supabaseAdmin.storage
+        .from("media").createSignedUrl("branding/assinatura-carlos.png", 60);
+      if (signedSig2?.signedUrl) {
+        const head = await fetch(signedSig2.signedUrl, { method: "HEAD" });
+        if (head.ok) coordSigUrl = signedSig2.signedUrl;
+      }
+    } catch { /* no signature */ }
+
     const pdfBytes = await buildCertificatePdf({
       studentName, studentCpf,
       enrollmentNumber: profile.enrollment_number || null,
@@ -231,6 +242,7 @@ Deno.serve(async (req) => {
       templateUrl: templateSignedUrl,
       logoUrl: logoSignedUrl,
       presidentSigUrl,
+      coordSigUrl,
       certCode, verifyUrl,
     });
 
