@@ -164,11 +164,10 @@ export default function AdminCampanhaDetalhe() {
     setConcluindo(true);
     try {
       const rows = cursoIds.map((curso_id) => ({
-        user_id: inscrito.usuario_id,
+        user_id: inscrito.usuario_id as string,
         course_id: curso_id,
         status: "concluido",
         progress: 100,
-        completed_at: new Date().toISOString(),
       }));
       const { error } = await supabase
         .from("enrollments")
