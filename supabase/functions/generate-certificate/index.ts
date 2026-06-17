@@ -211,6 +211,17 @@ Deno.serve(async (req) => {
       }
     } catch { /* no logo yet */ }
 
+    // President (Antonino) signature image
+    let presidentSigUrl: string | null = null;
+    try {
+      const { data: signedSig } = await supabaseAdmin.storage
+        .from("media").createSignedUrl("branding/assinatura-antonino.png", 60);
+      if (signedSig?.signedUrl) {
+        const head = await fetch(signedSig.signedUrl, { method: "HEAD" });
+        if (head.ok) presidentSigUrl = signedSig.signedUrl;
+      }
+    } catch { /* no signature */ }
+
     const pdfBytes = await buildCertificatePdf({
       studentName, studentCpf,
       enrollmentNumber: profile.enrollment_number || null,
@@ -219,8 +230,10 @@ Deno.serve(async (req) => {
       startStr, endStr, dateStr,
       templateUrl: templateSignedUrl,
       logoUrl: logoSignedUrl,
+      presidentSigUrl,
       certCode, verifyUrl,
     });
+
 
     const filePath = `certificates/${certCode}.pdf`;
     const { error: uploadError } = await supabaseAdmin.storage
