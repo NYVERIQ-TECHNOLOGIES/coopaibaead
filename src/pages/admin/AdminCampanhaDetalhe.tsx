@@ -10,9 +10,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { ArrowLeft, Download, FileSpreadsheet, FileText, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { maskCPF } from "@/lib/cpf";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
@@ -30,6 +31,8 @@ export default function AdminCampanhaDetalhe() {
   const [cancelar, setCancelar] = useState<any>(null);
   const [motivo, setMotivo] = useState("");
   const [progresso, setProgresso] = useState<Map<string, { pct: number; concluido: boolean }>>(new Map());
+  const [detalhe, setDetalhe] = useState<any>(null);
+  const [concluindo, setConcluindo] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -154,6 +157,31 @@ export default function AdminCampanhaDetalhe() {
     load();
   };
 
+  const concluirCursos = async (inscrito: any) => {
+    if (!inscrito?.usuario_id) return toast.error("Inscrito sem usuário vinculado");
+    const cursoIds = Array.from(vinculados);
+    if (cursoIds.length === 0) return toast.error("Nenhum curso vinculado à campanha");
+    setConcluindo(true);
+    try {
+      const rows = cursoIds.map((curso_id) => ({
+        user_id: inscrito.usuario_id as string,
+        course_id: curso_id,
+        status: "concluido",
+        progress: 100,
+      }));
+      const { error } = await supabase
+        .from("enrollments")
+        .upsert(rows, { onConflict: "user_id,course_id" });
+      if (error) throw error;
+      toast.success("Curso(s) concluído(s) para o inscrito");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao concluir cursos");
+    } finally {
+      setConcluindo(false);
+    }
+  };
+
   const exportCSV = () => {
     const headers = ["protocolo","nome","cpf","rg","email","telefone","cidade","estado","status","data_inscricao"];
     const rows = filtered.map(i => [i.protocolo,i.nome_completo,i.cpf,i.rg,i.email,i.telefone,i.cidade,i.estado,i.status,i.data_inscricao]);
@@ -258,7 +286,11 @@ export default function AdminCampanhaDetalhe() {
                     {filtered.map((i) => {
                       const prog = i.usuario_id ? progresso.get(i.usuario_id) : undefined;
                       return (
-                        <TableRow key={i.id}>
+                        <TableRow
+                          key={i.id}
+                          className="cursor-pointer hover:bg-muted/40"
+                          onClick={() => setDetalhe(i)}
+                        >
                           <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
                           <TableCell>{i.nome_completo}</TableCell>
                           <TableCell>{maskCPF(i.cpf)}</TableCell>
@@ -280,7 +312,7 @@ export default function AdminCampanhaDetalhe() {
                             )}
                           </TableCell>
                           <TableCell><Badge variant={i.status === "aprovada" ? "default" : i.status === "cancelada" ? "destructive" : "secondary"}>{i.status}</Badge></TableCell>
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             {i.status !== "cancelada" && (
                               <Button size="sm" variant="ghost" onClick={() => setCancelar(i)}>Cancelar</Button>
                             )}
@@ -350,6 +382,104 @@ export default function AdminCampanhaDetalhe() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Sheet open={!!detalhe} onOpenChange={(o) => !o && setDetalhe(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="break-words">{detalhe?.nome_completo}</SheetTitle>
+            <SheetDescription className="font-mono text-xs">{detalhe?.protocolo}</SheetDescription>
+          </SheetHeader>
+
+          {detalhe && (
+            <div className="mt-6 space-y-5 text-sm">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={detalhe.status === "aprovada" ? "default" : detalhe.status === "cancelada" ? "destructive" : "secondary"}>
+                  {detalhe.status}
+                </Badge>
+                {detalhe.usuario_id && progresso.get(detalhe.usuario_id)?.concluido && (
+                  <Badge className="bg-primary text-primary-foreground">Concluído</Badge>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                <div>
+                  <div className="text-xs text-muted-foreground">CPF</div>
+                  <div>{maskCPF(detalhe.cpf)}</div>
+                </div>
+                {detalhe.rg && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">RG</div>
+                    <div>{detalhe.rg}</div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-xs text-muted-foreground">E-mail</div>
+                  <div className="break-all">{detalhe.email || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Telefone</div>
+                  <div>{detalhe.telefone || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Endereço</div>
+                  <div className="break-words">{detalhe.endereco || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Cidade / UF</div>
+                  <div>{detalhe.cidade}{detalhe.estado ? ` / ${detalhe.estado}` : ""}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Inscrição</div>
+                  <div>{new Date(detalhe.data_inscricao).toLocaleString("pt-BR")}</div>
+                </div>
+                {detalhe.usuario_id && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Progresso</div>
+                    {(() => {
+                      const p = progresso.get(detalhe.usuario_id);
+                      if (!p) return <div className="text-muted-foreground">—</div>;
+                      return (
+                        <div className="flex items-center gap-2 mt-1">
+                          <Progress value={p.pct} className="h-2 flex-1" />
+                          <span className="text-xs text-muted-foreground">{p.pct}%</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t pt-4 space-y-2">
+                <Button
+                  className="w-full"
+                  disabled={
+                    concluindo ||
+                    !detalhe.usuario_id ||
+                    detalhe.status === "cancelada" ||
+                    vinculados.size === 0 ||
+                    !!progresso.get(detalhe.usuario_id)?.concluido
+                  }
+                  onClick={() => concluirCursos(detalhe)}
+                >
+                  {concluindo ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                  {progresso.get(detalhe.usuario_id)?.concluido ? "Curso já concluído" : "Concluir curso"}
+                </Button>
+                {!detalhe.usuario_id && (
+                  <p className="text-xs text-muted-foreground">Inscrito ainda não vinculado a um usuário do sistema.</p>
+                )}
+                {vinculados.size === 0 && (
+                  <p className="text-xs text-muted-foreground">Vincule pelo menos um curso à campanha na aba "Cursos Vinculados".</p>
+                )}
+                {detalhe.status !== "cancelada" && (
+                  <Button variant="outline" className="w-full" onClick={() => { setCancelar(detalhe); setDetalhe(null); }}>
+                    Cancelar inscrição
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
