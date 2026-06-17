@@ -140,7 +140,7 @@ async function reissueOne(admin: any, asUser: any, certificate_id: string) {
 
     } catch (e: any) {
       await admin.rpc("mark_certificate_error", { _certificate_id: cert.id, _message: e?.message || "Falha na reemissão do PDF" });
-      return json({ error: "Falha ao gerar o PDF. O certificado foi marcado como erro." }, 500);
+      throw new Error("Falha ao gerar o PDF. O certificado foi marcado como erro.");
     }
 
     // Overwrite the PDF at the same storage path → URL/code/QR unchanged.
@@ -149,7 +149,7 @@ async function reissueOne(admin: any, asUser: any, certificate_id: string) {
       .from("media").upload(filePath, pdfBytes, { contentType: "application/pdf", upsert: true });
     if (upErr) {
       await admin.rpc("mark_certificate_error", { _certificate_id: cert.id, _message: upErr.message });
-      return json({ error: "Falha ao salvar o PDF reemitido." }, 500);
+      throw new Error("Falha ao salvar o PDF reemitido.");
     }
 
     if (!cert.pdf_path) {
@@ -158,17 +158,13 @@ async function reissueOne(admin: any, asUser: any, certificate_id: string) {
 
     // Increments reissue counter, updates last_reissued_at/by and logs audit
     const { error: rpcErr } = await asUser.rpc("register_certificate_reissue", { _certificate_id: cert.id });
-    if (rpcErr) return json({ error: rpcErr.message }, 500);
+    if (rpcErr) throw new Error(rpcErr.message);
 
     const { data: updated } = await admin
       .from("certificates").select("*").eq("id", cert.id).maybeSingle();
+    return updated;
+}
 
-    return json({ certificate: updated }, 200);
-  } catch (err: any) {
-    console.error("reissue-certificate error:", err);
-    return json({ error: "Erro interno ao reemitir o certificado." }, 500);
-  }
-});
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
