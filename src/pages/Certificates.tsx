@@ -445,11 +445,12 @@ export default function Certificates() {
                 <RefreshCw className="w-4 h-4" /> Reemitir todos
               </Button>
             )}
-
+            {isAdmin && (
               <Button asChild variant="outline" className="gap-2">
                 <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
               </Button>
             )}
+
           </div>
         )}
       </div>
