@@ -127,6 +127,16 @@ async function reissueOne(admin: any, asUser: any, certificate_id: string) {
       }
     } catch { /* no signature */ }
 
+    let coordSigUrl: string | null = null;
+    try {
+      const { data: signedSig2 } = await admin.storage
+        .from("media").createSignedUrl("branding/assinatura-carlos.png", 60);
+      if (signedSig2?.signedUrl) {
+        const head = await fetch(signedSig2.signedUrl, { method: "HEAD" });
+        if (head.ok) coordSigUrl = signedSig2.signedUrl;
+      }
+    } catch { /* no signature */ }
+
     let pdfBytes: Uint8Array;
     try {
       pdfBytes = await buildCertificatePdf({
