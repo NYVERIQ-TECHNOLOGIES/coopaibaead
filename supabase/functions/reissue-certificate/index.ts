@@ -157,6 +157,8 @@ interface CertData {
   dateStr: string;
   templateUrl: string | null;
   logoUrl: string | null;
+  presidentSigUrl?: string | null;
+
   certCode: string;
   verifyUrl: string;
 }
