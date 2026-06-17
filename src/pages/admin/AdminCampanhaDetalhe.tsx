@@ -31,6 +31,8 @@ export default function AdminCampanhaDetalhe() {
   const [cancelar, setCancelar] = useState<any>(null);
   const [motivo, setMotivo] = useState("");
   const [progresso, setProgresso] = useState<Map<string, { pct: number; concluido: boolean }>>(new Map());
+  const [detalhe, setDetalhe] = useState<any>(null);
+  const [concluindo, setConcluindo] = useState(false);
 
   const load = async () => {
     if (!id) return;
