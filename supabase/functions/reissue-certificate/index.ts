@@ -144,7 +144,7 @@ async function reissueOne(admin: any, asUser: any, certificate_id: string) {
         enrollmentNumber: cert.enrollment_number_snapshot || profile?.enrollment_number || null,
         cooperativa: cert.cooperativa_snapshot || profile?.cooperativa || null,
         courseTitle, courseDuration, startStr, endStr, dateStr,
-        templateUrl: templateSignedUrl, logoUrl: logoSignedUrl, presidentSigUrl,
+        templateUrl: templateSignedUrl, logoUrl: logoSignedUrl, presidentSigUrl, coordSigUrl,
         certCode: cert.code, verifyUrl,
       });
 
