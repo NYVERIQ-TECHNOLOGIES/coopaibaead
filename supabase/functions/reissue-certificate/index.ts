@@ -37,13 +37,47 @@ Deno.serve(async (req) => {
     if (!isAdminRow) return json({ error: "Apenas administradores podem reemitir certificados." }, 403);
 
     const body = await req.json();
-    const { certificate_id } = body as { certificate_id?: string };
-    if (!certificate_id) return json({ error: "certificate_id required" }, 400);
+    const { certificate_id, bulk } = body as { certificate_id?: string; bulk?: boolean };
 
+    // ── Bulk reissue: regenerate PDFs for ALL non-cancelled certificates ──
+    if (bulk === true) {
+      const { data: allCerts } = await admin
+        .from("certificates").select("id").neq("status", "cancelado");
+      const ids = (allCerts || []).map((c: any) => c.id);
+      let ok = 0, fail = 0;
+      for (const id of ids) {
+        try {
+          await reissueOne(admin, asUser, id);
+          ok++;
+        } catch (e) {
+          console.error("bulk reissue failed for", id, e);
+          fail++;
+        }
+      }
+      return json({ bulk: true, total: ids.length, ok, fail }, 200);
+    }
+
+    if (!certificate_id) return json({ error: "certificate_id required" }, 400);
+    try {
+      const updated = await reissueOne(admin, asUser, certificate_id);
+      return json({ certificate: updated }, 200);
+    } catch (e: any) {
+      const msg = e?.message || "Erro";
+      const status = msg.includes("não encontrado") ? 404 : msg.includes("cancelado") ? 409 : 500;
+      return json({ error: msg }, status);
+    }
+  } catch (err: any) {
+    console.error("reissue-certificate error:", err);
+    return json({ error: "Erro interno ao reemitir o certificado." }, 500);
+  }
+});
+
+async function reissueOne(admin: any, asUser: any, certificate_id: string) {
     const { data: cert, error: certErr } = await admin
       .from("certificates").select("*").eq("id", certificate_id).maybeSingle();
-    if (certErr || !cert) return json({ error: "Certificado não encontrado" }, 404);
-    if (cert.status === "cancelado") return json({ error: "Certificado cancelado não pode ser reemitido." }, 409);
+    if (certErr || !cert) throw new Error("Certificado não encontrado");
+    if (cert.status === "cancelado") throw new Error("Certificado cancelado não pode ser reemitido.");
+
 
     // Re-load fresh course/profile data for snapshots that may have shifted,
     // but ALWAYS reuse the original code, issued_at and pdf_path.
