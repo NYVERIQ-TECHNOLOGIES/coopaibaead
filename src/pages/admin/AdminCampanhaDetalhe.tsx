@@ -157,6 +157,32 @@ export default function AdminCampanhaDetalhe() {
     load();
   };
 
+  const concluirCursos = async (inscrito: any) => {
+    if (!inscrito?.usuario_id) return toast.error("Inscrito sem usuário vinculado");
+    const cursoIds = Array.from(vinculados);
+    if (cursoIds.length === 0) return toast.error("Nenhum curso vinculado à campanha");
+    setConcluindo(true);
+    try {
+      const rows = cursoIds.map((curso_id) => ({
+        user_id: inscrito.usuario_id,
+        course_id: curso_id,
+        status: "concluido",
+        progress: 100,
+        completed_at: new Date().toISOString(),
+      }));
+      const { error } = await supabase
+        .from("enrollments")
+        .upsert(rows, { onConflict: "user_id,course_id" });
+      if (error) throw error;
+      toast.success("Curso(s) concluído(s) para o inscrito");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao concluir cursos");
+    } finally {
+      setConcluindo(false);
+    }
+  };
+
   const exportCSV = () => {
     const headers = ["protocolo","nome","cpf","rg","email","telefone","cidade","estado","status","data_inscricao"];
     const rows = filtered.map(i => [i.protocolo,i.nome_completo,i.cpf,i.rg,i.email,i.telefone,i.cidade,i.estado,i.status,i.data_inscricao]);
