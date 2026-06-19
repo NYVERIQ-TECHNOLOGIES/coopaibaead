@@ -230,7 +230,6 @@ export default function StudentExamDialog({
                   const d = result.details!.find((x) => x.question_id === q.id);
                   if (!d) return null;
                   const givenText = d.given ? q[`option_${d.given}`] : "—";
-                  const correctText = q[`option_${d.correct_option}`];
                   return (
                     <div
                       key={q.id}
@@ -257,10 +256,7 @@ export default function StudentExamDialog({
                           </p>
                           {!d.is_correct && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Resposta correta:{" "}
-                              <strong className="text-success">
-                                {d.correct_option.toUpperCase()}) {correctText}
-                              </strong>
+                              Revise o material da aula para entender a resposta correta.
                             </p>
                           )}
                         </div>
