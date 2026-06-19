@@ -15,6 +15,7 @@ interface Props {
   evaluationId: string | null;
   evaluationTitle: string;
   evaluationType?: string;          // "prova" | "simulado" | "exercicio"
+  // Note: the server no longer returns `correct_option` to prevent answer-key leakage.
   courseId?: string | null;          // required for final-exam reset
 }
 
@@ -33,7 +34,7 @@ export default function StudentExamDialog({
   const { toast } = useToast();
   const qc = useQueryClient();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{ score: number; correct: number; total: number; details?: Array<{ question_id: string; given: string; correct_option: string; is_correct: boolean }> } | null>(null);
+  const [result, setResult] = useState<{ score: number; correct: number; total: number; details?: Array<{ question_id: string; given: string; is_correct: boolean }> } | null>(null);
   const [resetting, setResetting] = useState(false);
 
   const isFinalExam = evaluationType === "prova";
