@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import NotificationBell from "./NotificationBell";
+import PageTOC from "./PageTOC";
 
 export default function AppLayout() {
   return (
@@ -13,6 +14,7 @@ export default function AppLayout() {
         <div className="px-3 sm:px-4 md:px-6 lg:px-8 py-4 lg:py-6 pt-16 lg:pt-6 max-w-[1600px] mx-auto w-full">
           <Outlet />
         </div>
+        <PageTOC />
       </main>
     </div>
   );

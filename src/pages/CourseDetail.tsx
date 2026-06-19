@@ -719,8 +719,8 @@ export default function CourseDetail() {
       </Link>
 
       {/* Hero */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-2xl overflow-hidden h-48 lg:h-64">
+      <motion.div id="toc-hero" data-toc-section data-toc-label="Visão geral" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-2xl overflow-hidden h-48 lg:h-64 scroll-mt-24">
         {course.image ? (
           <SignedImage path={course.image} alt={course.title} className="w-full h-full object-cover" />
         ) : (
@@ -864,7 +864,7 @@ export default function CourseDetail() {
       </motion.div>
 
       {/* ========== MODULES & LESSONS ========== */}
-      <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
+      <div id="toc-modules" data-toc-section data-toc-label="Módulos & Aulas" className="bg-card rounded-xl shadow-card border border-border overflow-hidden scroll-mt-24">
         <button onClick={() => toggleSection("modules")}
           className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
           <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
@@ -988,7 +988,7 @@ export default function CourseDetail() {
       </div>
 
       {/* ========== EVALUATIONS ========== */}
-      <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
+      <div id="toc-evaluations" data-toc-section data-toc-label="Avaliações" className="bg-card rounded-xl shadow-card border border-border overflow-hidden scroll-mt-24">
         <button onClick={() => toggleSection("evaluations")}
           className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
           <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
@@ -1135,7 +1135,7 @@ export default function CourseDetail() {
       </div>
 
       {/* ========== BOOKS / LIBRARY ========== */}
-      <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
+      <div id="toc-books" data-toc-section data-toc-label="Livros & Materiais" className="bg-card rounded-xl shadow-card border border-border overflow-hidden scroll-mt-24">
         <button onClick={() => toggleSection("books")}
           className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
           <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
@@ -1202,7 +1202,9 @@ export default function CourseDetail() {
 
       {/* ========== COURSE CHAT ========== */}
       {course && courseId && (
-        <CourseChat courseId={courseId} cooperadoOnly={course.cooperado_only} />
+        <div id="toc-chat" data-toc-section data-toc-label="Chat do curso" className="scroll-mt-24">
+          <CourseChat courseId={courseId} cooperadoOnly={course.cooperado_only} />
+        </div>
       )}
 
       {/* ===== DIALOGS ===== */}
