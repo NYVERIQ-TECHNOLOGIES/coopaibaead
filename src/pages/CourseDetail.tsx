@@ -988,7 +988,7 @@ export default function CourseDetail() {
       </div>
 
       {/* ========== EVALUATIONS ========== */}
-      <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
+      <div id="toc-evaluations" data-toc-section data-toc-label="Avaliações" className="bg-card rounded-xl shadow-card border border-border overflow-hidden scroll-mt-24">
         <button onClick={() => toggleSection("evaluations")}
           className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
           <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
