@@ -1202,7 +1202,9 @@ export default function CourseDetail() {
 
       {/* ========== COURSE CHAT ========== */}
       {course && courseId && (
-        <CourseChat courseId={courseId} cooperadoOnly={course.cooperado_only} />
+        <div id="toc-chat" data-toc-section data-toc-label="Chat do curso" className="scroll-mt-24">
+          <CourseChat courseId={courseId} cooperadoOnly={course.cooperado_only} />
+        </div>
       )}
 
       {/* ===== DIALOGS ===== */}
