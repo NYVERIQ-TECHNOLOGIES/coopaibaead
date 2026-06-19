@@ -719,8 +719,8 @@ export default function CourseDetail() {
       </Link>
 
       {/* Hero */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-        className="relative rounded-2xl overflow-hidden h-48 lg:h-64">
+      <motion.div id="toc-hero" data-toc-section data-toc-label="Visão geral" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-2xl overflow-hidden h-48 lg:h-64 scroll-mt-24">
         {course.image ? (
           <SignedImage path={course.image} alt={course.title} className="w-full h-full object-cover" />
         ) : (
