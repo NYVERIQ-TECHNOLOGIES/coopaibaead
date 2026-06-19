@@ -44,6 +44,7 @@ import CheckoutReturn from "@/pages/CheckoutReturn";
 import Contato from "@/pages/public/Contato";
 import Termos from "@/pages/public/Termos";
 import Privacidade from "@/pages/public/Privacidade";
+import Seguranca from "@/pages/public/Seguranca";
 import PresencaList from "@/pages/PresencaList";
 import PresencaNovo from "@/pages/PresencaNovo";
 import PresencaEvento from "@/pages/PresencaEvento";
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/contato" element={<Contato />} />
               <Route path="/termos" element={<Termos />} />
               <Route path="/privacidade" element={<Privacidade />} />
+              <Route path="/seguranca" element={<Seguranca />} />
               <Route path="/validar-certificado" element={<ValidateCertificate />} />
               <Route path="/validar-certificado/:code" element={<ValidateCertificate />} />
             </Route>
