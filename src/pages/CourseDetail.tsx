@@ -864,7 +864,7 @@ export default function CourseDetail() {
       </motion.div>
 
       {/* ========== MODULES & LESSONS ========== */}
-      <div className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
+      <div id="toc-modules" data-toc-section data-toc-label="Módulos & Aulas" className="bg-card rounded-xl shadow-card border border-border overflow-hidden scroll-mt-24">
         <button onClick={() => toggleSection("modules")}
           className="w-full flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
           <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
