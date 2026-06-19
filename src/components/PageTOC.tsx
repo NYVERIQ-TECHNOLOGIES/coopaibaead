@@ -34,6 +34,19 @@ export default function PageTOC() {
 
   useEffect(() => {
     if (items.length === 0) return;
+    // Find the nearest scrollable ancestor of the first section so IntersectionObserver works
+    // inside layouts where the main element scrolls (not the window).
+    const first = document.getElementById(items[0].id);
+    let root: Element | null = null;
+    let node: HTMLElement | null = first?.parentElement ?? null;
+    while (node) {
+      const style = getComputedStyle(node);
+      if (/(auto|scroll)/.test(style.overflowY)) {
+        root = node;
+        break;
+      }
+      node = node.parentElement;
+    }
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
@@ -41,7 +54,7 @@ export default function PageTOC() {
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
         if (visible[0]) setActive(visible[0].target.id);
       },
-      { rootMargin: "-30% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] }
+      { root, rootMargin: "-30% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] }
     );
     items.forEach((i) => {
       const el = document.getElementById(i.id);
