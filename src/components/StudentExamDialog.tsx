@@ -15,6 +15,7 @@ interface Props {
   evaluationId: string | null;
   evaluationTitle: string;
   evaluationType?: string;          // "prova" | "simulado" | "exercicio"
+  // Note: the server no longer returns `correct_option` to prevent answer-key leakage.
   courseId?: string | null;          // required for final-exam reset
 }
 
@@ -33,7 +34,7 @@ export default function StudentExamDialog({
   const { toast } = useToast();
   const qc = useQueryClient();
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<{ score: number; correct: number; total: number; details?: Array<{ question_id: string; given: string; correct_option: string; is_correct: boolean }> } | null>(null);
+  const [result, setResult] = useState<{ score: number; correct: number; total: number; details?: Array<{ question_id: string; given: string; is_correct: boolean }> } | null>(null);
   const [resetting, setResetting] = useState(false);
 
   const isFinalExam = evaluationType === "prova";
@@ -229,7 +230,6 @@ export default function StudentExamDialog({
                   const d = result.details!.find((x) => x.question_id === q.id);
                   if (!d) return null;
                   const givenText = d.given ? q[`option_${d.given}`] : "—";
-                  const correctText = q[`option_${d.correct_option}`];
                   return (
                     <div
                       key={q.id}
@@ -256,10 +256,7 @@ export default function StudentExamDialog({
                           </p>
                           {!d.is_correct && (
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              Resposta correta:{" "}
-                              <strong className="text-success">
-                                {d.correct_option.toUpperCase()}) {correctText}
-                              </strong>
+                              Revise o material da aula para entender a resposta correta.
                             </p>
                           )}
                         </div>
