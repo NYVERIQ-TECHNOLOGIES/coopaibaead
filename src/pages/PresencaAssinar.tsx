@@ -12,7 +12,7 @@ import logoImg from "@/assets/logo-coopaiba.png";
 
 const isIframe = () => typeof window !== "undefined" && window.self !== window.top;
 
-type Tipo = "desenho" | "digitada" | "checkin";
+type Tipo = "digitada" | "checkin";
 
 export default function PresencaAssinar() {
   const { codigo } = useParams();
