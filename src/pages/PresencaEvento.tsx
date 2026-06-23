@@ -9,13 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
+import { ArrowLeft, Copy, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
 
 export default function PresencaEvento() {
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [iframeHeight, setIframeHeight] = useState(520);
 
   const { data: evento } = useQuery({
     queryKey: ["presenca_evento", id],

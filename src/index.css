@@ -116,6 +116,11 @@
   }
 }
 
+/* Remove min-h-screen em iframes para evitar rolagem duplicada */
+.in-iframe .min-h-screen {
+  min-height: auto !important;
+}
+
 @layer utilities {
   .gradient-primary {
     background: var(--gradient-primary);
