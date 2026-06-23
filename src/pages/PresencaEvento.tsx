@@ -9,13 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
+import { ArrowLeft, Copy, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
 
 export default function PresencaEvento() {
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [iframeHeight, setIframeHeight] = useState(520);
 
   const { data: evento } = useQuery({
     queryKey: ["presenca_evento", id],
@@ -54,6 +55,17 @@ export default function PresencaEvento() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [id, qc]);
+
+  /* Ajusta altura do iframe via postMessage vinda do formulário público */
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "presenca-resize" && typeof e.data.height === "number") {
+        setIframeHeight(e.data.height + 8); // folga para evitar scrollbar interno
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
 
   const publicUrl = useMemo(() => evento ? `${window.location.origin}/p/${evento.codigo}` : "", [evento]);
 
@@ -153,23 +165,31 @@ export default function PresencaEvento() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulário de presença embutido */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3 flex flex-col">
           <div className="flex items-center justify-between gap-2">
             <h2 className="font-heading font-semibold text-card-foreground">Registrar presença</h2>
-            <Button size="icon" variant="outline" onClick={copyLink} title="Copiar link público">
-              <Copy className="w-4 h-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" asChild title="Abrir formulário em nova aba">
+                <a href={`/p/${evento.codigo}`} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-1" /> Nova aba
+                </a>
+              </Button>
+              <Button size="icon" variant="outline" onClick={copyLink} title="Copiar link público">
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Código</span>
             <span className="font-mono font-bold text-primary">{evento.codigo}</span>
           </div>
-          <div className="rounded-lg overflow-hidden border border-border bg-background">
+          <div className="rounded-lg overflow-hidden border border-border bg-background flex-1 min-h-0">
             <iframe
               src={`/p/${evento.codigo}`}
               title="Formulário de presença"
-              className="w-full"
-              style={{ height: "70vh", minHeight: 600 }}
+              className="w-full block"
+              style={{ height: iframeHeight, minHeight: 360 }}
+              scrolling="no"
             />
           </div>
         </div>

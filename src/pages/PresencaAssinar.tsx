@@ -10,6 +10,8 @@ import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
 import { isValidCPF, maskCPF, onlyDigits } from "@/lib/cpf";
 import logoImg from "@/assets/logo-coopaiba.png";
 
+const isIframe = () => typeof window !== "undefined" && window.self !== window.top;
+
 type Tipo = "desenho" | "digitada" | "checkin";
 
 export default function PresencaAssinar() {
@@ -36,6 +38,21 @@ export default function PresencaAssinar() {
     })();
   }, [codigo]);
 
+  /* Envia altura do documento para o parent quando embutido em iframe */
+  useEffect(() => {
+    if (!isIframe()) return;
+    document.documentElement.classList.add("in-iframe");
+    const send = () => {
+      window.parent.postMessage({ type: "presenca-resize", height: document.documentElement.scrollHeight }, "*");
+    };
+    send();
+    const ro = new ResizeObserver(send);
+    ro.observe(document.documentElement);
+    return () => {
+      ro.disconnect();
+      document.documentElement.classList.remove("in-iframe");
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
