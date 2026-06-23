@@ -60,12 +60,10 @@ export default function PresencaAssinar() {
     if (!form.nome.trim() || form.nome.trim().length < 2) {
       return toast({ title: "Informe seu nome completo", variant: "destructive" });
     }
-    if (form.cpf && !isValidCPF(form.cpf)) {
+    if (!form.cpf || !isValidCPF(form.cpf)) {
       return toast({ title: "CPF inválido", variant: "destructive" });
     }
-    if (!form.cpf && !form.matricula) {
-      return toast({ title: "Informe CPF ou matrícula", variant: "destructive" });
-    }
+
 
     let assinaturaBase64: string | null = null;
     let assinaturaTexto: string | null = null;
