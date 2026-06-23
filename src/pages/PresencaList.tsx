@@ -68,9 +68,18 @@ export default function PresencaList() {
           {filtered.map((e: any, i) => {
             const count = e.presenca_assinaturas?.[0]?.count ?? 0;
             return (
-              <motion.div key={e.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }}>
+              <motion.div key={e.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.03 }} className="relative">
+                <Link
+                  to={`/presenca/${e.id}/editar`}
+                  onClick={(ev) => ev.stopPropagation()}
+                  className="absolute top-3 right-3 z-10 p-1.5 rounded-md bg-background/80 backdrop-blur border border-border text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  title="Editar evento"
+                  aria-label="Editar evento"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Link>
                 <Link to={`/presenca/${e.id}`} className="block bg-card border border-border rounded-xl p-5 hover:shadow-elevated transition-shadow">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between pr-10">
                     <div className="min-w-0">
                       <h3 className="font-heading font-semibold text-card-foreground truncate">{e.nome}</h3>
                       <p className="text-xs text-muted-foreground mt-0.5 capitalize">{e.tipo}</p>
