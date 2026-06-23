@@ -152,24 +152,28 @@ export default function PresencaEvento() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* QR + link */}
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-          <h2 className="font-heading font-semibold text-card-foreground">QR Code de Acesso</h2>
-          <div className="bg-white p-4 rounded-lg flex items-center justify-center">
-            <QRCodeCanvas id="evento-qr" value={publicUrl} size={200} level="H" includeMargin />
+        {/* Formulário de presença embutido */}
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="font-heading font-semibold text-card-foreground">Registrar presença</h2>
+            <Button size="icon" variant="outline" onClick={copyLink} title="Copiar link público">
+              <Copy className="w-4 h-4" />
+            </Button>
           </div>
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">Código</p>
-            <p className="font-mono text-2xl font-bold text-primary">{evento.codigo}</p>
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Código</span>
+            <span className="font-mono font-bold text-primary">{evento.codigo}</span>
           </div>
-          <div className="flex gap-2">
-            <Input readOnly value={publicUrl} className="text-xs" />
-            <Button size="icon" variant="outline" onClick={copyLink}><Copy className="w-4 h-4" /></Button>
+          <div className="rounded-lg overflow-hidden border border-border bg-background">
+            <iframe
+              src={`/p/${evento.codigo}`}
+              title="Formulário de presença"
+              className="w-full"
+              style={{ height: "70vh", minHeight: 600 }}
+            />
           </div>
-          <Button variant="outline" className="w-full" onClick={downloadQR}>
-            <Download className="w-4 h-4 mr-2" /> Baixar QR
-          </Button>
         </div>
+
 
         {/* Lista */}
         <div className="lg:col-span-2 bg-card border border-border rounded-xl overflow-hidden">
