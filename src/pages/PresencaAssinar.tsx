@@ -70,13 +70,7 @@ export default function PresencaAssinar() {
     setSubmitting(true);
 
     try {
-      if (tipo === "desenho") {
-        if (sigRef.current?.isEmpty()) {
-          setSubmitting(false);
-          return toast({ title: "Desenhe sua assinatura", variant: "destructive" });
-        }
-        assinaturaBase64 = sigRef.current!.toDataURL();
-      } else if (tipo === "digitada") {
+      if (tipo === "digitada") {
         if (!form.assinaturaTexto.trim()) {
           setSubmitting(false);
           return toast({ title: "Digite sua assinatura", variant: "destructive" });
