@@ -82,8 +82,8 @@ export default function PresencaAssinar() {
         body: {
           codigo: evento.codigo,
           nome: form.nome.trim(),
-          cpf: form.cpf ? onlyDigits(form.cpf) : null,
-          matricula: form.matricula || null,
+          cpf: onlyDigits(form.cpf),
+          matricula: null,
           tipo,
           assinaturaBase64,
           assinaturaTexto,
