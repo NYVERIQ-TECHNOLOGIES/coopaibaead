@@ -61,6 +61,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Realtime: refetch role/profile when admin changes them
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`user-role-changes-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_roles", filter: `user_id=eq.${user.id}` },
+        () => fetchUserData(user.id)
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `user_id=eq.${user.id}` },
+        () => fetchUserData(user.id)
+      )
+      .subscribe();
+
+    // Also refetch when the tab regains focus, as a safety net
+    const onFocus = () => fetchUserData(user.id);
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      supabase.removeChannel(channel);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [user?.id]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
