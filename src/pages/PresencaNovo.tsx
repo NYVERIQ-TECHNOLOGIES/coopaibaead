@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ const TIPOS = ["dia_de_campo", "reuniao", "assembleia", "curso", "treinamento", 
 
 export default function PresencaNovo() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
@@ -37,28 +39,65 @@ export default function PresencaNovo() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isEdit || !id) return;
+    supabase.from("presenca_eventos").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
+      if (error || !data) {
+        toast({ title: "Erro ao carregar evento", description: error?.message, variant: "destructive" });
+        return;
+      }
+      const d: any = data;
+      setForm({
+        nome: d.nome ?? "",
+        tipo: d.tipo ?? "dia_de_campo",
+        descricao: d.descricao ?? "",
+        data: d.data ?? new Date().toISOString().slice(0, 10),
+        horario: d.horario ? String(d.horario).slice(0, 5) : "",
+        data_fim: d.data_fim ?? "",
+        horario_fim: d.horario_fim ? String(d.horario_fim).slice(0, 5) : "",
+        local: d.local ?? "",
+        responsavel: d.responsavel ?? "",
+        expected_count: d.expected_count ? String(d.expected_count) : "",
+        course_id: d.course_id ?? "",
+      });
+    });
+  }, [id, isEdit]);
+
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nome.trim()) return;
     setLoading(true);
+    const payload = {
+      nome: form.nome.trim(),
+      tipo: form.tipo,
+      descricao: form.descricao || null,
+      data: form.data,
+      horario: form.horario || null,
+      data_fim: form.data_fim || null,
+      horario_fim: form.horario_fim || null,
+      local: form.local || null,
+      responsavel: form.responsavel || null,
+      expected_count: form.expected_count ? parseInt(form.expected_count) : null,
+      course_id: form.course_id || null,
+    };
+
+    if (isEdit && id) {
+      const { error } = await supabase.from("presenca_eventos").update(payload as any).eq("id", id);
+      setLoading(false);
+      if (error) {
+        toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Evento atualizado" });
+      navigate(`/presenca/${id}`);
+      return;
+    }
+
     const { data, error } = await supabase
       .from("presenca_eventos")
-      .insert({
-        nome: form.nome.trim(),
-        tipo: form.tipo,
-        descricao: form.descricao || null,
-        data: form.data,
-        horario: form.horario || null,
-        data_fim: form.data_fim || null,
-        horario_fim: form.horario_fim || null,
-        local: form.local || null,
-        responsavel: form.responsavel || null,
-        expected_count: form.expected_count ? parseInt(form.expected_count) : null,
-        course_id: form.course_id || null,
-        created_by: user?.id,
-      } as any)
+      .insert({ ...payload, created_by: user?.id } as any)
       .select()
       .single();
     setLoading(false);
@@ -77,8 +116,12 @@ export default function PresencaNovo() {
         <ArrowLeft className="w-4 h-4" /> Voltar
       </button>
       <div>
-        <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Novo Dia de Campo</h1>
-        <p className="text-muted-foreground mt-1">Crie um evento, vincule a um curso e gere a lista de presença digital.</p>
+        <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">
+          {isEdit ? "Editar Evento" : "Novo Dia de Campo"}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          {isEdit ? "Atualize os dados do evento." : "Crie um evento, vincule a um curso e gere a lista de presença digital."}
+        </p>
       </div>
 
       <form onSubmit={onSubmit} className="bg-card border border-border rounded-xl p-6 space-y-4">
@@ -139,7 +182,9 @@ export default function PresencaNovo() {
         </div>
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="outline" onClick={() => navigate("/presenca")}>Cancelar</Button>
-          <Button type="submit" disabled={loading}>{loading ? "Criando..." : "Criar evento"}</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar evento"}
+          </Button>
         </div>
       </form>
     </div>
