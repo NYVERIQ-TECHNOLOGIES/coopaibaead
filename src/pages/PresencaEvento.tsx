@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, FileSpreadsheet, FileText, Lock, Unlock, Search, Users } from "lucide-react";
+import { ArrowLeft, Copy, Download, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
 
 export default function PresencaEvento() {
   const { id } = useParams();
@@ -140,6 +140,9 @@ export default function PresencaEvento() {
           {evento.local && <p className="text-sm text-muted-foreground">{evento.local}</p>}
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => navigate(`/presenca/${evento.id}/editar`)}>
+            <Pencil className="w-4 h-4 mr-2" /> Editar
+          </Button>
           <Button variant="outline" onClick={toggleStatus}>
             {evento.status === "aberto" ? <><Lock className="w-4 h-4 mr-2" /> Encerrar</> : <><Unlock className="w-4 h-4 mr-2" /> Reabrir</>}
           </Button>
