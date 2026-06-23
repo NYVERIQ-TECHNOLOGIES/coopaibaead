@@ -12,7 +12,7 @@ import logoImg from "@/assets/logo-coopaiba.png";
 
 const isIframe = () => typeof window !== "undefined" && window.self !== window.top;
 
-type Tipo = "desenho" | "digitada" | "checkin";
+type Tipo = "digitada" | "checkin";
 
 export default function PresencaAssinar() {
   const { codigo } = useParams();
@@ -20,8 +20,8 @@ export default function PresencaAssinar() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ horario: string } | null>(null);
-  const [tipo, setTipo] = useState<Tipo>("desenho");
-  const [form, setForm] = useState({ nome: "", cpf: "", matricula: "", assinaturaTexto: "" });
+  const [tipo, setTipo] = useState<Tipo>("digitada");
+  const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
 
   useEffect(() => {
@@ -60,25 +60,17 @@ export default function PresencaAssinar() {
     if (!form.nome.trim() || form.nome.trim().length < 2) {
       return toast({ title: "Informe seu nome completo", variant: "destructive" });
     }
-    if (form.cpf && !isValidCPF(form.cpf)) {
+    if (!form.cpf || !isValidCPF(form.cpf)) {
       return toast({ title: "CPF inválido", variant: "destructive" });
     }
-    if (!form.cpf && !form.matricula) {
-      return toast({ title: "Informe CPF ou matrícula", variant: "destructive" });
-    }
+
 
     let assinaturaBase64: string | null = null;
     let assinaturaTexto: string | null = null;
     setSubmitting(true);
 
     try {
-      if (tipo === "desenho") {
-        if (sigRef.current?.isEmpty()) {
-          setSubmitting(false);
-          return toast({ title: "Desenhe sua assinatura", variant: "destructive" });
-        }
-        assinaturaBase64 = sigRef.current!.toDataURL();
-      } else if (tipo === "digitada") {
+      if (tipo === "digitada") {
         if (!form.assinaturaTexto.trim()) {
           setSubmitting(false);
           return toast({ title: "Digite sua assinatura", variant: "destructive" });
@@ -90,8 +82,8 @@ export default function PresencaAssinar() {
         body: {
           codigo: evento.codigo,
           nome: form.nome.trim(),
-          cpf: form.cpf ? onlyDigits(form.cpf) : null,
-          matricula: form.matricula || null,
+          cpf: onlyDigits(form.cpf),
+          matricula: null,
           tipo,
           assinaturaBase64,
           assinaturaTexto,
@@ -176,27 +168,22 @@ export default function PresencaAssinar() {
             <Label>Nome completo *</Label>
             <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required className="h-12 text-base" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label>CPF</Label>
-              <Input
-                inputMode="numeric"
-                value={form.cpf}
-                onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })}
-                placeholder="000.000.000-00"
-                className="h-12 text-base"
-              />
-            </div>
-            <div>
-              <Label>Matrícula</Label>
-              <Input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} placeholder="COOP-000000" className="h-12 text-base" />
-            </div>
+          <div>
+            <Label>CPF *</Label>
+            <Input
+              inputMode="numeric"
+              value={form.cpf}
+              onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })}
+              placeholder="000.000.000-00"
+              required
+              className="h-12 text-base"
+            />
           </div>
 
           <div>
             <Label>Forma de assinatura</Label>
-            <div className="grid grid-cols-3 gap-2 mt-1">
-              {(["desenho","digitada","checkin"] as Tipo[]).map((t) => (
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {(["digitada","checkin"] as Tipo[]).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -209,7 +196,7 @@ export default function PresencaAssinar() {
             </div>
           </div>
 
-          {tipo === "desenho" && <SignaturePad ref={sigRef} />}
+
           {tipo === "digitada" && (
             <div>
               <Label>Digite seu nome como assinatura</Label>
