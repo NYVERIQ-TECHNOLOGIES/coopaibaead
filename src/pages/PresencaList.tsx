@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, ClipboardCheck, Calendar, MapPin, Search, BarChart3 } from "lucide-react";
+import { Plus, ClipboardCheck, Calendar, MapPin, Search, BarChart3, Pencil } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
