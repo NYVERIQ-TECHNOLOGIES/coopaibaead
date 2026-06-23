@@ -168,21 +168,16 @@ export default function PresencaAssinar() {
             <Label>Nome completo *</Label>
             <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required className="h-12 text-base" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label>CPF</Label>
-              <Input
-                inputMode="numeric"
-                value={form.cpf}
-                onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })}
-                placeholder="000.000.000-00"
-                className="h-12 text-base"
-              />
-            </div>
-            <div>
-              <Label>Matrícula</Label>
-              <Input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} placeholder="COOP-000000" className="h-12 text-base" />
-            </div>
+          <div>
+            <Label>CPF *</Label>
+            <Input
+              inputMode="numeric"
+              value={form.cpf}
+              onChange={(e) => setForm({ ...form, cpf: maskCPF(e.target.value) })}
+              placeholder="000.000.000-00"
+              required
+              className="h-12 text-base"
+            />
           </div>
 
           <div>
