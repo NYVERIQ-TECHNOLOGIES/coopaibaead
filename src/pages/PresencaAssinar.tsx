@@ -182,8 +182,8 @@ export default function PresencaAssinar() {
 
           <div>
             <Label>Forma de assinatura</Label>
-            <div className="grid grid-cols-3 gap-2 mt-1">
-              {(["desenho","digitada","checkin"] as Tipo[]).map((t) => (
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {(["digitada","checkin"] as Tipo[]).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -196,7 +196,7 @@ export default function PresencaAssinar() {
             </div>
           </div>
 
-          {tipo === "desenho" && <SignaturePad ref={sigRef} />}
+
           {tipo === "digitada" && (
             <div>
               <Label>Digite seu nome como assinatura</Label>
