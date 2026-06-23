@@ -20,8 +20,8 @@ export default function PresencaAssinar() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ horario: string } | null>(null);
-  const [tipo, setTipo] = useState<Tipo>("desenho");
-  const [form, setForm] = useState({ nome: "", cpf: "", matricula: "", assinaturaTexto: "" });
+  const [tipo, setTipo] = useState<Tipo>("digitada");
+  const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
 
   useEffect(() => {
