@@ -20,7 +20,7 @@ export default function PresencaAssinar() {
   const [evento, setEvento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ horario: string } | null>(null);
+  const [done, setDone] = useState<{ horario: string; cursos: Array<{ id: string; title: string; description: string | null; image: string | null }> } | null>(null);
   const [tipo, setTipo] = useState<Tipo>("digitada");
   const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
