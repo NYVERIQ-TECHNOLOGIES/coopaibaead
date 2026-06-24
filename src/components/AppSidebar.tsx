@@ -21,7 +21,7 @@ const navItems = [
   { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
   { label: "Não listados", icon: UserX, path: "/unlisted-users", adminOnly: true },
   { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
-  { label: "Dia de Campo", icon: ClipboardCheck, path: "/presenca", moderatorAllowed: true },
+  { label: "Dia de Campo", icon: ClipboardCheck, path: "/presenca", adminOnly: true, moderatorAllowed: true, cooperadoAllowed: true },
   { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
@@ -45,9 +45,11 @@ export default function AppSidebar() {
   const { profile, user, role, signOut } = useAuth();
   const isAdmin = role === "admin";
   const isModerator = role === "moderador";
+  const isCooperado = role === "cooperado";
 
-  const filteredNav = navItems.filter((item) => {
+  const filteredNav = navItems.filter((item: any) => {
     if (isModerator) return !!item.moderatorAllowed;
+    if (isCooperado && item.cooperadoAllowed) return true;
     if (item.adminOnly && !isAdmin) return false;
     if (item.studentOnly && isAdmin) return false;
     return true;
