@@ -70,7 +70,10 @@ export default function PresencaAssinar() {
 
       // Se já registrou presença neste dispositivo, vai direto pro curso
       if (eventoData && typeof window !== "undefined" && localStorage.getItem(storageKey)) {
-        if (goToCourses(cursosData)) return;
+        if (goToCourses(cursosData, "Bem-vindo de volta")) {
+          setLoading(false);
+          return;
+        }
       }
       setLoading(false);
     })();
