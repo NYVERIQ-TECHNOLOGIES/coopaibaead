@@ -18,6 +18,7 @@ export default function PresencaNovo() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [form, setForm] = useState({
     nome: "",
     tipo: "dia_de_campo",
@@ -61,7 +62,22 @@ export default function PresencaNovo() {
         course_id: d.course_id ?? "",
       });
     });
+    supabase.from("presenca_evento_cursos" as any).select("curso_id").eq("evento_id", id).then(({ data }) => {
+      setSelectedCourses(((data as any[]) || []).map((r) => r.curso_id));
+    });
   }, [id, isEdit]);
+
+  const toggleCourse = (cid: string) => {
+    setSelectedCourses((prev) => prev.includes(cid) ? prev.filter((x) => x !== cid) : [...prev, cid]);
+  };
+
+  const syncCourses = async (eventoId: string) => {
+    await supabase.from("presenca_evento_cursos" as any).delete().eq("evento_id", eventoId);
+    if (selectedCourses.length > 0) {
+      const rows = selectedCourses.map((curso_id) => ({ evento_id: eventoId, curso_id }));
+      await supabase.from("presenca_evento_cursos" as any).insert(rows);
+    }
+  };
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
