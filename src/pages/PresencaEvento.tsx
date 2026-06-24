@@ -164,32 +164,8 @@ export default function PresencaEvento() {
         </div>
       </div>
 
-      {linkedCourses.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="font-heading font-semibold text-card-foreground">Cursos deste evento</h2>
-            <span className="text-xs text-muted-foreground">({linkedCourses.length})</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {linkedCourses.map((c: any) => (
-              <Link
-                key={c.id}
-                to={`/courses/${c.id}`}
-                className="group flex items-start gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-accent/40 transition-colors"
-              >
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
-                  <BookOpen className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm text-card-foreground truncate group-hover:text-primary">{c.title}</p>
-                  {c.duration && <p className="text-xs text-muted-foreground mt-0.5">{c.duration}</p>}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulário de presença embutido */}
