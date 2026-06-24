@@ -146,6 +146,28 @@ export default function PresencaAssinar() {
           <p className="text-sm text-muted-foreground mt-1">
             Horário: {new Date(done.horario).toLocaleString("pt-BR")}
           </p>
+
+          {done.cursos.length > 0 && (
+            <div className="mt-6 space-y-3 text-left">
+              <p className="text-sm font-medium text-card-foreground text-center">
+                {done.cursos.length === 1 ? "Redirecionando para o curso..." : "Cursos disponíveis para você:"}
+              </p>
+              {done.cursos.map((c) => (
+                <Button
+                  key={c.id}
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3"
+                  onClick={() => navigate(`/courses/${c.id}`)}
+                >
+                  <span className="truncate">{c.title}</span>
+                </Button>
+              ))}
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                Faça login com seu CPF cadastrado para acessar o conteúdo.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
