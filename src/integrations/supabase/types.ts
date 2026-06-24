@@ -1920,6 +1920,7 @@ export type Database = {
         Args: { _codigo: string }
         Returns: {
           description: string
+          duration: string
           id: string
           image: string
           title: string
