@@ -16,6 +16,7 @@ type Tipo = "digitada" | "checkin";
 
 export default function PresencaAssinar() {
   const { codigo } = useParams();
+  const navigate = useNavigate();
   const [evento, setEvento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
