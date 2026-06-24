@@ -101,11 +101,13 @@ export default function PresencaNovo() {
 
     if (isEdit && id) {
       const { error } = await supabase.from("presenca_eventos").update(payload as any).eq("id", id);
-      setLoading(false);
       if (error) {
+        setLoading(false);
         toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
         return;
       }
+      await syncCourses(id);
+      setLoading(false);
       toast({ title: "Evento atualizado" });
       navigate(`/presenca/${id}`);
       return;
@@ -116,12 +118,14 @@ export default function PresencaNovo() {
       .insert({ ...payload, created_by: user?.id } as any)
       .select()
       .single();
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       toast({ title: "Erro ao criar evento", description: error.message, variant: "destructive" });
       return;
     }
+    await syncCourses(data.id);
+    setLoading(false);
     toast({ title: "Evento criado", description: `Código: ${data.codigo}` });
     navigate(`/presenca/${data.id}`);
   };
@@ -154,12 +158,8 @@ export default function PresencaNovo() {
             </select>
           </div>
           <div>
-            <Label>Curso vinculado</Label>
-            <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              value={form.course_id} onChange={(e) => update("course_id", e.target.value)}>
-              <option value="">Nenhum</option>
-              {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </select>
+            <Label>Responsável</Label>
+            <Input value={form.responsavel} onChange={(e) => update("responsavel", e.target.value)} />
           </div>
           <div>
             <Label>Responsável</Label>
