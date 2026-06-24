@@ -168,10 +168,29 @@ export default function PresencaAssinar() {
           <p className="text-sm text-muted-foreground mt-1">
             Horário: {new Date(done.horario).toLocaleString("pt-BR")}
           </p>
+          {cursos.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <p className="text-sm font-medium text-card-foreground">Acesse os cursos deste evento:</p>
+              {cursos.map((c) => (
+                <Button
+                  key={c.id}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    const url = `/courses/${c.id}`;
+                    if (isIframe()) window.top?.location.assign(url);
+                    else navigate(url);
+                  }}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" /> {c.title}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-background">
