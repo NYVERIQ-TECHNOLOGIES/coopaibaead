@@ -9,9 +9,12 @@ import { BookOpen, CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
 import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
 import { isValidCPF, maskCPF, onlyDigits } from "@/lib/cpf";
 import logoImg from "@/assets/logo-coopaiba.png";
+import { Progress } from "@/components/ui/progress";
 
 
 const isIframe = () => typeof window !== "undefined" && window.self !== window.top;
+
+const REDIRECT_DELAY_MS = 3000;
 
 type Tipo = "digitada" | "checkin";
 
@@ -23,23 +26,35 @@ export default function PresencaAssinar() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ horario: string } | null>(null);
+  const [redirecting, setRedirecting] = useState<{ nome: string; progress: number } | null>(null);
   const [tipo, setTipo] = useState<Tipo>("digitada");
   const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
 
   const storageKey = `presenca:${codigo}`;
 
-  const goToCourses = (list: any[]) => {
+  const goToCourses = (list: any[], nome?: string) => {
     if (!list || list.length === 0) return false;
-    // Se embutido em iframe, abre na janela principal
     const target = list.length === 1 ? `/courses/${list[0].id}` : `/courses`;
-    if (isIframe()) {
-      window.top?.location.assign(target);
-    } else {
-      navigate(target);
-    }
+    const displayName = (nome || form.nome || "Você").trim() || "Você";
+    setRedirecting({ nome: displayName, progress: 0 });
+    const start = Date.now();
+    const tick = setInterval(() => {
+      const pct = Math.min(100, ((Date.now() - start) / REDIRECT_DELAY_MS) * 100);
+      setRedirecting((prev) => (prev ? { ...prev, progress: pct } : prev));
+      if (pct >= 100) clearInterval(tick);
+    }, 50);
+    setTimeout(() => {
+      clearInterval(tick);
+      if (isIframe()) {
+        window.top?.location.assign(target);
+      } else {
+        navigate(target);
+      }
+    }, REDIRECT_DELAY_MS);
     return true;
   };
+
 
   useEffect(() => {
     (async () => {
@@ -55,7 +70,10 @@ export default function PresencaAssinar() {
 
       // Se já registrou presença neste dispositivo, vai direto pro curso
       if (eventoData && typeof window !== "undefined" && localStorage.getItem(storageKey)) {
-        if (goToCourses(cursosData)) return;
+        if (goToCourses(cursosData, "Bem-vindo de volta")) {
+          setLoading(false);
+          return;
+        }
       }
       setLoading(false);
     })();
@@ -119,7 +137,7 @@ export default function PresencaAssinar() {
       if (result?.error) throw new Error(result.error);
       try { localStorage.setItem(storageKey, String(Date.now())); } catch {}
       // Redireciona automaticamente para o(s) curso(s) vinculado(s)
-      if (goToCourses(cursos)) return;
+      if (goToCourses(cursos, form.nome.trim())) return;
       setDone({ horario: result.horario });
     } catch (err: any) {
       toast({ title: "Erro ao registrar", description: err.message, variant: "destructive" });
@@ -128,6 +146,28 @@ export default function PresencaAssinar() {
     }
   };
 
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center shadow-elevated">
+          <CheckCircle2 className="w-14 h-14 mx-auto text-success mb-4" />
+          <h1 className="text-xl font-heading font-bold text-card-foreground">
+            {redirecting.nome}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Preparando seu acesso ao curso…
+          </p>
+          <div className="mt-6">
+            <Progress value={redirecting.progress} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              {Math.round(redirecting.progress)}%
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -135,6 +175,7 @@ export default function PresencaAssinar() {
       </div>
     );
   }
+
 
   if (!evento) {
     return (
