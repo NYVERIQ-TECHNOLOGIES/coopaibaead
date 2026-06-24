@@ -162,10 +162,6 @@ export default function PresencaNovo() {
             <Input value={form.responsavel} onChange={(e) => update("responsavel", e.target.value)} />
           </div>
           <div>
-            <Label>Responsável</Label>
-            <Input value={form.responsavel} onChange={(e) => update("responsavel", e.target.value)} />
-          </div>
-          <div>
             <Label>Data de início *</Label>
             <Input type="date" value={form.data} onChange={(e) => update("data", e.target.value)} required />
           </div>
@@ -189,8 +185,30 @@ export default function PresencaNovo() {
           </div>
           <div>
             <Label>Participantes esperados</Label>
-            <Input type="number" min="1" value={form.expected_count} onChange={(e) => update("expected_count", e.target.value)} />
-          </div>
+        </div>
+        <div>
+          <Label>Cursos vinculados</Label>
+          <p className="text-xs text-muted-foreground mb-2">Selecione um ou mais cursos para liberar aos participantes deste evento.</p>
+          {courses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum curso disponível.</p>
+          ) : (
+            <div className="max-h-56 overflow-y-auto border border-border rounded-md p-3 space-y-2 bg-background">
+              {courses.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={selectedCourses.includes(c.id)}
+                    onChange={() => toggleCourse(c.id)}
+                  />
+                  <span>{c.title}</span>
+                </label>
+              ))}
+            </div>
+          )}
+          {selectedCourses.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">{selectedCourses.length} curso(s) selecionado(s)</p>
+          )}
         </div>
         <div>
           <Label>Descrição</Label>
