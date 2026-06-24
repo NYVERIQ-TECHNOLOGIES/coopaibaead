@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
+import { BookOpen, CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
 import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
 import { isValidCPF, maskCPF, onlyDigits } from "@/lib/cpf";
 import logoImg from "@/assets/logo-coopaiba.png";
+
 
 const isIframe = () => typeof window !== "undefined" && window.self !== window.top;
 
