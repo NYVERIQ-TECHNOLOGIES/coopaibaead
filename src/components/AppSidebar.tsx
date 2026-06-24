@@ -48,12 +48,7 @@ export default function AppSidebar() {
   const isCooperado = role === "cooperado";
 
   const filteredNav = navItems.filter((item: any) => {
-    if (isModerator) return !!item.moderatorAllowed;
-    if (isCooperado && item.cooperadoAllowed) return true;
-    if (item.adminOnly && !isAdmin) return false;
-    if (item.studentOnly && isAdmin) return false;
-    return true;
-  });
+    if (isModerately) return !!item.moderator
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
