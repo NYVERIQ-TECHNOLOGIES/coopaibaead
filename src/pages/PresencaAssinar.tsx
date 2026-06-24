@@ -26,6 +26,7 @@ export default function PresencaAssinar() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ horario: string } | null>(null);
+  const [redirecting, setRedirecting] = useState<{ nome: string; progress: number } | null>(null);
   const [tipo, setTipo] = useState<Tipo>("digitada");
   const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
