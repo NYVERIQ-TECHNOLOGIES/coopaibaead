@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,10 +16,11 @@ type Tipo = "digitada" | "checkin";
 
 export default function PresencaAssinar() {
   const { codigo } = useParams();
+  const navigate = useNavigate();
   const [evento, setEvento] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [done, setDone] = useState<{ horario: string } | null>(null);
+  const [done, setDone] = useState<{ horario: string; cursos: Array<{ id: string; title: string; description: string | null; image: string | null }> } | null>(null);
   const [tipo, setTipo] = useState<Tipo>("digitada");
   const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
@@ -92,7 +93,12 @@ export default function PresencaAssinar() {
       if (error) throw error;
       const result = data as any;
       if (result?.error) throw new Error(result.error);
-      setDone({ horario: result.horario });
+      const { data: cursosData } = await supabase.rpc("get_evento_cursos_publico" as any, { _codigo: evento.codigo });
+      const cursos = (cursosData as any[] | null) ?? [];
+      setDone({ horario: result.horario, cursos });
+      if (cursos.length === 1) {
+        setTimeout(() => navigate(`/courses/${cursos[0].id}`), 1500);
+      }
     } catch (err: any) {
       toast({ title: "Erro ao registrar", description: err.message, variant: "destructive" });
     } finally {
@@ -140,6 +146,28 @@ export default function PresencaAssinar() {
           <p className="text-sm text-muted-foreground mt-1">
             Horário: {new Date(done.horario).toLocaleString("pt-BR")}
           </p>
+
+          {done.cursos.length > 0 && (
+            <div className="mt-6 space-y-3 text-left">
+              <p className="text-sm font-medium text-card-foreground text-center">
+                {done.cursos.length === 1 ? "Redirecionando para o curso..." : "Cursos disponíveis para você:"}
+              </p>
+              {done.cursos.map((c) => (
+                <Button
+                  key={c.id}
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start h-auto py-3"
+                  onClick={() => navigate(`/courses/${c.id}`)}
+                >
+                  <span className="truncate">{c.title}</span>
+                </Button>
+              ))}
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                Faça login com seu CPF cadastrado para acessar o conteúdo.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     );
