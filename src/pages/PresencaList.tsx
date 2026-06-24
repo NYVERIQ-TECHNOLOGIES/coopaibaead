@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, ClipboardCheck, Calendar, MapPin, Search, BarChart3, Pencil, ExternalLink } from "lucide-react";
+import { Plus, ClipboardCheck, Calendar, MapPin, Search, BarChart3, Pencil, ExternalLink, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,8 @@ export default function PresencaList() {
         await supabase.rpc("encerrar_eventos_vencidos" as any);
       }
       const query = isAdminOrMod
-        ? supabase.from("presenca_eventos").select("*, presenca_assinaturas(count)")
-        : supabase.from("presenca_eventos").select("*");
+        ? supabase.from("presenca_eventos").select("*, presenca_assinaturas(count), presenca_evento_cursos(curso_id, courses:curso_id(id, title))")
+        : supabase.from("presenca_eventos").select("*, presenca_evento_cursos(curso_id, courses:curso_id(id, title))");
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
