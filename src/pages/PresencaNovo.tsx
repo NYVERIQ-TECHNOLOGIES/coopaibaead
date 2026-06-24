@@ -18,6 +18,7 @@ export default function PresencaNovo() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
   const [form, setForm] = useState({
     nome: "",
     tipo: "dia_de_campo",
@@ -61,7 +62,22 @@ export default function PresencaNovo() {
         course_id: d.course_id ?? "",
       });
     });
+    supabase.from("presenca_evento_cursos" as any).select("curso_id").eq("evento_id", id).then(({ data }) => {
+      setSelectedCourses(((data as any[]) || []).map((r) => r.curso_id));
+    });
   }, [id, isEdit]);
+
+  const toggleCourse = (cid: string) => {
+    setSelectedCourses((prev) => prev.includes(cid) ? prev.filter((x) => x !== cid) : [...prev, cid]);
+  };
+
+  const syncCourses = async (eventoId: string) => {
+    await supabase.from("presenca_evento_cursos" as any).delete().eq("evento_id", eventoId);
+    if (selectedCourses.length > 0) {
+      const rows = selectedCourses.map((curso_id) => ({ evento_id: eventoId, curso_id }));
+      await supabase.from("presenca_evento_cursos" as any).insert(rows);
+    }
+  };
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -85,11 +101,13 @@ export default function PresencaNovo() {
 
     if (isEdit && id) {
       const { error } = await supabase.from("presenca_eventos").update(payload as any).eq("id", id);
-      setLoading(false);
       if (error) {
+        setLoading(false);
         toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
         return;
       }
+      await syncCourses(id);
+      setLoading(false);
       toast({ title: "Evento atualizado" });
       navigate(`/presenca/${id}`);
       return;
@@ -100,12 +118,14 @@ export default function PresencaNovo() {
       .insert({ ...payload, created_by: user?.id } as any)
       .select()
       .single();
-    setLoading(false);
 
     if (error) {
+      setLoading(false);
       toast({ title: "Erro ao criar evento", description: error.message, variant: "destructive" });
       return;
     }
+    await syncCourses(data.id);
+    setLoading(false);
     toast({ title: "Evento criado", description: `Código: ${data.codigo}` });
     navigate(`/presenca/${data.id}`);
   };
@@ -138,14 +158,6 @@ export default function PresencaNovo() {
             </select>
           </div>
           <div>
-            <Label>Curso vinculado</Label>
-            <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
-              value={form.course_id} onChange={(e) => update("course_id", e.target.value)}>
-              <option value="">Nenhum</option>
-              {courses.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
-            </select>
-          </div>
-          <div>
             <Label>Responsável</Label>
             <Input value={form.responsavel} onChange={(e) => update("responsavel", e.target.value)} />
           </div>
@@ -175,6 +187,30 @@ export default function PresencaNovo() {
             <Label>Participantes esperados</Label>
             <Input type="number" min="1" value={form.expected_count} onChange={(e) => update("expected_count", e.target.value)} />
           </div>
+        </div>
+        <div>
+          <Label>Cursos vinculados</Label>
+          <p className="text-xs text-muted-foreground mb-2">Selecione um ou mais cursos para liberar aos participantes deste evento.</p>
+          {courses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum curso disponível.</p>
+          ) : (
+            <div className="max-h-56 overflow-y-auto border border-border rounded-md p-3 space-y-2 bg-background">
+              {courses.map((c) => (
+                <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer hover:text-foreground">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-input"
+                    checked={selectedCourses.includes(c.id)}
+                    onChange={() => toggleCourse(c.id)}
+                  />
+                  <span>{c.title}</span>
+                </label>
+              ))}
+            </div>
+          )}
+          {selectedCourses.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">{selectedCourses.length} curso(s) selecionado(s)</p>
+          )}
         </div>
         <div>
           <Label>Descrição</Label>

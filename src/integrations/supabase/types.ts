@@ -1297,6 +1297,42 @@ export type Database = {
           },
         ]
       }
+      presenca_evento_cursos: {
+        Row: {
+          created_at: string
+          curso_id: string
+          evento_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          curso_id: string
+          evento_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          curso_id?: string
+          evento_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presenca_evento_cursos_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presenca_evento_cursos_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "presenca_eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       presenca_eventos: {
         Row: {
           codigo: string

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, ClipboardCheck, Calendar, MapPin, Search, BarChart3, Pencil, ExternalLink } from "lucide-react";
+import { Plus, ClipboardCheck, Calendar, MapPin, Search, BarChart3, Pencil, ExternalLink, BookOpen } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,8 @@ export default function PresencaList() {
         await supabase.rpc("encerrar_eventos_vencidos" as any);
       }
       const query = isAdminOrMod
-        ? supabase.from("presenca_eventos").select("*, presenca_assinaturas(count)")
-        : supabase.from("presenca_eventos").select("*");
+        ? supabase.from("presenca_eventos").select("*, presenca_assinaturas(count), presenca_evento_cursos(curso_id, courses:curso_id(id, title))")
+        : supabase.from("presenca_eventos").select("*, presenca_evento_cursos(curso_id, courses:curso_id(id, title))");
       const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -125,6 +125,31 @@ export default function PresencaList() {
                     <span className="text-xs text-muted-foreground">Código</span>
                     <span className="font-mono font-bold text-primary">{e.codigo}</span>
                   </div>
+                  {(() => {
+                    const cursos = (e.presenca_evento_cursos ?? [])
+                      .map((r: any) => r.courses)
+                      .filter(Boolean);
+                    if (cursos.length === 0) return null;
+                    return (
+                      <div className="mt-4 pt-4 border-t border-border space-y-2" onClick={(ev) => ev.preventDefault()}>
+                        <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5" /> Cursos disponíveis
+                        </p>
+                        <div className="space-y-1.5">
+                          {cursos.map((c: any) => (
+                            <Link
+                              key={c.id}
+                              to={`/courses/${c.id}`}
+                              className="flex items-center justify-between gap-2 text-xs px-2.5 py-1.5 rounded-md bg-muted/40 hover:bg-primary/10 hover:text-primary text-card-foreground transition-colors"
+                            >
+                              <span className="truncate">{c.title}</span>
+                              <span className="text-primary font-medium shrink-0">Fazer →</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {isAdminOrMod ? (
                     <div className="mt-2 flex items-center justify-between">
                       <span className="text-xs text-muted-foreground">Presenças</span>
