@@ -185,6 +185,8 @@ export default function PresencaNovo() {
           </div>
           <div>
             <Label>Participantes esperados</Label>
+            <Input type="number" min="1" value={form.expected_count} onChange={(e) => update("expected_count", e.target.value)} />
+          </div>
         </div>
         <div>
           <Label>Cursos vinculados</Label>
