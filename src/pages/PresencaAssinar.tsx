@@ -33,17 +33,28 @@ export default function PresencaAssinar() {
 
   const storageKey = `presenca:${codigo}`;
 
-  const goToCourses = (list: any[]) => {
+  const goToCourses = (list: any[], nome?: string) => {
     if (!list || list.length === 0) return false;
-    // Se embutido em iframe, abre na janela principal
     const target = list.length === 1 ? `/courses/${list[0].id}` : `/courses`;
-    if (isIframe()) {
-      window.top?.location.assign(target);
-    } else {
-      navigate(target);
-    }
+    const displayName = (nome || form.nome || "Você").trim() || "Você";
+    setRedirecting({ nome: displayName, progress: 0 });
+    const start = Date.now();
+    const tick = setInterval(() => {
+      const pct = Math.min(100, ((Date.now() - start) / REDIRECT_DELAY_MS) * 100);
+      setRedirecting((prev) => (prev ? { ...prev, progress: pct } : prev));
+      if (pct >= 100) clearInterval(tick);
+    }, 50);
+    setTimeout(() => {
+      clearInterval(tick);
+      if (isIframe()) {
+        window.top?.location.assign(target);
+      } else {
+        navigate(target);
+      }
+    }, REDIRECT_DELAY_MS);
     return true;
   };
+
 
   useEffect(() => {
     (async () => {
