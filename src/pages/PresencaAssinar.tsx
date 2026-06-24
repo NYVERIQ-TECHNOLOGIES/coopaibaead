@@ -17,7 +17,9 @@ type Tipo = "digitada" | "checkin";
 
 export default function PresencaAssinar() {
   const { codigo } = useParams();
+  const navigate = useNavigate();
   const [evento, setEvento] = useState<any>(null);
+  const [cursos, setCursos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ horario: string } | null>(null);
@@ -25,19 +27,41 @@ export default function PresencaAssinar() {
   const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
 
+  const storageKey = `presenca:${codigo}`;
+
+  const goToCourses = (list: any[]) => {
+    if (!list || list.length === 0) return false;
+    // Se embutido em iframe, abre na janela principal
+    const target = list.length === 1 ? `/courses/${list[0].id}` : `/courses`;
+    if (isIframe()) {
+      window.top?.location.assign(target);
+    } else {
+      navigate(target);
+    }
+    return true;
+  };
+
   useEffect(() => {
     (async () => {
-      // Tenta encerrar eventos vencidos antes de ler
       try { await supabase.rpc("encerrar_eventos_vencidos" as any); } catch {}
-      const { data, error } = await supabase.rpc("get_evento_publico", { _codigo: codigo! });
-      if (error || !data || (Array.isArray(data) && data.length === 0)) {
-        setEvento(null);
-      } else {
-        setEvento(Array.isArray(data) ? data[0] : data);
+      const [{ data: ev }, { data: cs }] = await Promise.all([
+        supabase.rpc("get_evento_publico", { _codigo: codigo! }),
+        supabase.rpc("get_evento_cursos_publico" as any, { _codigo: codigo! }),
+      ]);
+      const eventoData = Array.isArray(ev) ? ev[0] : ev;
+      const cursosData = (cs as any[]) ?? [];
+      setEvento(eventoData ?? null);
+      setCursos(cursosData);
+
+      // Se já registrou presença neste dispositivo, vai direto pro curso
+      if (eventoData && typeof window !== "undefined" && localStorage.getItem(storageKey)) {
+        if (goToCourses(cursosData)) return;
       }
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codigo]);
+
 
   /* Envia altura do documento para o parent quando embutido em iframe */
   useEffect(() => {
