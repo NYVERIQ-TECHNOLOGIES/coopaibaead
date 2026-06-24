@@ -93,7 +93,12 @@ export default function PresencaAssinar() {
       if (error) throw error;
       const result = data as any;
       if (result?.error) throw new Error(result.error);
-      setDone({ horario: result.horario });
+      const { data: cursosData } = await supabase.rpc("get_evento_cursos_publico" as any, { _codigo: evento.codigo });
+      const cursos = (cursosData as any[] | null) ?? [];
+      setDone({ horario: result.horario, cursos });
+      if (cursos.length === 1) {
+        setTimeout(() => navigate(`/courses/${cursos[0].id}`), 1500);
+      }
     } catch (err: any) {
       toast({ title: "Erro ao registrar", description: err.message, variant: "destructive" });
     } finally {
