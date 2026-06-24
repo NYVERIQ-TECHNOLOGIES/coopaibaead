@@ -46,19 +46,6 @@ export default function PresencaEvento() {
     enabled: !!id,
   });
 
-  const { data: linkedCourses = [] } = useQuery({
-    queryKey: ["presenca_evento_cursos", id],
-    enabled: !!id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("presenca_evento_cursos" as any)
-        .select("curso_id, courses:curso_id(id, title, description, image, duration)")
-        .eq("evento_id", id!);
-      if (error) throw error;
-      return (data ?? []).map((r: any) => r.courses).filter(Boolean);
-    },
-  });
-
   useEffect(() => {
     if (!id) return;
     const ch = supabase
