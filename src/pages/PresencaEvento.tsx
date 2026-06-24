@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Copy, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, Copy, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function PresencaEvento() {
   const { id } = useParams();
@@ -43,6 +44,19 @@ export default function PresencaEvento() {
       return data ?? [];
     },
     enabled: !!id,
+  });
+
+  const { data: linkedCourses = [] } = useQuery({
+    queryKey: ["presenca_evento_cursos", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("presenca_evento_cursos" as any)
+        .select("curso_id, courses:curso_id(id, title, description, image, duration)")
+        .eq("evento_id", id!);
+      if (error) throw error;
+      return (data ?? []).map((r: any) => r.courses).filter(Boolean);
+    },
   });
 
   useEffect(() => {
