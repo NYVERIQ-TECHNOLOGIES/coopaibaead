@@ -25,7 +25,7 @@ const navItems = [
   { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
-  { label: "Cooperados Eventuais", icon: Sparkles, path: "/cooperados-eventuais" },
+  { label: "Cooperados Eventuais", icon: Sparkles, path: "/cooperados-eventuais", cooperadoExcluded: true },
   { label: "Gestão Cooperados Eventuais", icon: Sparkles, path: "/admin/cooperados-eventuais", adminOnly: true },
   { label: "Fórum", icon: MessageSquare, path: "/forum" },
   { label: "Suporte", icon: Headphones, path: "/support", moderatorAllowed: true },
@@ -49,6 +49,7 @@ export default function AppSidebar() {
 
   const filteredNav = navItems.filter((item: any) => {
     if (isModerator) return !!item.moderatorAllowed;
+    if (isCooperado && item.cooperadoExcluded) return false;
     if (isCooperado && item.cooperadoAllowed) return true;
     if (item.adminOnly && !isAdmin) return false;
     if (item.studentOnly && isAdmin) return false;
