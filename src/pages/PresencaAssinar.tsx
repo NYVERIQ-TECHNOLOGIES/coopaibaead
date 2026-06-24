@@ -134,7 +134,7 @@ export default function PresencaAssinar() {
       if (result?.error) throw new Error(result.error);
       try { localStorage.setItem(storageKey, String(Date.now())); } catch {}
       // Redireciona automaticamente para o(s) curso(s) vinculado(s)
-      if (goToCourses(cursos)) return;
+      if (goToCourses(cursos, form.nome.trim())) return;
       setDone({ horario: result.horario });
     } catch (err: any) {
       toast({ title: "Erro ao registrar", description: err.message, variant: "destructive" });
