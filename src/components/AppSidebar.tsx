@@ -21,7 +21,7 @@ const navItems = [
   { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
   { label: "Não listados", icon: UserX, path: "/unlisted-users", adminOnly: true },
   { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
-  { label: "Dia de Campo", icon: ClipboardCheck, path: "/presenca", adminOnly: true, moderatorAllowed: true },
+  { label: "Dia de Campo", icon: ClipboardCheck, path: "/presenca", moderatorAllowed: true },
   { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
