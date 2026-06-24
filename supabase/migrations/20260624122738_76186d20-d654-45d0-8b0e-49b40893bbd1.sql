@@ -1,0 +1,1 @@
+CREATE POLICY "Cooperados veem eventos" ON public.presenca_eventos FOR SELECT TO authenticated USING (has_role(auth.uid(), 'cooperado'::app_role));
