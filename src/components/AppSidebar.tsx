@@ -25,7 +25,7 @@ const navItems = [
   { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
   { label: "Biblioteca", icon: Library, path: "/library" },
   { label: "Certificados", icon: Award, path: "/certificates" },
-  { label: "Cooperados Eventuais", icon: Sparkles, path: "/cooperados-eventuais" },
+  { label: "Cooperados Eventuais", icon: Sparkles, path: "/cooperados-eventuais", cooperadoExcluded: true },
   { label: "Gestão Cooperados Eventuais", icon: Sparkles, path: "/admin/cooperados-eventuais", adminOnly: true },
   { label: "Fórum", icon: MessageSquare, path: "/forum" },
   { label: "Suporte", icon: Headphones, path: "/support", moderatorAllowed: true },
