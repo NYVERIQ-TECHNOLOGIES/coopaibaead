@@ -1916,6 +1916,15 @@ export type Database = {
           total_without_enrollment: number
         }[]
       }
+      get_evento_cursos_publico: {
+        Args: { _codigo: string }
+        Returns: {
+          description: string
+          id: string
+          image: string
+          title: string
+        }[]
+      }
       get_evento_publico: {
         Args: { _codigo: string }
         Returns: {
