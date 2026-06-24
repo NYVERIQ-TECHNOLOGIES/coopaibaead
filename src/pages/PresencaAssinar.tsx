@@ -9,9 +9,12 @@ import { BookOpen, CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
 import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
 import { isValidCPF, maskCPF, onlyDigits } from "@/lib/cpf";
 import logoImg from "@/assets/logo-coopaiba.png";
+import { Progress } from "@/components/ui/progress";
 
 
 const isIframe = () => typeof window !== "undefined" && window.self !== window.top;
+
+const REDIRECT_DELAY_MS = 3000;
 
 type Tipo = "digitada" | "checkin";
 
