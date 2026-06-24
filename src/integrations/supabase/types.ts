@@ -2061,6 +2061,10 @@ export type Database = {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
+      tem_acesso_curso_via_presenca: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
       validate_certificate: {
         Args: { _code: string }
         Returns: {
