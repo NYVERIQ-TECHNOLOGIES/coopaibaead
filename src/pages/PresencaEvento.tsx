@@ -9,8 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, BookOpen, Copy, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowLeft, Copy, Download, ExternalLink, FileSpreadsheet, FileText, Lock, Unlock, Pencil, Search, Users } from "lucide-react";
+
 
 export default function PresencaEvento() {
   const { id } = useParams();
