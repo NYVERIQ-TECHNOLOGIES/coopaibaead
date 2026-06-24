@@ -146,6 +146,28 @@ export default function PresencaAssinar() {
     }
   };
 
+  if (redirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center shadow-elevated">
+          <CheckCircle2 className="w-14 h-14 mx-auto text-success mb-4" />
+          <h1 className="text-xl font-heading font-bold text-card-foreground">
+            {redirecting.nome}
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Preparando seu acesso ao curso…
+          </p>
+          <div className="mt-6">
+            <Progress value={redirecting.progress} className="h-2" />
+            <p className="text-xs text-muted-foreground mt-2">
+              {Math.round(redirecting.progress)}%
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -153,6 +175,7 @@ export default function PresencaAssinar() {
       </div>
     );
   }
+
 
   if (!evento) {
     return (
