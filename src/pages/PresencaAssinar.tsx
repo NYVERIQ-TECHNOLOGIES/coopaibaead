@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
+import { BookOpen, CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
 import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
 import { isValidCPF, maskCPF, onlyDigits } from "@/lib/cpf";
 import logoImg from "@/assets/logo-coopaiba.png";
+
 
 const isIframe = () => typeof window !== "undefined" && window.self !== window.top;
 
@@ -16,7 +17,9 @@ type Tipo = "digitada" | "checkin";
 
 export default function PresencaAssinar() {
   const { codigo } = useParams();
+  const navigate = useNavigate();
   const [evento, setEvento] = useState<any>(null);
+  const [cursos, setCursos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ horario: string } | null>(null);
@@ -24,19 +27,41 @@ export default function PresencaAssinar() {
   const [form, setForm] = useState({ nome: "", cpf: "", assinaturaTexto: "" });
   const sigRef = useRef<SignaturePadHandle>(null);
 
+  const storageKey = `presenca:${codigo}`;
+
+  const goToCourses = (list: any[]) => {
+    if (!list || list.length === 0) return false;
+    // Se embutido em iframe, abre na janela principal
+    const target = list.length === 1 ? `/courses/${list[0].id}` : `/courses`;
+    if (isIframe()) {
+      window.top?.location.assign(target);
+    } else {
+      navigate(target);
+    }
+    return true;
+  };
+
   useEffect(() => {
     (async () => {
-      // Tenta encerrar eventos vencidos antes de ler
       try { await supabase.rpc("encerrar_eventos_vencidos" as any); } catch {}
-      const { data, error } = await supabase.rpc("get_evento_publico", { _codigo: codigo! });
-      if (error || !data || (Array.isArray(data) && data.length === 0)) {
-        setEvento(null);
-      } else {
-        setEvento(Array.isArray(data) ? data[0] : data);
+      const [{ data: ev }, { data: cs }] = await Promise.all([
+        supabase.rpc("get_evento_publico", { _codigo: codigo! }),
+        supabase.rpc("get_evento_cursos_publico" as any, { _codigo: codigo! }),
+      ]);
+      const eventoData = Array.isArray(ev) ? ev[0] : ev;
+      const cursosData = (cs as any[]) ?? [];
+      setEvento(eventoData ?? null);
+      setCursos(cursosData);
+
+      // Se já registrou presença neste dispositivo, vai direto pro curso
+      if (eventoData && typeof window !== "undefined" && localStorage.getItem(storageKey)) {
+        if (goToCourses(cursosData)) return;
       }
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codigo]);
+
 
   /* Envia altura do documento para o parent quando embutido em iframe */
   useEffect(() => {
@@ -92,6 +117,9 @@ export default function PresencaAssinar() {
       if (error) throw error;
       const result = data as any;
       if (result?.error) throw new Error(result.error);
+      try { localStorage.setItem(storageKey, String(Date.now())); } catch {}
+      // Redireciona automaticamente para o(s) curso(s) vinculado(s)
+      if (goToCourses(cursos)) return;
       setDone({ horario: result.horario });
     } catch (err: any) {
       toast({ title: "Erro ao registrar", description: err.message, variant: "destructive" });
@@ -140,10 +168,29 @@ export default function PresencaAssinar() {
           <p className="text-sm text-muted-foreground mt-1">
             Horário: {new Date(done.horario).toLocaleString("pt-BR")}
           </p>
+          {cursos.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <p className="text-sm font-medium text-card-foreground">Acesse os cursos deste evento:</p>
+              {cursos.map((c) => (
+                <Button
+                  key={c.id}
+                  className="w-full justify-start"
+                  onClick={() => {
+                    const url = `/courses/${c.id}`;
+                    if (isIframe()) window.top?.location.assign(url);
+                    else navigate(url);
+                  }}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" /> {c.title}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen bg-background">
