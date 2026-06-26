@@ -6,7 +6,7 @@ import logoImg from "@/assets/logo-coopaiba.png";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardCheck,
   BarChart3, Library, Award, Settings,
-  ChevronLeft, ChevronRight, LogOut, Shield, Menu, X, Upload, MessageSquare, Activity, Headphones, UserX, CreditCard, Sparkles
+  ChevronLeft, ChevronRight, LogOut, Shield, ShieldCheck, Menu, X, Upload, MessageSquare, Activity, Headphones, UserX, CreditCard, Sparkles
 } from "lucide-react";
 
 // adminOnly: visível apenas para admin
