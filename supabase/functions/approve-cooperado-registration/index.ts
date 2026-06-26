@@ -83,14 +83,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Approve: create the account
+    // Approve: create the account with the standard default password
     const cpf = pending.cpf as string;
     const syntheticEmail = `cpf${cpf}@cooperado.coopaiba.com.br`;
-    const tempPassword = randomPassword();
+    const DEFAULT_PASSWORD = "Coopaiba@2026";
 
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email: syntheticEmail,
-      password: tempPassword,
+      password: DEFAULT_PASSWORD,
       email_confirm: true,
       user_metadata: {
         full_name: pending.full_name,
@@ -115,8 +115,6 @@ Deno.serve(async (req) => {
     await admin.from("user_roles").delete().eq("user_id", userId);
     await admin.from("user_roles").insert({ user_id: userId, role: "cooperado" });
 
-
-
     await admin.from("cooperado_pending_registrations")
       .update({
         status: "approved",
@@ -125,30 +123,18 @@ Deno.serve(async (req) => {
       })
       .eq("id", registration_id);
 
-    // Generate a one-time recovery link instead of returning a plaintext password
-    let recoveryLink: string | null = null;
-    try {
-      const { data: linkData } = await admin.auth.admin.generateLink({
-        type: "recovery",
-        email: syntheticEmail,
-      });
-      recoveryLink = (linkData as { properties?: { action_link?: string } } | null)
-        ?.properties?.action_link ?? null;
-    } catch (e) {
-      console.error("generateLink failed:", e);
-    }
-
     return new Response(
       JSON.stringify({
         success: true,
         status: "approved",
         user_id: userId,
         login_email: syntheticEmail,
-        recovery_link: recoveryLink,
-        note: "Compartilhe o link de recuperação com o cooperado para que ele defina sua senha.",
+        default_password: DEFAULT_PASSWORD,
+        note: "Compartilhe o login e a senha padrão com o cooperado.",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+
   } catch (err) {
     console.error("approve-cooperado-registration error:", err);
     return new Response(JSON.stringify({ error: "Erro interno" }), {
