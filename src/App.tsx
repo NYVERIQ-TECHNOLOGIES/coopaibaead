@@ -134,6 +134,7 @@ const App = () => (
               <Route path="/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CooperadosEventuaisDetalhe /></ProtectedRoute>} />
               <Route path="/admin/cooperados-eventuais" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhas /></ProtectedRoute>} />
               <Route path="/admin/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhaDetalhe /></ProtectedRoute>} />
+              <Route path="/admin/cooperados-pendentes" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCooperadosPendentes /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
