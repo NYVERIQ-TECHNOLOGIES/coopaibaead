@@ -55,6 +55,7 @@ import CooperadosEventuaisList from "@/pages/CooperadosEventuaisList";
 import CooperadosEventuaisDetalhe from "@/pages/CooperadosEventuaisDetalhe";
 import AdminCampanhas from "@/pages/admin/AdminCampanhas";
 import AdminCampanhaDetalhe from "@/pages/admin/AdminCampanhaDetalhe";
+import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
