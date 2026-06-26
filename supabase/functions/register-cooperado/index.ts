@@ -193,14 +193,11 @@ Deno.serve(async (req) => {
     if (autoApprove) {
       try {
         const syntheticEmail = `cpf${cleanCpf}@cooperado.coopaiba.com.br`;
-        const randBytes = new Uint8Array(32);
-        crypto.getRandomValues(randBytes);
-        const tempPassword =
-          btoa(String.fromCharCode(...randBytes)).replace(/[^A-Za-z0-9]/g, "") + "Aa1!";
+        const DEFAULT_PASSWORD = "Coopaiba@2026";
 
         const { data: created, error: createErr } = await admin.auth.admin.createUser({
           email: syntheticEmail,
-          password: tempPassword,
+          password: DEFAULT_PASSWORD,
           email_confirm: true,
           user_metadata: {
             full_name: name,
@@ -230,14 +227,16 @@ Deno.serve(async (req) => {
               pending: false,
               auto_approved: true,
               login_email: syntheticEmail,
+              default_password: DEFAULT_PASSWORD,
               message:
-                "Cadastro aprovado automaticamente. Use 'Esqueci minha senha' para definir sua senha.",
+                "Cadastro aprovado automaticamente. Use a senha padrão Coopaiba@2026 para entrar.",
             }),
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
           );
         } else {
           console.error("auto-approve createUser failed:", createErr);
         }
+
       } catch (e) {
         console.error("auto-approve error:", e);
       }
