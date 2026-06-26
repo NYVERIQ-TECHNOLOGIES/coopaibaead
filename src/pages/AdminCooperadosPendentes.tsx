@@ -101,21 +101,24 @@ export default function AdminCooperadosPendentes() {
     setActionId(null);
     if (error) return toast.error(error.message);
     if ((data as { error?: string })?.error) return toast.error((data as { error: string }).error);
-    const link = (data as { recovery_link?: string })?.recovery_link;
     const loginEmail = (data as { login_email?: string })?.login_email;
+    const defaultPassword = (data as { default_password?: string })?.default_password ?? "Coopaiba@2026";
     toast.success("Cooperado aprovado", {
-      description: loginEmail ? `Login: ${loginEmail}` : undefined,
-      action: link
+      description: loginEmail
+        ? `Login: ${loginEmail} • Senha padrão: ${defaultPassword}`
+        : `Senha padrão: ${defaultPassword}`,
+      action: loginEmail
         ? {
-            label: "Copiar link de senha",
+            label: "Copiar login",
             onClick: () => {
-              navigator.clipboard.writeText(link);
-              toast.success("Link copiado");
+              navigator.clipboard.writeText(`${loginEmail} / ${defaultPassword}`);
+              toast.success("Login copiado");
             },
           }
         : undefined,
       duration: 15000,
     });
+
     load();
   };
 
