@@ -55,6 +55,7 @@ import CooperadosEventuaisList from "@/pages/CooperadosEventuaisList";
 import CooperadosEventuaisDetalhe from "@/pages/CooperadosEventuaisDetalhe";
 import AdminCampanhas from "@/pages/admin/AdminCampanhas";
 import AdminCampanhaDetalhe from "@/pages/admin/AdminCampanhaDetalhe";
+import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -133,6 +134,7 @@ const App = () => (
               <Route path="/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CooperadosEventuaisDetalhe /></ProtectedRoute>} />
               <Route path="/admin/cooperados-eventuais" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhas /></ProtectedRoute>} />
               <Route path="/admin/cooperados-eventuais/:id" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCampanhaDetalhe /></ProtectedRoute>} />
+              <Route path="/admin/cooperados-pendentes" element={<ProtectedRoute allowedRoles={["admin"]}><AdminCooperadosPendentes /></ProtectedRoute>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

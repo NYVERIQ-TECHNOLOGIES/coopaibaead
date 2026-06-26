@@ -161,19 +161,86 @@ Deno.serve(async (req) => {
     // at approval time by the admin-approval edge function.
     void password;
 
-    const { error: insErr } = await admin.from("cooperado_pending_registrations").insert({
-      full_name: name,
-      cpf: cleanCpf,
-      email: email ? String(email).trim().toLowerCase() : null,
-      cooperativa: cooperativa || null,
-      status: "pending",
-    });
+    const { data: pendingRow, error: insErr } = await admin
+      .from("cooperado_pending_registrations")
+      .insert({
+        full_name: name,
+        cpf: cleanCpf,
+        email: email ? String(email).trim().toLowerCase() : null,
+        cooperativa: cooperativa || null,
+        status: "pending",
+      })
+      .select("id")
+      .single();
 
     if (insErr) {
       return new Response(JSON.stringify({ error: insErr.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Auto-approval: if app_settings.cooperado_auto_approve.enabled is true,
+    // immediately create the auth user and promote to cooperado.
+    const { data: settingRow } = await admin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "cooperado_auto_approve")
+      .maybeSingle();
+    const autoApprove =
+      (settingRow?.value as { enabled?: boolean } | null)?.enabled === true;
+
+    if (autoApprove) {
+      try {
+        const syntheticEmail = `cpf${cleanCpf}@cooperado.coopaiba.com.br`;
+        const randBytes = new Uint8Array(32);
+        crypto.getRandomValues(randBytes);
+        const tempPassword =
+          btoa(String.fromCharCode(...randBytes)).replace(/[^A-Za-z0-9]/g, "") + "Aa1!";
+
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
+          email: syntheticEmail,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: name,
+            cpf: cleanCpf,
+            cooperativa: cooperativa || null,
+            user_type: "cooperado",
+          },
+        });
+
+        if (!createErr && created?.user) {
+          const userId = created.user.id;
+          await admin.from("profiles").update({
+            full_name: name,
+            cpf: cleanCpf,
+            cooperativa: cooperativa || null,
+          }).eq("user_id", userId);
+          await admin.from("user_roles").delete().eq("user_id", userId);
+          await admin.from("user_roles").insert({ user_id: userId, role: "cooperado" });
+          await admin.from("cooperado_pending_registrations").update({
+            status: "approved",
+            reviewed_at: new Date().toISOString(),
+          }).eq("id", pendingRow!.id);
+
+          return new Response(
+            JSON.stringify({
+              success: true,
+              pending: false,
+              auto_approved: true,
+              login_email: syntheticEmail,
+              message:
+                "Cadastro aprovado automaticamente. Use 'Esqueci minha senha' para definir sua senha.",
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        } else {
+          console.error("auto-approve createUser failed:", createErr);
+        }
+      } catch (e) {
+        console.error("auto-approve error:", e);
+      }
     }
 
     return new Response(
