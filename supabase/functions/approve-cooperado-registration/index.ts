@@ -144,7 +144,8 @@ Deno.serve(async (req) => {
       userId = existing.id;
     }
 
-    const userId = created.user.id;
+    const userIdConst = userId!;
+    void userIdConst;
     await admin.from("profiles").update({
       full_name: pending.full_name,
       cpf,
