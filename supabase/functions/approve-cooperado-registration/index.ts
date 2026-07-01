@@ -93,25 +93,57 @@ Deno.serve(async (req) => {
     const syntheticEmail = `cpf${cpf}@cooperado.coopaiba.com.br`;
     const DEFAULT_PASSWORD = "Coopaiba@2026";
 
+    const userMeta = {
+      full_name: pending.full_name,
+      cpf,
+      cooperativa: pending.cooperativa ?? null,
+      user_type: "cooperado",
+    };
+
+    let userId: string | null = null;
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email: syntheticEmail,
       password: DEFAULT_PASSWORD,
       email_confirm: true,
-      user_metadata: {
-        full_name: pending.full_name,
-        cpf,
-        cooperativa: pending.cooperativa ?? null,
-        user_type: "cooperado",
-      },
+      user_metadata: userMeta,
     });
-    if (createErr || !created?.user) {
-      return new Response(
-        JSON.stringify({ error: createErr?.message ?? "Falha ao criar conta" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+
+    if (created?.user) {
+      userId = created.user.id;
+    } else {
+      // Likely already exists — find and reset password
+      const msg = (createErr as { message?: string; code?: string; status?: number } | null)?.message ?? "";
+      console.error("createUser failed:", JSON.stringify(createErr));
+      const { data: list, error: listErr } = await admin.auth.admin.listUsers({
+        page: 1, perPage: 200,
+      });
+      if (listErr) {
+        return new Response(
+          JSON.stringify({ error: `Falha ao criar conta: ${msg || listErr.message}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const existing = list.users.find((u) => u.email?.toLowerCase() === syntheticEmail.toLowerCase());
+      if (!existing) {
+        return new Response(
+          JSON.stringify({ error: `Falha ao criar conta: ${msg || "erro desconhecido"}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const { error: updErr } = await admin.auth.admin.updateUserById(existing.id, {
+        password: DEFAULT_PASSWORD,
+        email_confirm: true,
+        user_metadata: userMeta,
+      });
+      if (updErr) {
+        return new Response(
+          JSON.stringify({ error: `Conta já existe, falha ao redefinir: ${updErr.message}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      userId = existing.id;
     }
 
-    const userId = created.user.id;
     await admin.from("profiles").update({
       full_name: pending.full_name,
       cpf,
