@@ -57,6 +57,61 @@ export default function Certificates() {
   const [cancelCert, setCancelCert] = useState<Cert | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [auditCert, setAuditCert] = useState<Cert | null>(null);
+  const [downloadingAll, setDownloadingAll] = useState(false);
+
+  const downloadAllZip = async () => {
+    const eligible = filtered.filter((c: any) =>
+      c.pdf_path && (isStaff || c.delivery_mode !== "retirada") && c.status !== "cancelado"
+    );
+    if (eligible.length === 0) {
+      toast({ title: "Nenhum certificado disponível para download", variant: "destructive" });
+      return;
+    }
+    setDownloadingAll(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      const { data: { session } } = await supabase.auth.getSession();
+      const base = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-certificate`;
+      let ok = 0, fail = 0, cursor = 0;
+      const runOne = async (cert: any) => {
+        try {
+          const res = await fetch(`${base}?code=${encodeURIComponent(cert.code)}&download=1`, {
+            headers: { Authorization: `Bearer ${session?.access_token}` },
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const blob = await res.blob();
+          const name = ((cert as any).profiles?.full_name || cert.student_name_snapshot || "aluno")
+            .replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_");
+          zip.file(`${name}-${cert.code}.pdf`, blob);
+          ok++;
+        } catch (e) {
+          console.error("download failed", cert.code, e);
+          fail++;
+        }
+      };
+      const workers = Array.from({ length: 3 }, async () => {
+        while (cursor < eligible.length) {
+          const i = cursor++;
+          await runOne(eligible[i]);
+        }
+      });
+      toast({ title: "Preparando ZIP", description: `Baixando ${eligible.length} certificados...` });
+      await Promise.all(workers);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `certificados-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      toast({ title: "Download concluído", description: `${ok}/${eligible.length} incluídos (${fail} falhas).` });
+    } catch (e: any) {
+      toast({ title: "Erro no download em lote", description: e.message, variant: "destructive" });
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
 
   const { data: certificates = [], isLoading } = useQuery({
     queryKey: ["certificates", isAdmin, user?.id],
@@ -395,8 +450,14 @@ export default function Certificates() {
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Certificados</h1>
           <p className="text-muted-foreground mt-1">Gerencie certificados, modelos e retirada presencial</p>
         </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" className="gap-2" onClick={downloadAllZip} disabled={downloadingAll}>
+            {downloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloadingAll ? "Baixando..." : "Baixar todos"}
+          </Button>
         {isStaff && (
-          <div className="flex gap-2 flex-wrap">
+          <>
+
             {isAdmin && (
               <Button onClick={() => setGenerateOpen(true)} className="gap-2">
                 <Plus className="w-4 h-4" /> Gerar Certificado
@@ -478,8 +539,10 @@ export default function Certificates() {
               </Button>
             )}
 
-          </div>
+          </>
         )}
+        </div>
+
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
