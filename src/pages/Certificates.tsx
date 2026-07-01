@@ -450,8 +450,14 @@ export default function Certificates() {
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Certificados</h1>
           <p className="text-muted-foreground mt-1">Gerencie certificados, modelos e retirada presencial</p>
         </div>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" className="gap-2" onClick={downloadAllZip} disabled={downloadingAll}>
+            {downloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloadingAll ? "Baixando..." : "Baixar todos"}
+          </Button>
         {isStaff && (
-          <div className="flex gap-2 flex-wrap">
+          <>
+
             {isAdmin && (
               <Button onClick={() => setGenerateOpen(true)} className="gap-2">
                 <Plus className="w-4 h-4" /> Gerar Certificado
