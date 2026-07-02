@@ -212,29 +212,34 @@ export default function PresencaEvento() {
               <Input className="pl-9" placeholder="Buscar..." value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto overflow-y-auto max-h-[600px] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-primary/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-muted/30">
             <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30 text-xs text-muted-foreground uppercase">
+              <thead className="sticky top-0 z-10 bg-muted/80 backdrop-blur">
+                <tr className="border-b border-border text-xs text-muted-foreground uppercase">
                   <th className="text-left py-2 px-4">Nome</th>
                   <th className="text-left py-2 px-4">CPF</th>
                   <th className="text-left py-2 px-4">Matrícula</th>
-                  <th className="text-left py-2 px-4">Horário</th>
+                  <th className="text-left py-2 px-4">Data / Horário</th>
                   <th className="text-left py-2 px-4">Tipo</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
                   <tr><td colSpan={5} className="text-center py-8 text-muted-foreground">Nenhuma presença ainda</td></tr>
-                ) : filtered.map((a: any) => (
-                  <tr key={a.id} className="border-b border-border last:border-0 text-sm">
-                    <td className="py-2 px-4 font-medium text-card-foreground">{a.nome}</td>
-                    <td className="py-2 px-4 text-muted-foreground">{a.cpf || "—"}</td>
-                    <td className="py-2 px-4 text-muted-foreground">{a.matricula || "—"}</td>
-                    <td className="py-2 px-4 text-muted-foreground">{new Date(a.horario).toLocaleTimeString("pt-BR")}</td>
-                    <td className="py-2 px-4"><span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary capitalize">{a.assinatura_tipo}</span></td>
-                  </tr>
-                ))}
+                ) : filtered.map((a: any) => {
+                  const d = new Date(a.horario);
+                  return (
+                    <tr key={a.id} className="border-b border-border last:border-0 text-sm hover:bg-muted/30">
+                      <td className="py-2 px-4 font-medium text-card-foreground">{a.nome}</td>
+                      <td className="py-2 px-4 text-muted-foreground">{a.cpf || "—"}</td>
+                      <td className="py-2 px-4 text-muted-foreground">{a.matricula || "—"}</td>
+                      <td className="py-2 px-4 text-muted-foreground whitespace-nowrap">
+                        {d.toLocaleDateString("pt-BR")} <span className="text-foreground/60">·</span> {d.toLocaleTimeString("pt-BR")}
+                      </td>
+                      <td className="py-2 px-4"><span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary capitalize">{a.assinatura_tipo}</span></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
