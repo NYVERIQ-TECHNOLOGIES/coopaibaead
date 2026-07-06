@@ -573,27 +573,36 @@ export default function Certificates() {
           </TabsList>
 
           <TabsContent value="certificates" className="space-y-4">
-            <AdminFilters
-              search={search} setSearch={setSearch}
-              filterStatus={filterStatus} setFilterStatus={setFilterStatus}
-              filterCourse={filterCourse} setFilterCourse={setFilterCourse}
-              filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
-              filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
-              clearFilters={clearFilters} courses={courses}
-            />
-            <CertificatesTable
-              filtered={filtered}
-              isLoading={isLoading}
-              isStaff={isStaff}
-              isAdmin={isAdmin}
-              formatIssuerProfile={formatIssuerProfile}
-              onPickup={(c) => setPickupCert(c)}
-              onPrint={printCert}
-              onReceipt={(c) => printReceipt(c)}
-              onReissue={(c) => reissueCert.mutate(c)}
-              onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
-              onAudit={(c) => setAuditCert(c)}
-            />
+            <div className="flex flex-col lg:flex-row gap-4">
+              <aside className="lg:w-72 lg:flex-shrink-0">
+                <div className="lg:sticky lg:top-4">
+                  <AdminFilters
+                    search={search} setSearch={setSearch}
+                    filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+                    filterCourse={filterCourse} setFilterCourse={setFilterCourse}
+                    filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
+                    filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
+                    clearFilters={clearFilters} courses={courses}
+                    resultsCount={filtered.length}
+                  />
+                </div>
+              </aside>
+              <div className="flex-1 min-w-0">
+                <CertificatesTable
+                  filtered={filtered}
+                  isLoading={isLoading}
+                  isStaff={isStaff}
+                  isAdmin={isAdmin}
+                  formatIssuerProfile={formatIssuerProfile}
+                  onPickup={(c) => setPickupCert(c)}
+                  onPrint={printCert}
+                  onReceipt={(c) => printReceipt(c)}
+                  onReissue={(c) => reissueCert.mutate(c)}
+                  onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
+                  onAudit={(c) => setAuditCert(c)}
+                />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-4">
@@ -785,27 +794,40 @@ function AdminFilters(props: {
   filterDateTo: string; setFilterDateTo: (v: string) => void;
   clearFilters: () => void;
   courses: { id: string; title: string }[];
+  resultsCount?: number;
 }) {
   const hasFilters = props.search || props.filterStatus !== "todos" || props.filterCourse !== "todos" || props.filterDateFrom || props.filterDateTo;
   return (
-    <div className="bg-card rounded-xl border border-border p-4 space-y-3 overflow-hidden">
-      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-        <Filter className="w-4 h-4" /> Filtros
+    <div className="bg-card rounded-xl border border-border p-4 space-y-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Filter className="w-4 h-4 text-primary" /> Filtros
         {hasFilters && (
-          <Button size="sm" variant="ghost" className="ml-auto gap-1 h-7" onClick={props.clearFilters}>
+          <Button size="sm" variant="ghost" className="ml-auto gap-1 h-7 text-xs" onClick={props.clearFilters}>
             <X className="w-3.5 h-3.5" /> Limpar
           </Button>
         )}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3 w-full">
-        <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2 relative min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <Input value={props.search} onChange={(e) => props.setSearch(e.target.value)}
-            placeholder="Nome, CPF, curso ou código…" className="pl-9 w-full" />
+
+      {typeof props.resultsCount === "number" && (
+        <div className="text-xs text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
+          <span className="font-semibold text-foreground">{props.resultsCount}</span> resultado(s)
         </div>
-        <div className="min-w-0">
+      )}
+
+      <div className="space-y-3">
+        <div>
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Buscar</Label>
+          <div className="relative mt-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input value={props.search} onChange={(e) => props.setSearch(e.target.value)}
+              placeholder="Nome, CPF, curso…" className="pl-9 w-full" />
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Status</Label>
           <Select value={props.filterStatus} onValueChange={props.setFilterStatus}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="w-full mt-1"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os status</SelectItem>
               <SelectItem value="pendente">Em processamento</SelectItem>
@@ -817,22 +839,27 @@ function AdminFilters(props: {
             </SelectContent>
           </Select>
         </div>
-        <div className="min-w-0">
+
+        <div>
+          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Curso</Label>
           <Select value={props.filterCourse} onValueChange={props.setFilterCourse}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Curso" /></SelectTrigger>
+            <SelectTrigger className="w-full mt-1"><SelectValue placeholder="Curso" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os cursos</SelectItem>
               {props.courses.map((c) => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
-        <div className="min-w-0">
-          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">De</Label>
-          <Input type="date" className="w-full" value={props.filterDateFrom} onChange={(e) => props.setFilterDateFrom(e.target.value)} />
-        </div>
-        <div className="min-w-0">
-          <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Até</Label>
-          <Input type="date" className="w-full" value={props.filterDateTo} onChange={(e) => props.setFilterDateTo(e.target.value)} />
+
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">De</Label>
+            <Input type="date" className="w-full mt-1" value={props.filterDateFrom} onChange={(e) => props.setFilterDateFrom(e.target.value)} />
+          </div>
+          <div>
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Até</Label>
+            <Input type="date" className="w-full mt-1" value={props.filterDateTo} onChange={(e) => props.setFilterDateTo(e.target.value)} />
+          </div>
         </div>
       </div>
     </div>
