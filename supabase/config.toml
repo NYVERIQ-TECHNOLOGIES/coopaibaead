@@ -17,3 +17,7 @@ verify_jwt = false
 
 [functions.registrar-presenca]
 verify_jwt = false
+
+[functions.mcp]
+verify_jwt = false
+
