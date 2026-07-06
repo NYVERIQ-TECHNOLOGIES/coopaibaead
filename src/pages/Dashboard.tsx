@@ -33,7 +33,7 @@ export default function Dashboard() {
         supabase.from("courses").select("id", { count: "exact", head: true }),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "cooperado"),
-        supabase.from("certificates").select("id", { count: "exact", head: true }).eq("status", "emitido"),
+        supabase.from("certificates").select("id", { count: "exact", head: true }).in("status", ["emitido", "disponivel_retirada", "retirado"]),
         supabase.from("enrollments").select("id", { count: "exact", head: true }),
       ]);
       return {
