@@ -573,27 +573,36 @@ export default function Certificates() {
           </TabsList>
 
           <TabsContent value="certificates" className="space-y-4">
-            <AdminFilters
-              search={search} setSearch={setSearch}
-              filterStatus={filterStatus} setFilterStatus={setFilterStatus}
-              filterCourse={filterCourse} setFilterCourse={setFilterCourse}
-              filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
-              filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
-              clearFilters={clearFilters} courses={courses}
-            />
-            <CertificatesTable
-              filtered={filtered}
-              isLoading={isLoading}
-              isStaff={isStaff}
-              isAdmin={isAdmin}
-              formatIssuerProfile={formatIssuerProfile}
-              onPickup={(c) => setPickupCert(c)}
-              onPrint={printCert}
-              onReceipt={(c) => printReceipt(c)}
-              onReissue={(c) => reissueCert.mutate(c)}
-              onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
-              onAudit={(c) => setAuditCert(c)}
-            />
+            <div className="flex flex-col lg:flex-row gap-4">
+              <aside className="lg:w-72 lg:flex-shrink-0">
+                <div className="lg:sticky lg:top-4">
+                  <AdminFilters
+                    search={search} setSearch={setSearch}
+                    filterStatus={filterStatus} setFilterStatus={setFilterStatus}
+                    filterCourse={filterCourse} setFilterCourse={setFilterCourse}
+                    filterDateFrom={filterDateFrom} setFilterDateFrom={setFilterDateFrom}
+                    filterDateTo={filterDateTo} setFilterDateTo={setFilterDateTo}
+                    clearFilters={clearFilters} courses={courses}
+                    resultsCount={filtered.length}
+                  />
+                </div>
+              </aside>
+              <div className="flex-1 min-w-0">
+                <CertificatesTable
+                  filtered={filtered}
+                  isLoading={isLoading}
+                  isStaff={isStaff}
+                  isAdmin={isAdmin}
+                  formatIssuerProfile={formatIssuerProfile}
+                  onPickup={(c) => setPickupCert(c)}
+                  onPrint={printCert}
+                  onReceipt={(c) => printReceipt(c)}
+                  onReissue={(c) => reissueCert.mutate(c)}
+                  onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
+                  onAudit={(c) => setAuditCert(c)}
+                />
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="templates" className="space-y-4">
