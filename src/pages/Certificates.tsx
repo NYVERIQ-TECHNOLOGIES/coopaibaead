@@ -882,9 +882,9 @@ function CertificatesTable({
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
         <table className="w-full">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="border-b border-border bg-muted/30">
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Código</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Cooperado</th>
