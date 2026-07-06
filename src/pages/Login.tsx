@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
 import logoImg from "@/assets/logo-coopaiba.png";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
@@ -17,7 +17,15 @@ export default function Login() {
   const [mfaCode, setMfaCode] = useState("");
   const [verifyingMfa, setVerifyingMfa] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  const safeNext = (raw: string | null): string | null => {
+    if (!raw) return null;
+    // Only allow same-origin relative paths
+    if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+    return raw;
+  };
 
   const redirectAfterLogin = async () => {
     const {
@@ -38,6 +46,12 @@ export default function Login() {
         variant: "destructive",
       });
       navigate("/login", { replace: true });
+      return;
+    }
+
+    const next = safeNext(searchParams.get("next"));
+    if (next) {
+      navigate(next, { replace: true });
       return;
     }
 
