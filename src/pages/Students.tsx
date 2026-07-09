@@ -493,7 +493,7 @@ export default function Students() {
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
           <div className="overflow-auto max-h-[calc(100vh-280px)]">
-            <table className="w-full min-w-[1100px]">
+            <table className="w-full min-w-[1200px]">
               <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Matrícula</th>
