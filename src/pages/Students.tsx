@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, Download, FileBarChart, Power, FileSpreadsheet, MessageCircle, MoreVertical, Trash2, PowerOff } from "lucide-react";
+import { Search, Download, FileBarChart, Power, FileSpreadsheet, MessageCircle, MoreVertical, Trash2, PowerOff, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
