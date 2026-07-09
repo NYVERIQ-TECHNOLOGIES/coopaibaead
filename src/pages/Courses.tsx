@@ -458,6 +458,16 @@ export default function Courses() {
               <Label>Exclusivo para cooperados</Label>
             </div>
             <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+              <Switch checked={form.is_open} onCheckedChange={(v) => setForm({ ...form, is_open: v })} />
+              <div>
+                <Label>Curso aberto</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Quando desativado, o curso fica fechado. Somente administradores podem alterar esta opção.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 rounded-lg border border-border p-3">
               <Switch checked={form.eventual} onCheckedChange={(v) => setForm({ ...form, eventual: v })} />
               <div>
                 <Label>Curso eventual</Label>
