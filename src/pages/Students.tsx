@@ -31,6 +31,24 @@ export default function Students() {
   const navigate = useNavigate();
   const [hardDeleteFor, setHardDeleteFor] = useState<string | null>(null);
   const [chatLoadingFor, setChatLoadingFor] = useState<string | null>(null);
+  const [resetPwdFor, setResetPwdFor] = useState<{ id: string; name: string; email: string } | null>(null);
+  const isAdmin = role === "admin";
+
+  const resetPasswordMut = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: { userId, password: "Coopaiba@2026" },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      toast({ title: "Senha redefinida", description: "Nova senha: Coopaiba@2026" });
+      setResetPwdFor(null);
+    },
+    onError: (e: any) =>
+      toast({ title: "Erro ao redefinir senha", description: e.message, variant: "destructive" }),
+  });
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
