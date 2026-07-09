@@ -51,7 +51,9 @@ const emptyForm = {
   standalone_access_days: "" as string,
   premium_enabled: true,
   progressive_unlock: false,
+  is_open: true,
 };
+
 
 export default function Courses() {
   const [search, setSearch] = useState("");
