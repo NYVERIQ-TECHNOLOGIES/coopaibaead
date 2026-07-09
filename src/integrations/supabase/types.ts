@@ -788,6 +788,7 @@ export type Database = {
           id: string
           image: string | null
           intro_video_url: string | null
+          is_open: boolean
           is_paid: boolean
           premium_enabled: boolean
           price: number | null
@@ -807,6 +808,7 @@ export type Database = {
           id?: string
           image?: string | null
           intro_video_url?: string | null
+          is_open?: boolean
           is_paid?: boolean
           premium_enabled?: boolean
           price?: number | null
@@ -826,6 +828,7 @@ export type Database = {
           id?: string
           image?: string | null
           intro_video_url?: string | null
+          is_open?: boolean
           is_paid?: boolean
           premium_enabled?: boolean
           price?: number | null

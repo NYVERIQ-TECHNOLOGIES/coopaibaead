@@ -714,9 +714,31 @@ export default function CourseDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/courses" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Voltar aos cursos
-      </Link>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <Link to="/courses" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" /> Voltar aos cursos
+        </Link>
+        {isAdmin && (
+          <Button
+            variant={course.is_open === false ? "default" : "outline"}
+            size="sm"
+            className="gap-2"
+            onClick={async () => {
+              const next = !(course.is_open !== false);
+              const { error } = await supabase.from("courses").update({ is_open: next }).eq("id", courseId!);
+              if (error) {
+                toast({ title: "Erro", description: error.message, variant: "destructive" });
+                return;
+              }
+              toast({ title: next ? "Curso aberto" : "Curso fechado", description: next ? "O curso está disponível." : "O curso foi fechado." });
+              qc.invalidateQueries({ queryKey: ["course", courseId] });
+            }}
+          >
+            {course.is_open === false ? (<><Lock className="w-4 h-4" /> Curso fechado — abrir</>) : (<><CheckCircle className="w-4 h-4" /> Curso aberto — fechar</>)}
+          </Button>
+        )}
+      </div>
+
 
       {/* Hero */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
