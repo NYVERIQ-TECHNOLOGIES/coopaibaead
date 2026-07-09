@@ -111,7 +111,9 @@ export default function Courses() {
           : null,
         premium_enabled: values.premium_enabled,
         progressive_unlock: values.progressive_unlock,
+        is_open: values.is_open,
       };
+
       if (editingCourse) {
         const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
         if (error) throw error;
