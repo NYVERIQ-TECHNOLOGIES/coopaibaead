@@ -650,7 +650,7 @@ export default function Students() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={10} className="text-center py-8 text-muted-foreground">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
