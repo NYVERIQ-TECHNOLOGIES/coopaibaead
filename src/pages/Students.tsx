@@ -545,8 +545,29 @@ export default function Students() {
                       <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
                         {formatCpf((s as any).cpf) || "—"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground max-w-[240px] truncate" title={emailMap[s.user_id] || ""}>
-                        {emailMap[s.user_id] || "—"}
+                      <td className="py-3 px-4 text-sm text-muted-foreground max-w-[280px]">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate" title={emailMap[s.user_id] || ""}>
+                            {emailMap[s.user_id] || "—"}
+                          </span>
+                          {isAdmin && emailMap[s.user_id] && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Redefinir senha para padrão (Coopaiba@2026)"
+                              className="h-7 w-7 p-0 text-amber-600 hover:bg-amber-500/10 shrink-0"
+                              onClick={() =>
+                                setResetPwdFor({
+                                  id: s.user_id,
+                                  name: s.full_name || "Usuário",
+                                  email: emailMap[s.user_id],
+                                })
+                              }
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         {isSelf || isAdmin || isModerator ? (
