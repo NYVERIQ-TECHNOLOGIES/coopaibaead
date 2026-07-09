@@ -684,6 +684,28 @@ export default function Students() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!resetPwdFor} onOpenChange={(o) => !o && setResetPwdFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redefinir senha para o padrão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A senha de <strong>{resetPwdFor?.name}</strong> ({resetPwdFor?.email}) será
+              alterada para <strong>Coopaiba@2026</strong>. O usuário deverá usar essa senha
+              no próximo login.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resetPwdFor && resetPasswordMut.mutate(resetPwdFor.id)}
+              disabled={resetPasswordMut.isPending}
+            >
+              {resetPasswordMut.isPending ? "Redefinindo..." : "Redefinir senha"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
