@@ -551,25 +551,25 @@ export default function Students() {
                            {emailMap[s.user_id] || "—"}
                          </span>
                        </td>
-                       <td className="py-3 px-4">
-                         {isAdmin && emailMap[s.user_id] && (
-                           <Button
-                             size="sm"
-                             variant="outline"
-                             title="Redefinir senha para padrão (Coopaiba@2026)"
-                             className="h-8 gap-1.5 text-xs text-amber-600 border-amber-600/30 hover:bg-amber-500/10 hover:text-amber-600"
-                             onClick={() =>
-                               setResetPwdFor({
-                                 id: s.user_id,
-                                 name: s.full_name || "Usuário",
-                                 email: emailMap[s.user_id],
-                               })
-                             }
-                           >
-                             <KeyRound className="w-3.5 h-3.5" /> Redefinir
-                           </Button>
-                         )}
-                       </td>
+                        <td className="py-3 px-4">
+                          {role === "admin" && emailMap[s.user_id] && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              title="Redefinir senha para padrão (Coopaiba@2026)"
+                              className="h-8 gap-1.5 text-xs text-amber-600 border-amber-600/30 hover:bg-amber-500/10 hover:text-amber-600"
+                              onClick={() =>
+                                setResetPwdFor({
+                                  id: s.user_id,
+                                  name: s.full_name || "Usuário",
+                                  email: emailMap[s.user_id],
+                                })
+                              }
+                            >
+                              <KeyRound className="w-3.5 h-3.5" /> Redefinir
+                            </Button>
+                          )}
+                        </td>
                        <td className="py-3 px-4">
                         {isSelf || isAdmin || isModerator ? (
                           <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : s.role === "moderador" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
