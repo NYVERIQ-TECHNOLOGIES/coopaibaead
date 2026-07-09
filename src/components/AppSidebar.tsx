@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
@@ -6,41 +6,138 @@ import logoImg from "@/assets/logo-coopaiba.png";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardCheck,
   BarChart3, Library, Award, Settings,
-  ChevronLeft, ChevronRight, LogOut, Shield, ShieldCheck, Menu, X, Upload, MessageSquare, Activity, Headphones, UserX, CreditCard, Sparkles
+  ChevronLeft, ChevronRight, LogOut, Shield, ShieldCheck, Menu, X, Upload,
+  MessageSquare, Activity, Headphones, UserX, CreditCard, Sparkles,
+  Search, Star, ChevronDown, GraduationCap, Leaf, UsersRound,
+  TrendingUp, Wrench, LifeBuoy, MoreHorizontal, Pin,
 } from "lucide-react";
 
-// adminOnly: visível apenas para admin
-// studentOnly: visível apenas para aluno/cooperado
-// moderatorAllowed: também visível para o moderador (subset do adminOnly)
-// (sem flag): visível para alunos/cooperados/admin (não moderador, salvo flag)
-const navItems = [
-  
-  { label: "Dashboard", icon: LayoutDashboard, path: "/app", adminOnly: true, moderatorAllowed: true },
-  { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
-  { label: "Cursos", icon: BookOpen, path: "/courses" },
-  { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
-  { label: "Não listados", icon: UserX, path: "/unlisted-users", adminOnly: true },
-  { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
-  { label: "Dia de Campo", icon: ClipboardCheck, path: "/presenca", adminOnly: true, moderatorAllowed: true, cooperadoAllowed: true },
-  { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
-  { label: "Biblioteca", icon: Library, path: "/library" },
-  { label: "Certificados", icon: Award, path: "/certificates" },
-  { label: "Cooperados Eventuais", icon: Sparkles, path: "/cooperados-eventuais", cooperadoExcluded: true },
-  { label: "Gestão Cooperados Eventuais", icon: Sparkles, path: "/admin/cooperados-eventuais", adminOnly: true },
-  { label: "Autorizar Cooperados", icon: ShieldCheck, path: "/admin/cooperados-pendentes", adminOnly: true },
-  { label: "Fórum", icon: MessageSquare, path: "/forum" },
-  { label: "Suporte", icon: Headphones, path: "/support", moderatorAllowed: true },
-  { label: "Mídias", icon: Upload, path: "/media", adminOnly: true },
-  { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
-  { label: "Relatórios", icon: BarChart3, path: "/reports", adminOnly: true },
-  { label: "Assinaturas", icon: CreditCard, path: "/subscriptions", adminOnly: true },
-  { label: "Logs de Acesso", icon: Activity, path: "/admin-logs", adminOnly: true },
-  { label: "Configurações", icon: Settings, path: "/settings", moderatorAllowed: true },
+type NavItem = {
+  label: string;
+  icon: any;
+  path: string;
+  adminOnly?: boolean;
+  studentOnly?: boolean;
+  moderatorAllowed?: boolean;
+  cooperadoAllowed?: boolean;
+  cooperadoExcluded?: boolean;
+};
+
+type NavGroup = {
+  id: string;
+  label: string;
+  icon: any;
+  items: NavItem[];
+  defaultOpen?: boolean;
+};
+
+const groups: NavGroup[] = [
+  {
+    id: "principal",
+    label: "Principal",
+    icon: LayoutDashboard,
+    defaultOpen: true,
+    items: [
+      { label: "Dashboard", icon: LayoutDashboard, path: "/app", adminOnly: true, moderatorAllowed: true },
+      { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
+    ],
+  },
+  {
+    id: "ensino",
+    label: "Ensino",
+    icon: GraduationCap,
+    defaultOpen: true,
+    items: [
+      { label: "Cursos", icon: BookOpen, path: "/courses" },
+      { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
+      { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
+      { label: "Certificados", icon: Award, path: "/certificates" },
+      { label: "Fórum", icon: MessageSquare, path: "/forum" },
+    ],
+  },
+  {
+    id: "conteudo",
+    label: "Conteúdo",
+    icon: Library,
+    items: [
+      { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
+      { label: "Biblioteca", icon: Library, path: "/library" },
+      { label: "Mídias", icon: Upload, path: "/media", adminOnly: true },
+    ],
+  },
+  {
+    id: "campo",
+    label: "Campo & Eventos",
+    icon: Leaf,
+    items: [
+      { label: "Dia de Campo", icon: Leaf, path: "/presenca", adminOnly: true, moderatorAllowed: true, cooperadoAllowed: true },
+    ],
+  },
+  {
+    id: "cooperados",
+    label: "Cooperados",
+    icon: UsersRound,
+    items: [
+      { label: "Cooperados Eventuais", icon: Sparkles, path: "/cooperados-eventuais", cooperadoExcluded: true },
+      { label: "Gestão Eventuais", icon: Sparkles, path: "/admin/cooperados-eventuais", adminOnly: true },
+      { label: "Autorizar Cooperados", icon: ShieldCheck, path: "/admin/cooperados-pendentes", adminOnly: true },
+    ],
+  },
+  {
+    id: "gestao",
+    label: "Gestão",
+    icon: TrendingUp,
+    items: [
+      { label: "Relatórios", icon: BarChart3, path: "/reports", adminOnly: true },
+      { label: "Assinaturas", icon: CreditCard, path: "/subscriptions", adminOnly: true },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Administração",
+    icon: Wrench,
+    items: [
+      { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
+      { label: "Configurações", icon: Settings, path: "/settings", moderatorAllowed: true },
+      { label: "Logs de Acesso", icon: Activity, path: "/admin-logs", adminOnly: true },
+    ],
+  },
+  {
+    id: "suporte",
+    label: "Suporte",
+    icon: LifeBuoy,
+    items: [
+      { label: "Suporte", icon: Headphones, path: "/support", moderatorAllowed: true },
+    ],
+  },
+  {
+    id: "extras",
+    label: "Extras",
+    icon: MoreHorizontal,
+    items: [
+      { label: "Não listados", icon: UserX, path: "/unlisted-users", adminOnly: true },
+    ],
+  },
 ];
+
+const FAV_KEY = "coopaiba:sidebar:favorites";
+const OPEN_KEY = "coopaiba:sidebar:openGroups";
 
 export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || "[]"); } catch { return []; }
+  });
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(OPEN_KEY) || "null");
+      if (stored) return stored;
+    } catch {}
+    return Object.fromEntries(groups.map(g => [g.id, !!g.defaultOpen]));
+  });
+
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, user, role, signOut } = useAuth();
@@ -48,14 +145,44 @@ export default function AppSidebar() {
   const isModerator = role === "moderador";
   const isCooperado = role === "cooperado";
 
-  const filteredNav = navItems.filter((item: any) => {
+  useEffect(() => {
+    localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
+  }, [favorites]);
+  useEffect(() => {
+    localStorage.setItem(OPEN_KEY, JSON.stringify(openGroups));
+  }, [openGroups]);
+
+  const canSee = (item: NavItem) => {
     if (isModerator) return !!item.moderatorAllowed;
     if (isCooperado && item.cooperadoExcluded) return false;
     if (isCooperado && item.cooperadoAllowed) return true;
     if (item.adminOnly && !isAdmin) return false;
     if (item.studentOnly && isAdmin) return false;
     return true;
-  });
+  };
+
+  const filteredGroups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return groups
+      .map(g => ({
+        ...g,
+        items: g.items.filter(i => canSee(i) && (q === "" || i.label.toLowerCase().includes(q))),
+      }))
+      .filter(g => g.items.length > 0);
+  }, [query, role]);
+
+  const allVisibleItems = useMemo(
+    () => groups.flatMap(g => g.items).filter(canSee),
+    [role]
+  );
+  const favItems = allVisibleItems.filter(i => favorites.includes(i.path));
+
+  const toggleFav = (path: string) => {
+    setFavorites(f => f.includes(path) ? f.filter(p => p !== path) : [...f, path]);
+  };
+  const toggleGroup = (id: string) => {
+    setOpenGroups(o => ({ ...o, [id]: !o[id] }));
+  };
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
@@ -66,61 +193,135 @@ export default function AppSidebar() {
     navigate("/");
   };
 
+  const renderItem = (item: NavItem, opts?: { showFav?: boolean }) => {
+    const isActive = location.pathname === item.path;
+    const isFav = favorites.includes(item.path);
+    return (
+      <div key={item.path} className="group/item relative">
+        <Link
+          to={item.path}
+          onClick={() => setMobileOpen(false)}
+          title={collapsed ? item.label : undefined}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+            ${isActive
+              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
+              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            }`}
+        >
+          <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+          {!collapsed && (
+            <span className="text-sm font-medium truncate flex-1">{item.label}</span>
+          )}
+          {!collapsed && opts?.showFav !== false && (
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFav(item.path); }}
+              className={`opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 rounded hover:bg-sidebar-accent/60
+                ${isFav ? "!opacity-100 text-amber-400" : "text-sidebar-foreground/40 hover:text-sidebar-foreground"}`}
+              aria-label={isFav ? "Remover dos favoritos" : "Fixar nos favoritos"}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
+            </button>
+          )}
+        </Link>
+      </div>
+    );
+  };
+
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-6 border-b border-sidebar-border">
-        <img src={logoImg} alt="Coopaiba EAD" className="w-10 h-10 rounded-xl object-contain flex-shrink-0" />
-        <AnimatePresence>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              className="overflow-hidden whitespace-nowrap"
-            >
-              <h1 className="font-heading text-lg font-bold text-sidebar-primary-foreground">Coopaiba EAD</h1>
-              <p className="text-xs text-sidebar-foreground/60">Educação Cooperativista</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
+        <img src={logoImg} alt="Coopaiba EAD" className="w-9 h-9 rounded-xl object-contain flex-shrink-0" />
+        {!collapsed && (
+          <div className="overflow-hidden">
+            <h1 className="font-heading text-base font-bold text-sidebar-primary-foreground leading-tight">Coopaiba EAD</h1>
+            <p className="text-[11px] text-sidebar-foreground/60">Educação Cooperativista</p>
+          </div>
+        )}
       </div>
 
+      {/* Search */}
+      {!collapsed && (
+        <div className="px-3 pt-3">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-sidebar-foreground/50" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar no menu..."
+              className="w-full pl-8 pr-2 py-1.5 text-xs rounded-md bg-sidebar-accent/40 text-sidebar-foreground placeholder:text-sidebar-foreground/40 border border-sidebar-border/50 focus:outline-none focus:border-sidebar-primary/60"
+            />
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
-      <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto sidebar-scroll">
-        {filteredNav.map((item) => {
-          const isActive = location.pathname === item.path;
+      <nav className="flex-1 py-3 px-2 space-y-2 overflow-y-auto sidebar-scroll">
+        {/* Favorites */}
+        {!collapsed && favItems.length > 0 && query === "" && (
+          <div>
+            <div className="flex items-center gap-1.5 px-3 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+              <Pin className="w-3 h-3" /> Favoritos
+            </div>
+            <div className="space-y-0.5">
+              {favItems.map(i => renderItem(i))}
+            </div>
+            <div className="h-px bg-sidebar-border/60 mx-3 mt-2" />
+          </div>
+        )}
+
+        {filteredGroups.map((g, idx) => {
+          const isOpen = query !== "" ? true : (openGroups[g.id] ?? false);
+          if (collapsed) {
+            return (
+              <div key={g.id} className="space-y-0.5">
+                {g.items.map(i => renderItem(i, { showFav: false }))}
+                {idx < filteredGroups.length - 1 && (
+                  <div className="h-px bg-sidebar-border/50 my-2 mx-2" />
+                )}
+              </div>
+            );
+          }
           return (
-            <Link
-              key={item.path}
-              to={item.path}
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group
-                ${isActive
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
-            >
-              <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive ? "" : "group-hover:scale-110 transition-transform"}`} />
-              <AnimatePresence>
-                {!collapsed && (
-                  <motion.span
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: "auto" }}
-                    exit={{ opacity: 0, width: 0 }}
-                    className="text-sm font-medium overflow-hidden whitespace-nowrap"
+            <div key={g.id}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(g.id)}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+              >
+                <g.icon className="w-3 h-3" />
+                <span className="flex-1 text-left">{g.label}</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
+              </button>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.18 }}
+                    className="overflow-hidden"
                   >
-                    {item.label}
-                  </motion.span>
+                    <div className="space-y-0.5 pt-0.5">
+                      {g.items.map(i => renderItem(i))}
+                    </div>
+                  </motion.div>
                 )}
               </AnimatePresence>
-            </Link>
+            </div>
           );
         })}
+
+        {filteredGroups.length === 0 && !collapsed && (
+          <p className="text-xs text-sidebar-foreground/50 px-3 py-4 text-center">
+            Nenhum item encontrado
+          </p>
+        )}
       </nav>
 
       {/* User section */}
-      <div className="border-t border-sidebar-border p-4">
+      <div className="border-t border-sidebar-border p-3">
         <div className="flex items-center gap-3">
           <Link to="/profile" onClick={() => setMobileOpen(false)}
             className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity">
@@ -130,23 +331,16 @@ export default function AppSidebar() {
               <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
             )}
           </Link>
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex-1 min-w-0"
-              >
+          {!collapsed && (
+            <>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
                 <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {!collapsed && (
-            <button onClick={handleSignOut} className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
-              <LogOut className="w-4 h-4" />
-            </button>
+              </div>
+              <button onClick={handleSignOut} title="Sair" className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -154,7 +348,7 @@ export default function AppSidebar() {
       {/* Collapse button (desktop) */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-border items-center justify-center shadow-card hover:shadow-elevated transition-shadow"
+        className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 rounded-full bg-card border border-border items-center justify-center shadow-card hover:shadow-elevated transition-shadow z-10"
       >
         {collapsed ? <ChevronRight className="w-3 h-3 text-foreground" /> : <ChevronLeft className="w-3 h-3 text-foreground" />}
       </button>
@@ -192,11 +386,11 @@ export default function AppSidebar() {
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="lg:hidden fixed left-0 top-0 bottom-0 w-64 gradient-sidebar z-50"
+            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 gradient-sidebar z-50"
           >
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 text-sidebar-foreground/50 hover:text-sidebar-foreground"
+              className="absolute top-4 right-4 text-sidebar-foreground/50 hover:text-sidebar-foreground z-10"
             >
               <X className="w-5 h-5" />
             </button>
