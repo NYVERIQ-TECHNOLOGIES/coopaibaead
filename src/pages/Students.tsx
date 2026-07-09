@@ -493,13 +493,14 @@ export default function Students() {
       ) : (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
           <div className="overflow-auto max-h-[calc(100vh-280px)]">
-            <table className="w-full min-w-[1100px]">
+            <table className="w-full min-w-[1200px]">
               <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur supports-[backdrop-filter]:bg-muted/80">
                 <tr className="border-b border-border">
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Matrícula</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Aluno</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">CPF</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">E-mail</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Senha</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Tipo</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Cooperativa</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Status</th>
@@ -545,17 +546,18 @@ export default function Students() {
                       <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
                         {formatCpf((s as any).cpf) || "—"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground max-w-[280px]">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate" title={emailMap[s.user_id] || ""}>
-                            {emailMap[s.user_id] || "—"}
-                          </span>
-                          {isAdmin && emailMap[s.user_id] && (
+                       <td className="py-3 px-4 text-sm text-muted-foreground max-w-[280px]">
+                         <span className="truncate" title={emailMap[s.user_id] || ""}>
+                           {emailMap[s.user_id] || "—"}
+                         </span>
+                       </td>
+                        <td className="py-3 px-4">
+                          {role === "admin" && emailMap[s.user_id] && (
                             <Button
                               size="sm"
-                              variant="ghost"
+                              variant="outline"
                               title="Redefinir senha para padrão (Coopaiba@2026)"
-                              className="h-7 w-7 p-0 text-amber-600 hover:bg-amber-500/10 shrink-0"
+                              className="h-8 gap-1.5 text-xs text-amber-600 border-amber-600/30 hover:bg-amber-500/10 hover:text-amber-600"
                               onClick={() =>
                                 setResetPwdFor({
                                   id: s.user_id,
@@ -564,12 +566,11 @@ export default function Students() {
                                 })
                               }
                             >
-                              <KeyRound className="w-4 h-4" />
+                              <KeyRound className="w-3.5 h-3.5" /> Redefinir
                             </Button>
                           )}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
+                        </td>
+                       <td className="py-3 px-4">
                         {isSelf || isAdmin || isModerator ? (
                           <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : s.role === "moderador" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
                             {s.role === "cooperado" ? "Cooperado" : s.role === "admin" ? "Admin" : s.role === "moderador" ? "Moderador" : "Aluno"}
@@ -649,7 +650,7 @@ export default function Students() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={10} className="text-center py-8 text-muted-foreground">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
