@@ -9,9 +9,39 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const { email, userId, newEmail, password, token } = await req.json();
-    if (token !== Deno.env.get("BULK_IMPORT_TOKEN")) {
+
+    let authorized = false;
+    if (token && token === Deno.env.get("BULK_IMPORT_TOKEN")) {
+      authorized = true;
+    } else {
+      // Verify caller is an authenticated admin
+      const authHeader = req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const jwt = authHeader.replace("Bearer ", "");
+        const authClient = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+        );
+        const { data: claims } = await authClient.auth.getClaims(jwt);
+        const uid = claims?.claims?.sub;
+        if (uid) {
+          const adminForCheck = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+          );
+          const { data: isAdmin } = await adminForCheck.rpc("has_role", {
+            _user_id: uid,
+            _role: "admin",
+          });
+          if (isAdmin === true) authorized = true;
+        }
+      }
+    }
+
+    if (!authorized) {
       return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: corsHeaders });
     }
+
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -29,13 +59,12 @@ Deno.serve(async (req) => {
       }
     }
     if (!targetId) return new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: corsHeaders });
-    const user = { id: targetId };
     const updates: Record<string, unknown> = {};
     if (password) updates.password = password;
     if (newEmail) { updates.email = newEmail; updates.email_confirm = true; }
-    const { error } = await admin.auth.admin.updateUserById(user.id, updates);
+    const { error } = await admin.auth.admin.updateUserById(targetId, updates);
     if (error) throw error;
-    return new Response(JSON.stringify({ ok: true, user_id: user.id }), { headers: { ...corsHeaders, "content-type": "application/json" } });
+    return new Response(JSON.stringify({ ok: true, user_id: targetId }), { headers: { ...corsHeaders, "content-type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
   }
