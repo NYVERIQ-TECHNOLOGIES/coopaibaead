@@ -51,7 +51,9 @@ const emptyForm = {
   standalone_access_days: "" as string,
   premium_enabled: true,
   progressive_unlock: false,
+  is_open: true,
 };
+
 
 export default function Courses() {
   const [search, setSearch] = useState("");
@@ -109,7 +111,9 @@ export default function Courses() {
           : null,
         premium_enabled: values.premium_enabled,
         progressive_unlock: values.progressive_unlock,
+        is_open: values.is_open,
       };
+
       if (editingCourse) {
         const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
         if (error) throw error;
@@ -156,7 +160,9 @@ export default function Courses() {
       standalone_access_days: c.standalone_access_days != null ? String(c.standalone_access_days) : "",
       premium_enabled: c.premium_enabled ?? true,
       progressive_unlock: (c as any).progressive_unlock ?? false,
+      is_open: (c as any).is_open ?? true,
     });
+
     setDialogOpen(true);
   };
 
@@ -451,6 +457,16 @@ export default function Courses() {
               <Switch checked={form.cooperado_only} onCheckedChange={(v) => setForm({ ...form, cooperado_only: v })} />
               <Label>Exclusivo para cooperados</Label>
             </div>
+            <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+              <Switch checked={form.is_open} onCheckedChange={(v) => setForm({ ...form, is_open: v })} />
+              <div>
+                <Label>Curso aberto</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Quando desativado, o curso fica fechado. Somente administradores podem alterar esta opção.
+                </p>
+              </div>
+            </div>
+
             <div className="flex items-start gap-2 rounded-lg border border-border p-3">
               <Switch checked={form.eventual} onCheckedChange={(v) => setForm({ ...form, eventual: v })} />
               <div>
