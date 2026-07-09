@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, Download, FileBarChart, Power, FileSpreadsheet, MessageCircle, MoreVertical, Trash2, PowerOff } from "lucide-react";
+import { Search, Download, FileBarChart, Power, FileSpreadsheet, MessageCircle, MoreVertical, Trash2, PowerOff, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +31,24 @@ export default function Students() {
   const navigate = useNavigate();
   const [hardDeleteFor, setHardDeleteFor] = useState<string | null>(null);
   const [chatLoadingFor, setChatLoadingFor] = useState<string | null>(null);
+  const [resetPwdFor, setResetPwdFor] = useState<{ id: string; name: string; email: string } | null>(null);
+  const isAdmin = role === "admin";
+
+  const resetPasswordMut = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+        body: { userId, password: "Coopaiba@2026" },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+    },
+    onSuccess: () => {
+      toast({ title: "Senha redefinida", description: "Nova senha: Coopaiba@2026" });
+      setResetPwdFor(null);
+    },
+    onError: (e: any) =>
+      toast({ title: "Erro ao redefinir senha", description: e.message, variant: "destructive" }),
+  });
 
   const { data: students = [], isLoading } = useQuery({
     queryKey: ["students-list"],
@@ -527,8 +545,29 @@ export default function Students() {
                       <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
                         {formatCpf((s as any).cpf) || "—"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground max-w-[240px] truncate" title={emailMap[s.user_id] || ""}>
-                        {emailMap[s.user_id] || "—"}
+                      <td className="py-3 px-4 text-sm text-muted-foreground max-w-[280px]">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate" title={emailMap[s.user_id] || ""}>
+                            {emailMap[s.user_id] || "—"}
+                          </span>
+                          {isAdmin && emailMap[s.user_id] && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              title="Redefinir senha para padrão (Coopaiba@2026)"
+                              className="h-7 w-7 p-0 text-amber-600 hover:bg-amber-500/10 shrink-0"
+                              onClick={() =>
+                                setResetPwdFor({
+                                  id: s.user_id,
+                                  name: s.full_name || "Usuário",
+                                  email: emailMap[s.user_id],
+                                })
+                              }
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         {isSelf || isAdmin || isModerator ? (
@@ -641,6 +680,28 @@ export default function Students() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!resetPwdFor} onOpenChange={(o) => !o && setResetPwdFor(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redefinir senha para o padrão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A senha de <strong>{resetPwdFor?.name}</strong> ({resetPwdFor?.email}) será
+              alterada para <strong>Coopaiba@2026</strong>. O usuário deverá usar essa senha
+              no próximo login.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => resetPwdFor && resetPasswordMut.mutate(resetPwdFor.id)}
+              disabled={resetPasswordMut.isPending}
+            >
+              {resetPasswordMut.isPending ? "Redefinindo..." : "Redefinir senha"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
