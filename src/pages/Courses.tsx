@@ -158,7 +158,9 @@ export default function Courses() {
       standalone_access_days: c.standalone_access_days != null ? String(c.standalone_access_days) : "",
       premium_enabled: c.premium_enabled ?? true,
       progressive_unlock: (c as any).progressive_unlock ?? false,
+      is_open: (c as any).is_open ?? true,
     });
+
     setDialogOpen(true);
   };
 
