@@ -1,0 +1,1 @@
+ALTER TABLE public.courses ADD COLUMN IF NOT EXISTS is_open boolean NOT NULL DEFAULT true;
