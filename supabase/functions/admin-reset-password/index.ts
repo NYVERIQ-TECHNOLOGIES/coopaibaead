@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_ANON_KEY")!,
         );
-        // 1) Validate JWT signature/claims
-        const { data: claims, error: claimsErr } = await authClient.auth.getClaims(jwt);
-        const uid = claims?.claims?.sub;
+        // 1) Validate JWT and get user
+        const { data: userData, error: claimsErr } = await authClient.auth.getUser(jwt);
+        const uid = userData?.user?.id;
         if (!claimsErr && uid) {
           const adminForCheck = createClient(
             Deno.env.get("SUPABASE_URL")!,
