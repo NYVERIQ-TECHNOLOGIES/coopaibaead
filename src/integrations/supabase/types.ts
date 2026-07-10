@@ -1247,6 +1247,33 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_logs: {
+        Row: {
+          admin_user_id: string
+          id: string
+          performed_at: string
+          target_email: string | null
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_user_id: string
+          id?: string
+          performed_at?: string
+          target_email?: string | null
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_user_id?: string
+          id?: string
+          performed_at?: string
+          target_email?: string | null
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       presenca_assinaturas: {
         Row: {
           assinatura_tipo: string
