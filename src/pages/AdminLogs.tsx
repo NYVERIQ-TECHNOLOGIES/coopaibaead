@@ -42,6 +42,32 @@ export default function AdminLogs() {
     },
   });
 
+  const { data: pwdLogs = [], isLoading: loadingPwd } = useQuery({
+    queryKey: ["password-reset-logs", from, to],
+    queryFn: async () => {
+      const { data: rows } = await supabase
+        .from("password_reset_logs")
+        .select("id, admin_user_id, target_user_id, target_email, performed_at, user_agent")
+        .gte("performed_at", `${from}T00:00:00`)
+        .lte("performed_at", `${to}T23:59:59`)
+        .order("performed_at", { ascending: false })
+        .limit(1000);
+      if (!rows) return [];
+      const ids = Array.from(new Set(rows.flatMap((r) => [r.admin_user_id, r.target_user_id])));
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", ids);
+      const nameMap = new Map((profiles ?? []).map((p) => [p.user_id, p.full_name]));
+      return rows.map((r) => ({
+        ...r,
+        admin_name: nameMap.get(r.admin_user_id) || "Admin",
+        target_name: nameMap.get(r.target_user_id) || "—",
+      }));
+    },
+  });
+
+
   const exportCSV = () => {
     const header = ["Data/Hora", "Administrador", "User Agent"];
     const rows = logs.map((l) => [
