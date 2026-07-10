@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Download, Calendar } from "lucide-react";
+import { Activity, Download, Calendar, KeyRound } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 
 export default function AdminLogs() {
   const today = new Date().toISOString().slice(0, 10);
@@ -40,6 +41,32 @@ export default function AdminLogs() {
       }));
     },
   });
+
+  const { data: pwdLogs = [], isLoading: loadingPwd } = useQuery({
+    queryKey: ["password-reset-logs", from, to],
+    queryFn: async () => {
+      const { data: rows } = await supabase
+        .from("password_reset_logs")
+        .select("id, admin_user_id, target_user_id, target_email, performed_at, user_agent")
+        .gte("performed_at", `${from}T00:00:00`)
+        .lte("performed_at", `${to}T23:59:59`)
+        .order("performed_at", { ascending: false })
+        .limit(1000);
+      if (!rows) return [];
+      const ids = Array.from(new Set(rows.flatMap((r) => [r.admin_user_id, r.target_user_id])));
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", ids);
+      const nameMap = new Map((profiles ?? []).map((p) => [p.user_id, p.full_name]));
+      return rows.map((r) => ({
+        ...r,
+        admin_name: nameMap.get(r.admin_user_id) || "Admin",
+        target_name: nameMap.get(r.target_user_id) || "—",
+      }));
+    },
+  });
+
 
   const exportCSV = () => {
     const header = ["Data/Hora", "Administrador", "User Agent"];
@@ -156,6 +183,56 @@ export default function AdminLogs() {
           </div>
         )}
       </motion.div>
+
+      <div>
+        <h2 className="text-xl font-heading font-bold text-foreground flex items-center gap-2">
+          <KeyRound className="w-5 h-5 text-amber-600" />
+          Redefinições de Senha
+        </h2>
+        <p className="text-muted-foreground text-sm mt-1 mb-3">
+          Registros de senhas redefinidas por administradores ({pwdLogs.length})
+        </p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-card rounded-xl shadow-card border border-border overflow-hidden"
+        >
+          {loadingPwd ? (
+            <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+          ) : pwdLogs.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <KeyRound className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p>Nenhuma redefinição de senha neste período</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Data/Hora</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administrador</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aluno</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">E-mail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pwdLogs.map((r) => (
+                    <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/20">
+                      <td className="py-3 px-4 text-sm text-foreground font-mono">
+                        {new Date(r.performed_at).toLocaleString("pt-BR")}
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium text-card-foreground">{r.admin_name}</td>
+                      <td className="py-3 px-4 text-sm text-card-foreground">{r.target_name}</td>
+                      <td className="py-3 px-4 text-xs text-muted-foreground hidden md:table-cell">{r.target_email || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      </div>
     </div>
+
   );
 }
