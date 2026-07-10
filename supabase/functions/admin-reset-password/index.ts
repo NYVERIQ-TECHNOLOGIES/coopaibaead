@@ -11,10 +11,14 @@ Deno.serve(async (req) => {
     const { email, userId, newEmail, password, token } = await req.json();
 
     let authorized = false;
+    let bulkToken = false;
+    let adminUserId: string | null = null;
+
     if (token && token === Deno.env.get("BULK_IMPORT_TOKEN")) {
       authorized = true;
+      bulkToken = true;
     } else {
-      // Verify caller is an authenticated admin
+      // Verify caller is an authenticated admin (double check: JWT + role lookup)
       const authHeader = req.headers.get("Authorization");
       if (authHeader?.startsWith("Bearer ")) {
         const jwt = authHeader.replace("Bearer ", "");
@@ -22,18 +26,34 @@ Deno.serve(async (req) => {
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_ANON_KEY")!,
         );
-        const { data: claims } = await authClient.auth.getClaims(jwt);
+        // 1) Validate JWT signature/claims
+        const { data: claims, error: claimsErr } = await authClient.auth.getClaims(jwt);
         const uid = claims?.claims?.sub;
-        if (uid) {
+        if (!claimsErr && uid) {
           const adminForCheck = createClient(
             Deno.env.get("SUPABASE_URL")!,
             Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
           );
-          const { data: isAdmin } = await adminForCheck.rpc("has_role", {
-            _user_id: uid,
-            _role: "admin",
-          });
-          if (isAdmin === true) authorized = true;
+          // 2) Confirm user still exists and is not banned
+          const { data: userLookup, error: userErr } = await adminForCheck.auth.admin.getUserById(uid);
+          if (!userErr && userLookup?.user && !(userLookup.user as any).banned_until) {
+            // 3) Verify admin role via has_role RPC (server-authoritative)
+            const { data: isAdmin } = await adminForCheck.rpc("has_role", {
+              _user_id: uid,
+              _role: "admin",
+            });
+            // 4) Extra defense: direct row check in user_roles
+            const { data: roleRow } = await adminForCheck
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", uid)
+              .eq("role", "admin")
+              .maybeSingle();
+            if (isAdmin === true && roleRow) {
+              authorized = true;
+              adminUserId = uid;
+            }
+          }
         }
       }
     }
@@ -47,23 +67,44 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
     let targetId = userId as string | undefined;
+    let resolvedEmail: string | null = email ?? null;
     if (!targetId && email) {
       let page = 1;
       while (!targetId) {
         const { data: list, error: le } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
         if (le) throw le;
         const u = list.users.find((x) => (x.email || "").toLowerCase() === email.toLowerCase());
-        if (u) { targetId = u.id; break; }
+        if (u) { targetId = u.id; resolvedEmail = u.email ?? email; break; }
         if (list.users.length < 1000) break;
         page++;
       }
     }
     if (!targetId) return new Response(JSON.stringify({ error: "not_found" }), { status: 404, headers: corsHeaders });
+
+    // If we don't yet know the email but have an id, fetch it for the log
+    if (!resolvedEmail && targetId) {
+      const { data: u } = await admin.auth.admin.getUserById(targetId);
+      resolvedEmail = u?.user?.email ?? null;
+    }
+
     const updates: Record<string, unknown> = {};
     if (password) updates.password = password;
     if (newEmail) { updates.email = newEmail; updates.email_confirm = true; }
     const { error } = await admin.auth.admin.updateUserById(targetId, updates);
     if (error) throw error;
+
+    // Audit log: only for password resets performed by a real admin (skip bulk-token flow)
+    if (password && !bulkToken && adminUserId) {
+      const ua = req.headers.get("user-agent") ?? null;
+      const { error: logErr } = await admin.from("password_reset_logs").insert({
+        admin_user_id: adminUserId,
+        target_user_id: targetId,
+        target_email: resolvedEmail,
+        user_agent: ua,
+      });
+      if (logErr) console.error("password_reset_logs insert failed:", logErr);
+    }
+
     return new Response(JSON.stringify({ ok: true, user_id: targetId }), { headers: { ...corsHeaders, "content-type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
