@@ -183,6 +183,56 @@ export default function AdminLogs() {
           </div>
         )}
       </motion.div>
+
+      <div>
+        <h2 className="text-xl font-heading font-bold text-foreground flex items-center gap-2">
+          <KeyRound className="w-5 h-5 text-amber-600" />
+          Redefinições de Senha
+        </h2>
+        <p className="text-muted-foreground text-sm mt-1 mb-3">
+          Registros de senhas redefinidas por administradores ({pwdLogs.length})
+        </p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-card rounded-xl shadow-card border border-border overflow-hidden"
+        >
+          {loadingPwd ? (
+            <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+          ) : pwdLogs.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <KeyRound className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p>Nenhuma redefinição de senha neste período</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Data/Hora</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administrador</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Aluno</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">E-mail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pwdLogs.map((r) => (
+                    <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/20">
+                      <td className="py-3 px-4 text-sm text-foreground font-mono">
+                        {new Date(r.performed_at).toLocaleString("pt-BR")}
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium text-card-foreground">{r.admin_name}</td>
+                      <td className="py-3 px-4 text-sm text-card-foreground">{r.target_name}</td>
+                      <td className="py-3 px-4 text-xs text-muted-foreground hidden md:table-cell">{r.target_email || "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      </div>
     </div>
+
   );
 }
