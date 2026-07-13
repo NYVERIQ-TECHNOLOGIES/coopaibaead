@@ -777,6 +777,89 @@ export type Database = {
           },
         ]
       }
+      course_survey_responses: {
+        Row: {
+          answers: Json
+          course_id: string
+          id: string
+          submitted_at: string
+          survey_id: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          course_id: string
+          id?: string
+          submitted_at?: string
+          survey_id: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          course_id?: string
+          id?: string
+          submitted_at?: string
+          survey_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_survey_responses_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "course_survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "course_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      course_surveys: {
+        Row: {
+          course_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          questions: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          questions?: Json
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          questions?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_surveys_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: true
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           cooperado_only: boolean
