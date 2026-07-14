@@ -22,7 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { maskPhone, onlyDigits } from "@/lib/estados-br";
+import { maskPhone } from "@/lib/estados-br";
 import SEO from "@/components/SEO";
 
 type PasswordCheck = {
