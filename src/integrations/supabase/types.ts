@@ -1523,6 +1523,7 @@ export type Database = {
           cooperativa: string | null
           cpf: string | null
           created_at: string
+          data_nascimento: string | null
           deactivated_at: string | null
           enrollment_number: string | null
           full_name: string
@@ -1537,6 +1538,7 @@ export type Database = {
           cooperativa?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           deactivated_at?: string | null
           enrollment_number?: string | null
           full_name?: string
@@ -1551,6 +1553,7 @@ export type Database = {
           cooperativa?: string | null
           cpf?: string | null
           created_at?: string
+          data_nascimento?: string | null
           deactivated_at?: string | null
           enrollment_number?: string | null
           full_name?: string
@@ -2009,6 +2012,10 @@ export type Database = {
       }
       cancelar_inscricao_eventual: {
         Args: { _id: string; _motivo: string }
+        Returns: undefined
+      }
+      complete_profile_info: {
+        Args: { _cpf?: string; _data_nascimento?: string; _phone?: string }
         Returns: undefined
       }
       encerrar_eventos_vencidos: { Args: never; Returns: number }
