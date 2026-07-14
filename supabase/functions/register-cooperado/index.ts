@@ -168,6 +168,7 @@ Deno.serve(async (req) => {
         full_name: name,
         cpf: cleanCpf,
         email: email ? String(email).trim().toLowerCase() : null,
+        phone: cleanPhone,
         cooperativa: cooperativa || null,
         status: "pending",
       })
