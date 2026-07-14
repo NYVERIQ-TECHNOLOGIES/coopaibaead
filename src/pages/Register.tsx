@@ -13,6 +13,7 @@ import {
   IdCard,
   Check,
   X,
+  Phone,
 } from "lucide-react";
 
 import logoImg from "@/assets/logo-coopaiba.png";
@@ -21,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { maskPhone } from "@/lib/estados-br";
 import SEO from "@/components/SEO";
 
 type PasswordCheck = {
@@ -47,6 +49,7 @@ export default function Register() {
   const [userType, setUserType] = useState<"aluno" | "cooperado">("aluno");
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -144,12 +147,14 @@ export default function Register() {
   const trimmedName = fullName.trim();
   const nameOk = trimmedName.length > 0 && trimmedName.split(/\s+/).length >= 2;
   const cpfOk = isValidCpf(cpf);
+  const cleanPhone = phone.replace(/\D/g, "");
+  const phoneOk = cleanPhone.length >= 10 && cleanPhone.length <= 11;
   const emailRequired = userType === "aluno";
   const emailOk = !emailRequired || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const cooperativaOk = userType !== "cooperado" || !!cooperativa;
 
   const formValid =
-    nameOk && cpfOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk;
+    nameOk && cpfOk && phoneOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk;
 
 
 
@@ -169,6 +174,10 @@ export default function Register() {
     }
     if (!cpfOk) {
       toast({ title: "CPF inválido", description: "Digite um CPF válido para continuar.", variant: "destructive" });
+      return;
+    }
+    if (!phoneOk) {
+      toast({ title: "Telefone inválido", description: "Informe um número de telefone ou celular válido com DDD.", variant: "destructive" });
       return;
     }
     if (emailRequired && !emailOk) {
@@ -227,6 +236,7 @@ export default function Register() {
             full_name: trimmedName,
             cooperativa,
             avatar_url,
+            phone: cleanPhone,
           },
         });
 
@@ -284,9 +294,10 @@ export default function Register() {
       try {
         await new Promise((r) => setTimeout(r, 400));
 
-        const updates: { avatar_url?: string; cpf?: string; full_name?: string } = {
+        const updates: { avatar_url?: string; cpf?: string; full_name?: string; phone?: string } = {
           cpf: cleanCpf,
           full_name: trimmedName,
+          phone: cleanPhone,
         };
 
         if (photoFile) {
@@ -454,10 +465,35 @@ export default function Register() {
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
-              {cpf.length > 0 && !cpfOk && (
-                <p className="text-xs text-destructive mt-1">CPF inválido.</p>
-              )}
+            {cpf.length > 0 && !cpfOk && (
+              <p className="text-xs text-destructive mt-1">CPF inválido.</p>
+            )}
+          </div>
+
+          {/* Telefone */}
+          <div>
+            <label htmlFor="phone" className="text-sm font-medium text-card-foreground mb-1.5 block">
+              Telefone / WhatsApp *
+            </label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="(00) 00000-0000"
+                value={phone}
+                onChange={(e) => setPhone(maskPhone(e.target.value))}
+                required
+                maxLength={15}
+                autoComplete="tel"
+                className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
+            {phone.length > 0 && !phoneOk && (
+              <p className="text-xs text-destructive mt-1">Informe um telefone válido com DDD.</p>
+            )}
+          </div>
 
             {userType === "cooperado" && (
               <div>

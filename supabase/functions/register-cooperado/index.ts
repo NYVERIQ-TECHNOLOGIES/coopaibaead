@@ -111,9 +111,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { cpf, password, full_name, cooperativa, email } = await req.json();
+    const { cpf, password, full_name, cooperativa, email, phone } = await req.json();
 
     const cleanCpf = String(cpf || "").replace(/\D/g, "");
+    const cleanPhone = phone ? String(phone).replace(/\D/g, "").slice(0, 11) : null;
     if (cleanCpf.length !== 11) {
       return new Response(JSON.stringify({ error: "CPF inválido" }), {
         status: 400,
@@ -129,6 +130,12 @@ Deno.serve(async (req) => {
     const name = String(full_name || "").trim();
     if (name.length < 3 || name.length > 120) {
       return new Response(JSON.stringify({ error: "Nome inválido" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (cleanPhone && (cleanPhone.length < 10 || cleanPhone.length > 11)) {
+      return new Response(JSON.stringify({ error: "Telefone inválido" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -167,6 +174,7 @@ Deno.serve(async (req) => {
         full_name: name,
         cpf: cleanCpf,
         email: email ? String(email).trim().toLowerCase() : null,
+        phone: cleanPhone,
         cooperativa: cooperativa || null,
         status: "pending",
       })
@@ -202,6 +210,7 @@ Deno.serve(async (req) => {
           user_metadata: {
             full_name: name,
             cpf: cleanCpf,
+            phone: cleanPhone,
             cooperativa: cooperativa || null,
             user_type: "cooperado",
           },
@@ -212,6 +221,7 @@ Deno.serve(async (req) => {
           await admin.from("profiles").update({
             full_name: name,
             cpf: cleanCpf,
+            phone: cleanPhone,
             cooperativa: cooperativa || null,
           }).eq("user_id", userId);
           await admin.from("user_roles").delete().eq("user_id", userId);
