@@ -49,6 +49,7 @@ export default function Register() {
   const [userType, setUserType] = useState<"aluno" | "cooperado">("aluno");
   const [fullName, setFullName] = useState("");
   const [cpf, setCpf] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -146,12 +147,14 @@ export default function Register() {
   const trimmedName = fullName.trim();
   const nameOk = trimmedName.length > 0 && trimmedName.split(/\s+/).length >= 2;
   const cpfOk = isValidCpf(cpf);
+  const cleanPhone = phone.replace(/\D/g, "");
+  const phoneOk = cleanPhone.length >= 10 && cleanPhone.length <= 11;
   const emailRequired = userType === "aluno";
   const emailOk = !emailRequired || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const cooperativaOk = userType !== "cooperado" || !!cooperativa;
 
   const formValid =
-    nameOk && cpfOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk;
+    nameOk && cpfOk && phoneOk && emailOk && allPasswordOk && passwordsMatch && agreed && cooperativaOk;
 
 
 
@@ -171,6 +174,10 @@ export default function Register() {
     }
     if (!cpfOk) {
       toast({ title: "CPF inválido", description: "Digite um CPF válido para continuar.", variant: "destructive" });
+      return;
+    }
+    if (!phoneOk) {
+      toast({ title: "Telefone inválido", description: "Informe um número de telefone ou celular válido com DDD.", variant: "destructive" });
       return;
     }
     if (emailRequired && !emailOk) {
