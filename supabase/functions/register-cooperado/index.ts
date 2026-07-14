@@ -134,6 +134,12 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    if (cleanPhone && (cleanPhone.length < 10 || cleanPhone.length > 11)) {
+      return new Response(JSON.stringify({ error: "Telefone inválido" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // CPF cannot already exist as approved profile or pending registration
     const { data: existingProfile } = await admin
