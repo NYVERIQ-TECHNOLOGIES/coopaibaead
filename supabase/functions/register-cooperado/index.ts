@@ -111,9 +111,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { cpf, password, full_name, cooperativa, email } = await req.json();
+    const { cpf, password, full_name, cooperativa, email, phone } = await req.json();
 
     const cleanCpf = String(cpf || "").replace(/\D/g, "");
+    const cleanPhone = phone ? String(phone).replace(/\D/g, "").slice(0, 11) : null;
     if (cleanCpf.length !== 11) {
       return new Response(JSON.stringify({ error: "CPF inválido" }), {
         status: 400,

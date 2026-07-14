@@ -148,6 +148,7 @@ Deno.serve(async (req) => {
       full_name: pending.full_name,
       cpf,
       cooperativa: pending.cooperativa ?? null,
+      phone: pending.phone ?? null,
     }).eq("user_id", userId);
     await admin.from("user_roles").delete().eq("user_id", userId);
     await admin.from("user_roles").insert({ user_id: userId, role: "cooperado" });
