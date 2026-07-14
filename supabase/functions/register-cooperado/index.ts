@@ -204,6 +204,7 @@ Deno.serve(async (req) => {
           user_metadata: {
             full_name: name,
             cpf: cleanCpf,
+            phone: cleanPhone,
             cooperativa: cooperativa || null,
             user_type: "cooperado",
           },
@@ -214,6 +215,7 @@ Deno.serve(async (req) => {
           await admin.from("profiles").update({
             full_name: name,
             cpf: cleanCpf,
+            phone: cleanPhone,
             cooperativa: cooperativa || null,
           }).eq("user_id", userId);
           await admin.from("user_roles").delete().eq("user_id", userId);
