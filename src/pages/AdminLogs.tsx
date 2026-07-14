@@ -143,9 +143,9 @@ export default function AdminLogs() {
             <p>Nenhum acesso registrado neste período</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-auto max-h-[420px]">
             <table className="w-full">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm">
                 <tr className="border-b border-border bg-muted/30">
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Data/Hora
