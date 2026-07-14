@@ -236,6 +236,7 @@ export default function Register() {
             full_name: trimmedName,
             cooperativa,
             avatar_url,
+            phone: cleanPhone,
           },
         });
 
@@ -293,9 +294,10 @@ export default function Register() {
       try {
         await new Promise((r) => setTimeout(r, 400));
 
-        const updates: { avatar_url?: string; cpf?: string; full_name?: string } = {
+        const updates: { avatar_url?: string; cpf?: string; full_name?: string; phone?: string } = {
           cpf: cleanCpf,
           full_name: trimmedName,
+          phone: cleanPhone,
         };
 
         if (photoFile) {
