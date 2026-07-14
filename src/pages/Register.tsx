@@ -465,10 +465,35 @@ export default function Register() {
                   className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
-              {cpf.length > 0 && !cpfOk && (
-                <p className="text-xs text-destructive mt-1">CPF inválido.</p>
-              )}
+            {cpf.length > 0 && !cpfOk && (
+              <p className="text-xs text-destructive mt-1">CPF inválido.</p>
+            )}
+          </div>
+
+          {/* Telefone */}
+          <div>
+            <label htmlFor="phone" className="text-sm font-medium text-card-foreground mb-1.5 block">
+              Telefone / WhatsApp *
+            </label>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="(00) 00000-0000"
+                value={phone}
+                onChange={(e) => setPhone(maskPhone(e.target.value))}
+                required
+                maxLength={15}
+                autoComplete="tel"
+                className="w-full pl-10 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
+            {phone.length > 0 && !phoneOk && (
+              <p className="text-xs text-destructive mt-1">Informe um telefone válido com DDD.</p>
+            )}
+          </div>
 
             {userType === "cooperado" && (
               <div>
