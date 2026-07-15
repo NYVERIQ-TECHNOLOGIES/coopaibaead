@@ -56,7 +56,7 @@ function validateCPF(cpf: string) {
 }
 
 export function CompleteProfileModal() {
-  const { user, loading, role } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const [missing, setMissing] = useState<Missing | null>(null);
   const [open, setOpen] = useState(false);
@@ -69,7 +69,7 @@ export function CompleteProfileModal() {
   const excluded = EXCLUDED_PREFIXES.some((p) => location.pathname.startsWith(p));
 
   useEffect(() => {
-    if (loading || !user || excluded || role === "admin") return;
+    if (loading || !user || excluded) return;
     let cancelled = false;
     (async () => {
       const { data } = await supabase
