@@ -94,7 +94,7 @@ export function CompleteProfileModal() {
     return () => {
       cancelled = true;
     };
-  }, [user, loading, excluded, location.pathname]);
+  }, [user, loading, excluded, location.pathname, role]);
 
   if (!missing || !open) return null;
 
