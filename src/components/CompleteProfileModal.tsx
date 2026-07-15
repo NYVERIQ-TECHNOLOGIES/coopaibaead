@@ -69,7 +69,7 @@ export function CompleteProfileModal() {
   const excluded = EXCLUDED_PREFIXES.some((p) => location.pathname.startsWith(p));
 
   useEffect(() => {
-    if (loading || !user || excluded) return;
+    if (loading || !user || excluded || role === "admin") return;
     let cancelled = false;
     (async () => {
       const { data } = await supabase
