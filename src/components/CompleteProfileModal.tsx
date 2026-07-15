@@ -56,7 +56,7 @@ function validateCPF(cpf: string) {
 }
 
 export function CompleteProfileModal() {
-  const { user, loading } = useAuth();
+  const { user, loading, role } = useAuth();
   const location = useLocation();
   const [missing, setMissing] = useState<Missing | null>(null);
   const [open, setOpen] = useState(false);
