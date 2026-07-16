@@ -1,6 +1,7 @@
 import { Link, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, Award, Users, ShieldCheck, GraduationCap, Sparkles } from "lucide-react";
+import heroImage from "@/assets/home-hero.jpg";
 import SEO from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 
