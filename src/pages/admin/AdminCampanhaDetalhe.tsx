@@ -31,6 +31,7 @@ export default function AdminCampanhaDetalhe() {
   const [cancelar, setCancelar] = useState<any>(null);
   const [motivo, setMotivo] = useState("");
   const [progresso, setProgresso] = useState<Map<string, { pct: number; concluido: boolean }>>(new Map());
+  const [nascimentos, setNascimentos] = useState<Map<string, string>>(new Map());
   const [detalhe, setDetalhe] = useState<any>(null);
   const [concluindo, setConcluindo] = useState(false);
 
@@ -49,6 +50,20 @@ export default function AdminCampanhaDetalhe() {
 
     const cursoIds = (vinc || []).map((v: any) => v.curso_id);
     const userIds = Array.from(new Set((ins || []).map((i: any) => i.usuario_id).filter(Boolean))) as string[];
+
+    // Buscar data de nascimento dos inscritos
+    if (userIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, data_nascimento")
+        .in("user_id", userIds);
+      const nm = new Map<string, string>();
+      (profs || []).forEach((p: any) => { if (p.data_nascimento) nm.set(p.user_id, p.data_nascimento); });
+      setNascimentos(nm);
+    } else {
+      setNascimentos(new Map());
+    }
+
     if (cursoIds.length && userIds.length) {
       // Progresso real: matrícula + aulas concluídas + avaliações aprovadas (>=70) + certificado emitido
       const [{ data: mods }, { data: evals }, { data: certs }, { data: enrolls }] = await Promise.all([
@@ -274,6 +289,7 @@ export default function AdminCampanhaDetalhe() {
                       <TableHead>Protocolo</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead>CPF</TableHead>
+                      <TableHead>Nascimento</TableHead>
                       <TableHead>Número</TableHead>
                       <TableHead>Endereço</TableHead>
                       <TableHead>Data</TableHead>
@@ -285,6 +301,10 @@ export default function AdminCampanhaDetalhe() {
                   <TableBody>
                     {filtered.map((i) => {
                       const prog = i.usuario_id ? progresso.get(i.usuario_id) : undefined;
+                      const dobRaw = i.usuario_id ? nascimentos.get(i.usuario_id) : undefined;
+                      const dob = dobRaw
+                        ? (() => { const [y,m,d] = String(dobRaw).split("T")[0].split("-"); return `${d}/${m}/${y}`; })()
+                        : "—";
                       return (
                         <TableRow
                           key={i.id}
@@ -294,6 +314,7 @@ export default function AdminCampanhaDetalhe() {
                           <TableCell className="font-mono text-xs">{i.protocolo}</TableCell>
                           <TableCell>{i.nome_completo}</TableCell>
                           <TableCell>{maskCPF(i.cpf)}</TableCell>
+                          <TableCell className="text-xs whitespace-nowrap">{dob}</TableCell>
                           <TableCell className="text-xs">{i.telefone}</TableCell>
                           <TableCell className="text-xs max-w-xs truncate" title={i.endereco}>{i.endereco}</TableCell>
                           <TableCell className="text-xs">{new Date(i.data_inscricao).toLocaleString("pt-BR")}</TableCell>
@@ -321,7 +342,7 @@ export default function AdminCampanhaDetalhe() {
                       );
                     })}
                     {filtered.length === 0 && (
-                      <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum inscrito</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-8">Nenhum inscrito</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
