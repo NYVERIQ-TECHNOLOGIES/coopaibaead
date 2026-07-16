@@ -62,8 +62,14 @@ export default function Home() {
             className="relative"
           >
             <div className="aspect-[4/3] rounded-2xl gradient-primary p-1 shadow-elevated">
-              <div className="w-full h-full rounded-xl bg-card flex items-center justify-center">
-                <GraduationCap className="w-32 h-32 text-primary/30" strokeWidth={1.2} />
+              <div className="w-full h-full rounded-xl bg-card overflow-hidden">
+                <img
+                  src={heroImage}
+                  alt="Cooperados estudando em sala de aula moderna"
+                  width={1024}
+                  height={768}
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
             <div className="absolute -bottom-4 -left-4 bg-card border border-border rounded-xl px-4 py-3 shadow-card flex items-center gap-3">
