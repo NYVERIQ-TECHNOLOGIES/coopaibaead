@@ -118,7 +118,7 @@ export default function Certificates() {
     queryFn: async () => {
       let query = supabase
         .from("certificates")
-        .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf)")
+        .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf, data_nascimento)")
         .order("created_at", { ascending: false });
       if (!isStaff && user) {
         query = query.eq("user_id", user.id);
@@ -889,6 +889,7 @@ function CertificatesTable({
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Código</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Cooperado</th>
               {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">CPF</th>}
+              {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Nascimento</th>}
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emissão</th>
               <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Solicitado por</th>
@@ -898,10 +899,13 @@ function CertificatesTable({
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={isStaff ? 8 : 7} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+              <tr><td colSpan={isStaff ? 9 : 7} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
             ) : filtered.map((cert, i) => {
               const name = cert.profiles?.full_name ?? cert.student_name_snapshot ?? "—";
               const cpf = cert.profiles?.cpf ?? cert.student_cpf_snapshot ?? "—";
+              const dob = cert.profiles?.data_nascimento
+                ? (() => { const [y,m,d] = String(cert.profiles.data_nascimento).split("T")[0].split("-"); return `${d}/${m}/${y}`; })()
+                : "—";
               const issuedRef = cert.issued_at || cert.created_at;
               const issuedDate = new Date(issuedRef);
               return (
@@ -910,6 +914,7 @@ function CertificatesTable({
                   <td className="py-3 px-4 text-sm font-mono text-primary font-medium">{cert.code}</td>
                   <td className="py-3 px-4 text-sm text-card-foreground">{name}</td>
                   {isStaff && <td className="py-3 px-4 text-xs text-muted-foreground font-mono">{cpf}</td>}
+                  {isStaff && <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap">{dob}</td>}
                   <td className="py-3 px-4 text-sm text-card-foreground">{cert.courses?.title ?? cert.course_title_snapshot ?? "—"}</td>
                   <td className="py-3 px-4 text-sm text-muted-foreground whitespace-nowrap">
                     <div>{issuedDate.toLocaleDateString("pt-BR")}</div>
