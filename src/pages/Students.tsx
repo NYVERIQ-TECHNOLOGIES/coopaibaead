@@ -74,7 +74,7 @@ export default function Students() {
 
       const profiles = await fetchAll<any>(
         "profiles",
-        "user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf"
+        "user_id, full_name, avatar_url, cooperativa, created_at, enrollment_number, is_active, deactivated_at, cpf, data_nascimento"
       );
       const roles = await fetchAll<{ user_id: string; role: string }>("user_roles", "user_id, role");
       const roleMap = new Map(roles.map((r) => [r.user_id, r.role]));
@@ -204,6 +204,13 @@ export default function Students() {
   const totalAdmins = students.filter((s) => s.role === "admin" && s.is_active !== false).length;
   const totalModeradores = students.filter((s) => s.role === "moderador" && s.is_active !== false).length;
   const totalInativos = students.filter((s) => s.is_active === false).length;
+
+  const formatBirthDate = (v?: string | null) => {
+    if (!v) return "—";
+    const [y, m, d] = v.split("T")[0].split("-");
+    if (!y || !m || !d) return "—";
+    return `${d}/${m}/${y}`;
+  };
 
   const formatCpf = (v?: string | null) => {
     if (!v) return "";
@@ -499,6 +506,7 @@ export default function Students() {
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Matrícula</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Aluno</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">CPF</th>
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Nascimento</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">E-mail</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Senha</th>
                   <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">Tipo</th>
@@ -545,6 +553,9 @@ export default function Students() {
                        </td>
                       <td className="py-3 px-4 text-xs font-mono text-muted-foreground whitespace-nowrap">
                         {formatCpf((s as any).cpf) || "—"}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-muted-foreground whitespace-nowrap">
+                        {formatBirthDate((s as any).data_nascimento)}
                       </td>
                        <td className="py-3 px-4 text-sm text-muted-foreground max-w-[280px]">
                          <span className="truncate" title={emailMap[s.user_id] || ""}>
@@ -650,7 +661,7 @@ export default function Students() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="text-center py-8 text-muted-foreground">
+                    <td colSpan={11} className="text-center py-8 text-muted-foreground">
                       Nenhum aluno encontrado
                     </td>
                   </tr>
