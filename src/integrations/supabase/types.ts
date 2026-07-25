@@ -56,6 +56,57 @@ export type Database = {
         }
         Relationships: []
       }
+      archived_course_completions: {
+        Row: {
+          archived_at: string
+          archived_by: string | null
+          completed_at: string | null
+          course_duration: string | null
+          course_title: string
+          created_at: string
+          enrolled_at: string | null
+          id: string
+          original_course_id: string
+          progress: number
+          status: string
+          student_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string
+          archived_by?: string | null
+          completed_at?: string | null
+          course_duration?: string | null
+          course_title: string
+          created_at?: string
+          enrolled_at?: string | null
+          id?: string
+          original_course_id: string
+          progress?: number
+          status?: string
+          student_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string
+          archived_by?: string | null
+          completed_at?: string | null
+          course_duration?: string | null
+          course_title?: string
+          created_at?: string
+          enrolled_at?: string | null
+          id?: string
+          original_course_id?: string
+          progress?: number
+          status?: string
+          student_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           course_id: string
@@ -200,7 +251,7 @@ export type Database = {
           completed_at: string | null
           cooperativa_snapshot: string | null
           course_duration_snapshot: string | null
-          course_id: string
+          course_id: string | null
           course_started_at_snapshot: string | null
           course_title_snapshot: string | null
           created_at: string
@@ -237,7 +288,7 @@ export type Database = {
           completed_at?: string | null
           cooperativa_snapshot?: string | null
           course_duration_snapshot?: string | null
-          course_id: string
+          course_id?: string | null
           course_started_at_snapshot?: string | null
           course_title_snapshot?: string | null
           created_at?: string
@@ -274,7 +325,7 @@ export type Database = {
           completed_at?: string | null
           cooperativa_snapshot?: string | null
           course_duration_snapshot?: string | null
-          course_id?: string
+          course_id?: string | null
           course_started_at_snapshot?: string | null
           course_title_snapshot?: string | null
           created_at?: string
@@ -2017,6 +2068,10 @@ export type Database = {
       complete_profile_info: {
         Args: { _cpf?: string; _data_nascimento?: string; _phone?: string }
         Returns: undefined
+      }
+      delete_course_with_options: {
+        Args: { _course_id: string; _preserve_history?: boolean }
+        Returns: Json
       }
       encerrar_eventos_vencidos: { Args: never; Returns: number }
       get_admin_reports: { Args: never; Returns: Json }
