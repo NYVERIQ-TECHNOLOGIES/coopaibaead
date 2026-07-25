@@ -60,6 +60,8 @@ export default function Courses() {
   const [filter, setFilter] = useState<"all" | "cooperado">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [preserveHistory, setPreserveHistory] = useState(true);
+
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [uploadingImage, setUploadingImage] = useState(false);
