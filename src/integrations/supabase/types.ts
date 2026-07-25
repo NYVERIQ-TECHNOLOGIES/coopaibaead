@@ -621,6 +621,42 @@ export type Database = {
         }
         Relationships: []
       }
+      course_audit_log: {
+        Row: {
+          action: string
+          actor_name: string | null
+          actor_user_id: string | null
+          course_id: string
+          course_title: string
+          created_at: string
+          details: Json
+          id: string
+          preserved_history: boolean | null
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          actor_user_id?: string | null
+          course_id: string
+          course_title: string
+          created_at?: string
+          details?: Json
+          id?: string
+          preserved_history?: boolean | null
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          actor_user_id?: string | null
+          course_id?: string
+          course_title?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          preserved_history?: boolean | null
+        }
+        Relationships: []
+      }
       course_books: {
         Row: {
           cooperado_only: boolean

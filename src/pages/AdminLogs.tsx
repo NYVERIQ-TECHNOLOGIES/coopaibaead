@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Download, Calendar, KeyRound } from "lucide-react";
+import { Activity, Download, Calendar, KeyRound, BookX } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,22 @@ export default function AdminLogs() {
       }));
     },
   });
+
+  const { data: courseLogs = [], isLoading: loadingCourses } = useQuery({
+    queryKey: ["course-audit-log", from, to],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("course_audit_log")
+        .select("id, action, course_title, preserved_history, actor_name, details, created_at")
+        .gte("created_at", `${from}T00:00:00`)
+        .lte("created_at", `${to}T23:59:59`)
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      return (data ?? []) as any[];
+    },
+  });
+
+
 
 
   const exportCSV = () => {
@@ -232,7 +248,77 @@ export default function AdminLogs() {
           )}
         </motion.div>
       </div>
+
+      <div>
+        <h2 className="text-xl font-heading font-bold text-foreground flex items-center gap-2">
+          <BookX className="w-5 h-5 text-destructive" />
+          Cursos Excluídos e Restaurados
+        </h2>
+        <p className="text-muted-foreground text-sm mt-1 mb-3">
+          Auditoria de exclusões e restaurações de cursos ({courseLogs.length})
+        </p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="bg-card rounded-xl shadow-card border border-border overflow-hidden"
+        >
+          {loadingCourses ? (
+            <div className="text-center py-12 text-muted-foreground">Carregando...</div>
+          ) : courseLogs.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <BookX className="w-12 h-12 mx-auto mb-3 opacity-40" />
+              <p>Nenhuma exclusão ou restauração neste período</p>
+            </div>
+          ) : (
+            <div className="overflow-auto max-h-[420px]">
+              <table className="w-full">
+                <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm">
+                  <tr className="border-b border-border bg-muted/30">
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Data/Hora</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ação</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Curso</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Administrador</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Histórico</th>
+                    <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Detalhes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courseLogs.map((r) => (
+                    <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/20">
+                      <td className="py-3 px-4 text-sm text-foreground font-mono whitespace-nowrap">
+                        {new Date(r.created_at).toLocaleString("pt-BR")}
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            r.action === "restaurado"
+                              ? "bg-primary/10 text-primary"
+                              : "bg-destructive/10 text-destructive"
+                          }`}
+                        >
+                          {r.action === "restaurado" ? "Restaurado" : "Excluído"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium text-card-foreground">{r.course_title}</td>
+                      <td className="py-3 px-4 text-sm text-card-foreground">{r.actor_name || "Admin"}</td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {r.preserved_history ? "Mantido" : "Não mantido"}
+                      </td>
+                      <td className="py-3 px-4 text-xs text-muted-foreground hidden md:table-cell">
+                        {r.action === "restaurado"
+                          ? `Certificados: ${r.details?.restored_certificates ?? 0} · Matrículas: ${r.details?.restored_enrollments ?? 0}`
+                          : `Conclusões arquivadas: ${r.details?.archived_completions ?? 0} · Certificados preservados: ${r.details?.preserved_certificates ?? 0}`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </motion.div>
+      </div>
     </div>
+
 
   );
 }
