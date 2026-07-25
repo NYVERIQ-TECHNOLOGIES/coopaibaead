@@ -88,6 +88,39 @@ export default function Courses() {
     },
   });
 
+  const { data: deletedCourses = [] } = useQuery({
+    queryKey: ["deleted-courses"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("deleted_courses")
+        .select("id, course_id, course_title, preserved_history, certificate_ids, deleted_at")
+        .is("restored_at", null)
+        .order("deleted_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      const { data, error } = await supabase.rpc("restore_deleted_course", { _course_id: courseId });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      qc.invalidateQueries({ queryKey: ["deleted-courses"] });
+      toast({
+        title: "Curso restaurado",
+        description: `Certificados religados: ${data?.restored_certificates ?? 0} · Matrículas recuperadas: ${data?.restored_enrollments ?? 0}`,
+      });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+
+
   const handleImageUpload = async (file: File) => {
     const ext = file.name.split(".").pop();
     const path = `courses/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
