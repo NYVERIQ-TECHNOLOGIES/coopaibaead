@@ -134,16 +134,27 @@ export default function Courses() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("courses").delete().eq("id", id);
+      const { data, error } = await supabase.rpc("delete_course_with_options", {
+        _course_id: id,
+        _preserve_history: preserveHistory,
+      });
       if (error) throw error;
+      return data as any;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["courses"] });
       setDeleteId(null);
-      toast({ title: "Curso removido" });
+      setPreserveHistory(true);
+      toast({
+        title: "Curso removido",
+        description: data?.preserved
+          ? `Histórico preservado: ${data.archived_completions ?? 0} conclusão(ões) e ${data.preserved_certificates ?? 0} certificado(s).`
+          : "Todos os dados vinculados ao curso foram apagados.",
+      });
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
+
 
   const openNew = () => { setEditingCourse(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (c: Course) => {
