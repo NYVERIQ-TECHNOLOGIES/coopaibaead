@@ -196,11 +196,22 @@ export default function Courses() {
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={openNew} className="gradient-primary text-primary-foreground w-fit">
-            <Plus className="w-4 h-4 mr-2" /> Novo Curso
-          </Button>
+          <div className="flex gap-2 w-fit">
+            <Button variant="outline" onClick={() => setTrashOpen(true)}>
+              <History className="w-4 h-4 mr-2" /> Excluídos
+              {deletedCourses.length > 0 && (
+                <span className="ml-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                  {deletedCourses.length}
+                </span>
+              )}
+            </Button>
+            <Button onClick={openNew} className="gradient-primary text-primary-foreground">
+              <Plus className="w-4 h-4 mr-2" /> Novo Curso
+            </Button>
+          </div>
         )}
       </div>
+
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
