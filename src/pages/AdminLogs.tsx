@@ -67,6 +67,22 @@ export default function AdminLogs() {
     },
   });
 
+  const { data: courseLogs = [], isLoading: loadingCourses } = useQuery({
+    queryKey: ["course-audit-log", from, to],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("course_audit_log")
+        .select("id, action, course_title, preserved_history, actor_name, details, created_at")
+        .gte("created_at", `${from}T00:00:00`)
+        .lte("created_at", `${to}T23:59:59`)
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      return (data ?? []) as any[];
+    },
+  });
+
+
+
 
   const exportCSV = () => {
     const header = ["Data/Hora", "Administrador", "User Agent"];
