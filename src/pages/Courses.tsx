@@ -61,6 +61,8 @@ export default function Courses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [preserveHistory, setPreserveHistory] = useState(true);
+  const [trashOpen, setTrashOpen] = useState(false);
+
 
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState(emptyForm);
