@@ -567,18 +567,36 @@ export default function Courses() {
       </Dialog>
 
       {/* Delete Confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => { if (!o) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>Tem certeza que deseja remover este curso? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+            <div className="space-y-1">
+              <Label htmlFor="preserve-history" className="text-sm font-medium">Manter histórico dos alunos</Label>
+              <p className="text-xs text-muted-foreground">
+                Preserva os registros dos alunos que concluíram o curso e os certificados já solicitados
+                (permanecem válidos e verificáveis). Se desativado, esses dados serão apagados definitivamente.
+              </p>
+            </div>
+            <Switch id="preserve-history" checked={preserveHistory} onCheckedChange={setPreserveHistory} />
+          </div>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)}>Confirmar</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Removendo..." : "Confirmar"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   );
 }
