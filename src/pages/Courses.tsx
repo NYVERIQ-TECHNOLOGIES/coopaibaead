@@ -178,6 +178,8 @@ export default function Courses() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["courses"] });
+      qc.invalidateQueries({ queryKey: ["deleted-courses"] });
+
       setDeleteId(null);
       setPreserveHistory(true);
       toast({
