@@ -977,6 +977,51 @@ export type Database = {
         }
         Relationships: []
       }
+      deleted_courses: {
+        Row: {
+          certificate_ids: string[]
+          course_id: string
+          course_title: string
+          created_at: string
+          deleted_at: string
+          deleted_by: string | null
+          id: string
+          preserved_history: boolean
+          restored_at: string | null
+          restored_by: string | null
+          snapshot: Json
+          updated_at: string
+        }
+        Insert: {
+          certificate_ids?: string[]
+          course_id: string
+          course_title: string
+          created_at?: string
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          preserved_history?: boolean
+          restored_at?: string | null
+          restored_by?: string | null
+          snapshot: Json
+          updated_at?: string
+        }
+        Update: {
+          certificate_ids?: string[]
+          course_id?: string
+          course_title?: string
+          created_at?: string
+          deleted_at?: string
+          deleted_by?: string | null
+          id?: string
+          preserved_history?: boolean
+          restored_at?: string | null
+          restored_by?: string | null
+          snapshot?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       edge_function_rate_limits: {
         Row: {
           function_name: string
@@ -2241,6 +2286,7 @@ export type Database = {
         Args: { _course_id: string }
         Returns: undefined
       }
+      restore_deleted_course: { Args: { _course_id: string }; Returns: Json }
       submit_exam_answers: {
         Args: { _answers: Json; _evaluation_id: string }
         Returns: Json

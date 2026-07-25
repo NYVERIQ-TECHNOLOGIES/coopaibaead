@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Pencil, Trash2, Lock, Upload, Loader2, Image } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Lock, Upload, Loader2, Image, History, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +61,8 @@ export default function Courses() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [preserveHistory, setPreserveHistory] = useState(true);
+  const [trashOpen, setTrashOpen] = useState(false);
+
 
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -85,6 +87,39 @@ export default function Courses() {
       return data as Course[];
     },
   });
+
+  const { data: deletedCourses = [] } = useQuery({
+    queryKey: ["deleted-courses"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("deleted_courses")
+        .select("id, course_id, course_title, preserved_history, certificate_ids, deleted_at")
+        .is("restored_at", null)
+        .order("deleted_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: async (courseId: string) => {
+      const { data, error } = await supabase.rpc("restore_deleted_course", { _course_id: courseId });
+      if (error) throw error;
+      return data as any;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      qc.invalidateQueries({ queryKey: ["deleted-courses"] });
+      toast({
+        title: "Curso restaurado",
+        description: `Certificados religados: ${data?.restored_certificates ?? 0} · Matrículas recuperadas: ${data?.restored_enrollments ?? 0}`,
+      });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+  });
+
+
 
   const handleImageUpload = async (file: File) => {
     const ext = file.name.split(".").pop();
@@ -143,6 +178,8 @@ export default function Courses() {
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["courses"] });
+      qc.invalidateQueries({ queryKey: ["deleted-courses"] });
+
       setDeleteId(null);
       setPreserveHistory(true);
       toast({
@@ -196,11 +233,22 @@ export default function Courses() {
           </p>
         </div>
         {isAdmin && (
-          <Button onClick={openNew} className="gradient-primary text-primary-foreground w-fit">
-            <Plus className="w-4 h-4 mr-2" /> Novo Curso
-          </Button>
+          <div className="flex gap-2 w-fit">
+            <Button variant="outline" onClick={() => setTrashOpen(true)}>
+              <History className="w-4 h-4 mr-2" /> Excluídos
+              {deletedCourses.length > 0 && (
+                <span className="ml-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                  {deletedCourses.length}
+                </span>
+              )}
+            </Button>
+            <Button onClick={openNew} className="gradient-primary text-primary-foreground">
+              <Plus className="w-4 h-4 mr-2" /> Novo Curso
+            </Button>
+          </div>
         )}
       </div>
+
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -609,6 +657,56 @@ export default function Courses() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Deleted courses / restore */}
+      <Dialog open={trashOpen} onOpenChange={setTrashOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cursos excluídos</DialogTitle>
+            <DialogDescription>
+              Restaure um curso recentemente excluído. O conteúdo (módulos, aulas, avaliações e materiais) é recriado.
+              Certificados e matrículas de concluintes só voltam se a exclusão foi feita com a opção de manter o histórico.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deletedCourses.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">Nenhum curso excluído disponível para restauração.</p>
+          ) : (
+            <div className="space-y-3">
+              {deletedCourses.map((d) => (
+                <div key={d.id} className="flex items-start justify-between gap-4 rounded-lg border p-3">
+                  <div className="space-y-1 min-w-0">
+                    <p className="font-medium text-foreground truncate">{d.course_title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Excluído em {new Date(d.deleted_at).toLocaleString("pt-BR")}
+                    </p>
+                    <span className={`inline-block text-xs px-2 py-0.5 rounded-full ${d.preserved_history ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {d.preserved_history
+                        ? `Histórico preservado · ${d.certificate_ids?.length ?? 0} certificado(s)`
+                        : "Histórico não preservado"}
+                    </span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => restoreMutation.mutate(d.course_id)}
+                    disabled={restoreMutation.isPending}
+                  >
+                    {restoreMutation.isPending ? (
+                      <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                    ) : (
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                    )}
+                    Restaurar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
 
     </div>
   );
