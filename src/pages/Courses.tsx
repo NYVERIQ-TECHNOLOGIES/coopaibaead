@@ -60,6 +60,8 @@ export default function Courses() {
   const [filter, setFilter] = useState<"all" | "cooperado">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [preserveHistory, setPreserveHistory] = useState(true);
+
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -132,16 +134,27 @@ export default function Courses() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("courses").delete().eq("id", id);
+      const { data, error } = await supabase.rpc("delete_course_with_options", {
+        _course_id: id,
+        _preserve_history: preserveHistory,
+      });
       if (error) throw error;
+      return data as any;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["courses"] });
       setDeleteId(null);
-      toast({ title: "Curso removido" });
+      setPreserveHistory(true);
+      toast({
+        title: "Curso removido",
+        description: data?.preserved
+          ? `Histórico preservado: ${data.archived_completions ?? 0} conclusão(ões) e ${data.preserved_certificates ?? 0} certificado(s).`
+          : "Todos os dados vinculados ao curso foram apagados.",
+      });
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
+
 
   const openNew = () => { setEditingCourse(null); setForm(emptyForm); setDialogOpen(true); };
   const openEdit = (c: Course) => {
@@ -567,18 +580,36 @@ export default function Courses() {
       </Dialog>
 
       {/* Delete Confirm */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => { if (!o) setDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>Tem certeza que deseja remover este curso? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
+
+          <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
+            <div className="space-y-1">
+              <Label htmlFor="preserve-history" className="text-sm font-medium">Manter histórico dos alunos</Label>
+              <p className="text-xs text-muted-foreground">
+                Preserva os registros dos alunos que concluíram o curso e os certificados já solicitados
+                (permanecem válidos e verificáveis). Se desativado, esses dados serão apagados definitivamente.
+              </p>
+            </div>
+            <Switch id="preserve-history" checked={preserveHistory} onCheckedChange={setPreserveHistory} />
+          </div>
+
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteId && deleteMutation.mutate(deleteId)}>Confirmar</AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Removendo..." : "Confirmar"}
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   );
 }
