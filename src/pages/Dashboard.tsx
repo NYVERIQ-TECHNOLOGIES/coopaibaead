@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardWelcomeVideo from "@/components/DashboardWelcomeVideo";
 
-const COLORS = ["hsl(220, 70%, 45%)", "hsl(170, 50%, 40%)", "hsl(35, 90%, 55%)", "hsl(280, 60%, 50%)"];
+const COLORS = ["hsl(var(--primary))", "hsl(var(--primary-glow))", "hsl(var(--warning))", "hsl(var(--info))"];
 
 
 export default function Dashboard() {
