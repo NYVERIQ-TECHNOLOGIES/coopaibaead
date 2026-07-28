@@ -775,8 +775,8 @@ export default function CourseDetail() {
 
 
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
-        <div className="space-y-6 min-w-0">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-4 sm:gap-6 items-start">
+        <div className="space-y-4 sm:space-y-6 min-w-0 order-2 xl:order-1">
       {/* Progress */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="bg-card rounded-2xl p-6 shadow-card border border-border/70">
@@ -944,7 +944,7 @@ export default function CourseDetail() {
       )}
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-20 min-w-0">
+        <aside className="space-y-4 min-w-0 order-1 xl:order-2 xl:sticky xl:top-20">
         {/* ========== MODULES & LESSONS ========== */}
         <div className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
           <button onClick={() => toggleSection("modules")}
@@ -965,7 +965,11 @@ export default function CourseDetail() {
                 </div>
               )}
               <div className="divide-y divide-border">
-                {modules.map((mod: any) => (
+                {modules.map((mod: any) => {
+                  const modLessons = mod.lessons || [];
+                  const modDone = modLessons.filter((l: any) => (isAdmin ? l.completed : completedLessonIds.has(l.id))).length;
+                  const modPct = modLessons.length ? Math.round((modDone / modLessons.length) * 100) : 0;
+                  return (
                   <div key={mod.id}>
                     <div className="flex items-start justify-between gap-2 p-4 bg-muted/5">
                       <div className="min-w-0 flex-1">
@@ -973,7 +977,26 @@ export default function CourseDetail() {
                           {mod.locked && <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
                           <span className="min-w-0 break-words">{mod.title}</span>
                         </h3>
-                        <Badge variant="outline" className="mt-1.5 text-[10px] font-medium">{mod.lessons?.length || 0} aulas</Badge>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <Badge variant="outline" className="text-[10px] font-medium">{modLessons.length} aulas</Badge>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-semibold ${modPct === 100 ? "bg-success/10 text-success border-success/30" : modPct > 0 ? "bg-primary/10 text-primary border-primary/30" : "text-muted-foreground"}`}
+                          >
+                            {modDone}/{modLessons.length} concluídas
+                          </Badge>
+                        </div>
+                        {modLessons.length > 0 && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${modPct === 100 ? "bg-success" : "gradient-primary"}`}
+                                style={{ width: `${modPct}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-semibold text-muted-foreground tabular-nums w-8 text-right">{modPct}%</span>
+                          </div>
+                        )}
                       </div>
                       {isAdmin && (
                         <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -1023,6 +1046,11 @@ export default function CourseDetail() {
                                 <p className={`text-sm leading-snug break-words ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                   {locked && <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>}
+                                  {!locked && (
+                                    <Badge variant="outline" className={`text-[10px] font-semibold ${userCompleted ? "bg-success/10 text-success border-success/30" : "text-muted-foreground"}`}>
+                                      {userCompleted ? "Concluída" : "Pendente"}
+                                    </Badge>
+                                  )}
                                   <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
                                   {lesson.duration && <span className="text-[11px] text-muted-foreground whitespace-nowrap">{lesson.duration}</span>}
                                   {lesson.content_url && !locked && (
@@ -1064,7 +1092,8 @@ export default function CourseDetail() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 {modules.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-6">Nenhum módulo criado</p>
                 )}
