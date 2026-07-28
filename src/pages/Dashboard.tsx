@@ -92,7 +92,7 @@ export default function Dashboard() {
       </section>
 
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard title="Total de Alunos" value={String(counts?.students ?? 0)} icon={Users} gradient="primary" />
         <StatCard title="Cooperados" value={String(counts?.cooperados ?? 0)} icon={UserCheck} gradient="secondary" />
         <StatCard title="Cursos Ativos" value={String(counts?.courses ?? 0)} icon={BookOpen} gradient="accent" />
@@ -101,14 +101,14 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-card rounded-xl p-5 shadow-card border border-border">
-          <h3 className="font-heading font-semibold text-card-foreground mb-4">Distribuição</h3>
+          className="bg-card rounded-2xl p-6 shadow-card border border-border/70">
+          <h3 className="font-heading font-bold text-card-foreground mb-5">Distribuição</h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={courseDistribution.filter(d => d.value > 0)} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
                 {courseDistribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid hsl(220, 15%, 90%)", fontSize: "13px" }} />
+              <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--card-foreground))", fontSize: "13px" }} />
             </PieChart>
           </ResponsiveContainer>
           <div className="grid grid-cols-2 gap-2 mt-2">
@@ -122,8 +122,8 @@ export default function Dashboard() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-card rounded-xl p-5 shadow-card border border-border lg:col-span-2">
-          <h3 className="font-heading font-semibold text-card-foreground mb-4">Últimos Cadastros</h3>
+          className="bg-card rounded-2xl p-6 shadow-card border border-border/70 lg:col-span-2">
+          <h3 className="font-heading font-bold text-card-foreground mb-5">Últimos Cadastros</h3>
           {recentProfiles && recentProfiles.length > 0 ? (
             <div className="space-y-3">
               {recentProfiles.map((p, i) => (
@@ -141,7 +141,7 @@ export default function Dashboard() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-card-foreground">{p.full_name || "Usuário"}</p>
+                    <p className="text-sm font-semibold text-card-foreground">{p.full_name || "Usuário"}</p>
                     <p className="text-xs text-muted-foreground">Cadastrado em {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
                   </div>
                 </div>
@@ -154,8 +154,8 @@ export default function Dashboard() {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-        className="bg-card rounded-xl p-5 shadow-card border border-border">
-        <h3 className="font-heading font-semibold text-card-foreground mb-4 flex items-center gap-2">
+        className="bg-card rounded-2xl p-6 shadow-card border border-border/70">
+        <h3 className="font-heading font-bold text-card-foreground mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-warning" /> Resumo Rápido
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -164,7 +164,7 @@ export default function Dashboard() {
             { label: "Cursos Disponíveis", count: counts?.courses ?? 0, color: "text-success" },
             { label: "Certificados Emitidos", count: counts?.certificates ?? 0, color: "text-accent" },
           ].map((alert) => (
-            <div key={alert.label} className="bg-muted/50 rounded-lg p-3">
+            <div key={alert.label} className="rounded-2xl border border-border/60 bg-secondary/60 p-4">
               <p className={`text-xl font-heading font-bold ${alert.color}`}>{alert.count}</p>
               <p className="text-sm text-muted-foreground">{alert.label}</p>
             </div>
