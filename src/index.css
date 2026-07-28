@@ -229,6 +229,29 @@
   .gradient-sidebar {
     background: var(--gradient-sidebar);
   }
+  .gradient-hero {
+    background: var(--gradient-hero);
+    --primary-foreground: var(--brand-foreground);
+  }
+  .surface-soft {
+    background: hsl(var(--secondary));
+  }
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, hsl(var(--foreground) / 0.06), transparent);
+    animation: shimmer 1.6s infinite;
+  }
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
