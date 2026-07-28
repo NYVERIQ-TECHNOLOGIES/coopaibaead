@@ -147,14 +147,18 @@ export default function Login() {
           transition={{ delay: 0.2 }}
           className="relative z-10 text-center"
         >
-          <img src={logoImg} alt="Coopaiba EAD" className="w-28 h-28 mx-auto mb-8 rounded-[1.5rem] object-contain bg-brand-foreground/10 p-3 backdrop-blur shadow-elevated" />
+          <img
+            src={logoImg}
+            alt="Coopaiba EAD"
+            className="w-28 h-28 mx-auto mb-8 rounded-[1.5rem] object-contain bg-brand-foreground/10 p-3 backdrop-blur shadow-elevated"
+          />
           <h1 className="text-4xl font-heading font-bold text-brand-foreground mb-4">Coopaiba EAD</h1>
           <p className="text-lg text-brand-foreground/80 max-w-md">
             Plataforma de educação cooperativista. Aprenda, colabore e cresça junto com sua comunidade.
           </p>
           <div className="flex justify-center gap-8 mt-12">
             {[
-              { value: "1.200+", label: "Alunos" },
+              { value: "+2000", label: "Alunos" },
               { value: "18+", label: "Cursos" },
               { value: "95%", label: "Satisfação" },
             ].map((stat) => (
@@ -169,7 +173,11 @@ export default function Login() {
 
       {/* Right panel - form */}
       <div className="flex-1 flex items-center justify-center p-5 sm:p-8 bg-background">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-[1.5rem] border border-border/70 bg-card p-6 sm:p-9 shadow-elevated">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md rounded-[1.5rem] border border-border/70 bg-card p-6 sm:p-9 shadow-elevated"
+        >
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -221,7 +229,9 @@ export default function Login() {
             </>
           ) : (
             <>
-              <h2 className="text-[26px] font-heading font-extrabold tracking-tight text-foreground">Bem-vindo de volta</h2>
+              <h2 className="text-[26px] font-heading font-extrabold tracking-tight text-foreground">
+                Bem-vindo de volta
+              </h2>
               <p className="text-muted-foreground mt-1 mb-8">Entre na sua conta para continuar</p>
 
               <form className="space-y-4" onSubmit={handleLogin}>
