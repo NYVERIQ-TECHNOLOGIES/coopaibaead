@@ -158,7 +158,7 @@ export default function Login() {
           </p>
           <div className="flex justify-center gap-8 mt-12">
             {[
-              { value: "+2000", label: "Alunos" },
+              { value: "2000+", label: "Alunos" },
               { value: "18+", label: "Cursos" },
               { value: "95%", label: "Satisfação" },
             ].map((stat) => (
