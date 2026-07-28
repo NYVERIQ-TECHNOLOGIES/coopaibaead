@@ -235,30 +235,31 @@ export default function AppSidebar() {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
-        <img src={logoImg} alt="Coopaiba EAD" className="w-9 h-9 rounded-xl object-contain flex-shrink-0" />
+      <div className={`flex items-center gap-3 px-4 py-6 border-b border-sidebar-border/70 ${collapsed ? "justify-center" : ""}`}>
+        <img src={logoImg} alt="Coopaiba EAD" className="w-11 h-11 rounded-2xl object-contain flex-shrink-0 shadow-card bg-card p-1" />
         {!collapsed && (
           <div className="overflow-hidden">
-            <h1 className="font-heading text-base font-bold text-sidebar-foreground leading-tight">Coopaiba EAD</h1>
-            <p className="text-[11px] text-sidebar-foreground/60">Educação Cooperativista</p>
+            <h1 className="font-heading text-[17px] font-extrabold tracking-tight text-sidebar-foreground leading-tight">Coopaiba EAD</h1>
+            <p className="text-[11px] text-sidebar-foreground/55">Ecossistema de Aprendizagem</p>
           </div>
         )}
       </div>
 
       {/* Search */}
       {!collapsed && (
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-4">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-sidebar-foreground/50" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/45" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar no menu..."
-              className="w-full pl-8 pr-2 py-1.5 text-xs rounded-md bg-sidebar-accent/40 text-sidebar-foreground placeholder:text-sidebar-foreground/40 border border-sidebar-border/50 focus:outline-none focus:border-sidebar-primary/60"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-sidebar-accent/50 text-sidebar-foreground placeholder:text-sidebar-foreground/40 border border-sidebar-border/60 transition-colors focus:outline-none focus:border-sidebar-primary/50 focus:bg-sidebar-accent"
             />
           </div>
         </div>
       )}
+
 
       {/* Navigation */}
       <nav className="flex-1 py-3 px-2 space-y-2 overflow-y-auto sidebar-scroll">
