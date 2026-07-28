@@ -27,6 +27,7 @@ import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
 import { getSignedUrl } from "@/lib/storage";
 import CourseChat from "@/components/CourseChat";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
 import IntroVideoModal from "@/components/IntroVideoModal";
