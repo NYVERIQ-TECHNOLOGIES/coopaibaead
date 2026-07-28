@@ -1046,6 +1046,11 @@ export default function CourseDetail() {
                                 <p className={`text-sm leading-snug break-words ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
                                 <div className="mt-1 flex flex-wrap items-center gap-1.5">
                                   {locked && <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>}
+                                  {!locked && (
+                                    <Badge variant="outline" className={`text-[10px] font-semibold ${userCompleted ? "bg-success/10 text-success border-success/30" : "text-muted-foreground"}`}>
+                                      {userCompleted ? "Concluída" : "Pendente"}
+                                    </Badge>
+                                  )}
                                   <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
                                   {lesson.duration && <span className="text-[11px] text-muted-foreground whitespace-nowrap">{lesson.duration}</span>}
                                   {lesson.content_url && !locked && (
@@ -1087,7 +1092,8 @@ export default function CourseDetail() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 {modules.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-6">Nenhum módulo criado</p>
                 )}
