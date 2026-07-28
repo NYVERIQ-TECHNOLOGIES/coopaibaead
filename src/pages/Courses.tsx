@@ -71,7 +71,7 @@ export default function Courses() {
   const [introProgress, setIntroProgress] = useState(0);
   const imageFileRef = useRef<HTMLInputElement>(null);
   const introFileRef = useRef<HTMLInputElement>(null);
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isAdmin = role === "admin";
@@ -87,6 +87,22 @@ export default function Courses() {
       return data as Course[];
     },
   });
+
+  const { data: myEnrollments = [] } = useQuery({
+    queryKey: ["my-enrollments-progress", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select("course_id, progress")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []) as { course_id: string; progress: number }[];
+    },
+  });
+
+  const progressMap: Record<string, number> = {};
+  for (const e of myEnrollments) progressMap[e.course_id] = Math.round(Number(e.progress ?? 0));
 
   const { data: deletedCourses = [] } = useQuery({
     queryKey: ["deleted-courses"],
