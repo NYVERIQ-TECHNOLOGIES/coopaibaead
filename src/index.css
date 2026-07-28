@@ -151,8 +151,28 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
     line-height: 1.2;
+    letter-spacing: -0.018em;
+    font-weight: 700;
     overflow-wrap: break-word;
   }
+
+  /* Transição suave entre temas */
+  body, header, aside, nav, main, section, article, footer,
+  [class*="bg-card"], [class*="bg-background"], [class*="bg-muted"], [class*="bg-sidebar"] {
+    transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
+  }
+
+  /* Foco visível e acessível em todos os elementos interativos */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: calc(var(--radius) - 6px);
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
+
 
   /* Evita overflow horizontal por imagens/mídia */
   img, video, canvas, svg {
