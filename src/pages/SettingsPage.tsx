@@ -410,6 +410,35 @@ export default function SettingsPage() {
           </Section>
         </TabsContent>
 
+        <TabsContent value="appearance">
+          <Section title="Tema da interface" desc="Escolha entre claro, escuro ou seguir o sistema" icon={Palette}>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { value: "light", label: "Claro", icon: Sun, hint: "Interface clara e elegante" },
+                { value: "dark", label: "Escuro", icon: Moon, hint: "Grafite profundo, alto contraste" },
+                { value: "system", label: "Automático", icon: Monitor, hint: "Segue o sistema operacional" },
+              ].map(({ value, label, icon: Icon, hint }) => {
+                const active = theme === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTheme(value)}
+                    aria-pressed={active}
+                    className={`rounded-lg border p-4 text-left transition-all hover-lift ${
+                      active ? "border-primary bg-primary/5 shadow-glow" : "border-border bg-card hover:border-primary/40"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 mb-2 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                    <p className="font-heading font-semibold text-foreground">{label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </Section>
+        </TabsContent>
+
         <TabsContent value="platform">
           <Section title="Informações da Plataforma" desc="Detalhes sobre a Coopaiba EAD" icon={Globe}>
             <div className="space-y-3 text-sm">
