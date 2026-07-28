@@ -445,10 +445,13 @@ export default function Certificates() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <section className="relative overflow-hidden rounded-[1.5rem] gradient-hero px-6 py-7 sm:px-8 shadow-elevated">
+        <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-brand-foreground/10 blur-2xl" />
+        <div className="relative flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Certificados</h1>
-          <p className="text-muted-foreground mt-1">Gerencie certificados, modelos e retirada presencial</p>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-foreground/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-foreground/90 backdrop-blur">Coopaiba EAD</span>
+          <h1 className="mt-3 text-2xl lg:text-3xl font-heading font-extrabold tracking-tight text-brand-foreground">Certificados</h1>
+          <p className="text-brand-foreground/75 mt-1.5 text-sm">Gerencie certificados, modelos e retirada presencial</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" className="gap-2" onClick={downloadAllZip} disabled={downloadingAll}>
@@ -542,10 +545,10 @@ export default function Certificates() {
           </>
         )}
         </div>
+        </div>
+      </section>
 
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
         {[
           { label: "Total", value: certificates.length, icon: Award, gradient: "gradient-primary" },
           { label: "Disponíveis", value: emitted, icon: CheckCircle, gradient: "gradient-secondary" },
@@ -553,13 +556,13 @@ export default function Certificates() {
           { label: "Em processamento", value: pending, icon: Clock, gradient: "gradient-accent" },
         ].map((stat) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-xl p-4 shadow-card border border-border flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl ${stat.gradient} flex items-center justify-center`}>
-              <stat.icon className="w-6 h-6 text-primary-foreground" />
+            className="bg-card rounded-2xl p-5 shadow-card border border-border/70 flex items-center gap-4 transition-all duration-200 hover:shadow-elevated hover:-translate-y-0.5">
+            <div className={`w-12 h-12 rounded-2xl ${stat.gradient} flex items-center justify-center shadow-card`}>
+              <stat.icon className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
-              <p className="text-2xl font-heading font-bold text-card-foreground">{stat.value}</p>
-              <p className="text-sm text-muted-foreground">{stat.label}</p>
+            <div className="min-w-0">
+              <p className="text-2xl font-heading font-extrabold tracking-tight text-card-foreground">{stat.value}</p>
+              <p className="text-[13px] text-muted-foreground truncate">{stat.label}</p>
             </div>
           </motion.div>
         ))}
@@ -616,7 +619,7 @@ export default function Certificates() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {templates.map((tpl) => (
                   <motion.div key={tpl.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                    className={`bg-card rounded-xl border shadow-card overflow-hidden transition-all ${tpl.active ? "border-primary/50" : "border-border opacity-70"}`}>
+                    className={`bg-card rounded-2xl border shadow-card overflow-hidden transition-all duration-200 hover:shadow-elevated ${tpl.active ? "border-primary/50 ring-1 ring-primary/15" : "border-border/70 opacity-80"}`}>
                     <div className="aspect-video bg-muted/30 flex items-center justify-center overflow-hidden">
                       {tpl.file_url.match(/\.(png|jpg|jpeg|webp|svg)$/i) ? (
                         <SignedImage path={tpl.file_url} alt={tpl.name} className="w-full h-full object-contain" />
@@ -878,23 +881,29 @@ function CertificatesTable({
   onAudit?: (c: any) => void;
   onDownload?: (c: any) => void;
 }) {
-  if (isLoading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
+  if (isLoading) return (
+    <div className="rounded-2xl border border-border/70 bg-card p-5 space-y-3 shadow-card">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="h-11 rounded-xl bg-muted shimmer" />
+      ))}
+    </div>
+  );
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="bg-card rounded-xl shadow-card border border-border overflow-hidden">
-      <div className="overflow-x-auto max-h-[70vh] overflow-y-auto">
+      className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
+      <div className="overflow-x-auto max-h-[70vh] overflow-y-auto sidebar-scroll">
         <table className="w-full">
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-border bg-muted/30">
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Código</th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Cooperado</th>
-              {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">CPF</th>}
-              {isStaff && <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Nascimento</th>}
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Curso</th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Emissão</th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Solicitado por</th>
-              <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Status</th>
-              <th className="text-right py-3 px-4 text-xs font-semibold text-muted-foreground uppercase">Ações</th>
+            <tr className="border-b border-border bg-secondary/70 backdrop-blur supports-[backdrop-filter]:bg-secondary/60">
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Código</th>
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Cooperado</th>
+              {isStaff && <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">CPF</th>}
+              {isStaff && <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Nascimento</th>}
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Curso</th>
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Emissão</th>
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Solicitado por</th>
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Status</th>
+              <th className="text-right py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -910,7 +919,7 @@ function CertificatesTable({
               const issuedDate = new Date(issuedRef);
               return (
                 <motion.tr key={cert.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
-                  className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  className="border-b border-border/60 last:border-0 hover:bg-secondary/50 transition-colors">
                   <td className="py-3 px-4 text-sm font-mono text-primary font-medium">{cert.code}</td>
                   <td className="py-3 px-4 text-sm text-card-foreground">{name}</td>
                   {isStaff && <td className="py-3 px-4 text-xs text-muted-foreground font-mono">{cpf}</td>}
@@ -927,7 +936,7 @@ function CertificatesTable({
                     )}
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${CERT_STATUS_STYLE[cert.status] || "text-muted-foreground"}`}>
+                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${CERT_STATUS_STYLE[cert.status] || "text-muted-foreground border-border"}`}>
                       {CERT_STATUS_LABEL[cert.status] || cert.status}
                     </span>
                   </td>
