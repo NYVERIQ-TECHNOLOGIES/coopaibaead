@@ -967,14 +967,16 @@ export default function CourseDetail() {
               <div className="divide-y divide-border">
                 {modules.map((mod: any) => (
                   <div key={mod.id}>
-                    <div className="flex items-center justify-between p-4 bg-muted/5">
-                      <h3 className="font-heading font-semibold text-card-foreground flex items-center gap-2 text-sm">
-                        {mod.locked && <Lock className="w-4 h-4 text-muted-foreground" />}
-                        {mod.title}
-                        <Badge variant="outline" className="text-[10px]">{mod.lessons?.length || 0} aulas</Badge>
-                      </h3>
+                    <div className="flex items-start justify-between gap-2 p-4 bg-muted/5">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-heading font-semibold text-card-foreground flex items-start gap-2 text-sm leading-snug">
+                          {mod.locked && <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
+                          <span className="min-w-0 break-words">{mod.title}</span>
+                        </h3>
+                        <Badge variant="outline" className="mt-1.5 text-[10px] font-medium">{mod.lessons?.length || 0} aulas</Badge>
+                      </div>
                       {isAdmin && (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openNewLesson(mod.id)}><Plus className="w-3.5 h-3.5 text-primary" /></Button>
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditModule(mod)}><Edit className="w-3.5 h-3.5" /></Button>
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteModuleMut.mutate(mod.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
@@ -991,7 +993,7 @@ export default function CourseDetail() {
                         return (
                           <div key={lesson.id}>
                             <div
-                              className={`flex items-center gap-3 px-4 py-2.5 pl-8 transition-colors group ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/10 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
+                              className={`flex items-start gap-3 px-4 py-3 pl-6 sm:pl-8 transition-colors group ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/10 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
                               onClick={() => {
                                 if (locked) {
                                   toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
@@ -1018,16 +1020,18 @@ export default function CourseDetail() {
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <p className={`text-sm ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
+                                <p className={`text-sm leading-snug break-words ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
+                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                                  {locked && <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>}
+                                  <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
+                                  {lesson.duration && <span className="text-[11px] text-muted-foreground whitespace-nowrap">{lesson.duration}</span>}
+                                  {lesson.content_url && !locked && (
+                                    <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                  )}
+                                </div>
                               </div>
-                              {lesson.content_url && !locked && (
-                                <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                              )}
-                              {locked && <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>}
-                              <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
-                              <span className="text-xs text-muted-foreground flex-shrink-0">{lesson.duration}</span>
                               {isAdmin && (
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center gap-0.5 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" /></Button>
                                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
                                 </div>
