@@ -948,12 +948,24 @@ export default function CourseDetail() {
         {/* ========== MODULES & LESSONS ========== */}
         <div className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
           <button onClick={() => toggleSection("modules")}
-            className="w-full flex items-center justify-between p-5 hover:bg-secondary/50 transition-colors">
-            <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-primary" /> Módulos & Aulas ({totalLessons})
-            </h2>
-            {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+            className="w-full p-5 text-left hover:bg-secondary/50 transition-colors">
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" /> Conteúdo do Curso
+              </h2>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-primary">{progressPct}%</span>
+                {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              </div>
+            </div>
+            <div className="mt-2.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+              <div className="h-full gradient-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {modules.length} módulos · {totalLessons} aulas
+            </p>
           </button>
+
 
           {expandedSections.modules && (
             <div className="border-t border-border">
