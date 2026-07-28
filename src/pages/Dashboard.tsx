@@ -62,25 +62,35 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DashboardWelcomeVideo />
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Visão geral da plataforma Coopaiba EAD</p>
-        </div>
-        {enrollmentNumber && (
-          <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-card">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <IdCard className="w-4 h-4 text-primary" />
-            </div>
-            <div className="leading-tight">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Matrícula</p>
-              <p className="font-mono font-semibold text-sm text-foreground">{enrollmentNumber}</p>
-            </div>
+      <section className="relative overflow-hidden rounded-[1.5rem] gradient-hero px-6 py-8 sm:px-10 sm:py-10 shadow-elevated">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-foreground/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-10 -bottom-24 h-56 w-56 rounded-full bg-brand-foreground/5 blur-2xl" />
+        <div className="relative flex items-start justify-between gap-6 flex-wrap">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-foreground/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-foreground/90 backdrop-blur">
+              Coopaiba EAD
+            </span>
+            <h1 className="mt-4 text-3xl lg:text-4xl font-heading font-extrabold tracking-tight text-brand-foreground">Dashboard</h1>
+            <p className="text-brand-foreground/75 mt-2 text-[15px] leading-relaxed">
+              Visão geral do ecossistema de aprendizagem — cursos, cooperados e certificados em um só lugar.
+            </p>
           </div>
-        )}
-      </div>
+          {enrollmentNumber && (
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-brand-foreground/20 bg-brand-foreground/10 px-4 py-3 backdrop-blur">
+              <div className="w-10 h-10 rounded-xl bg-brand-foreground/15 flex items-center justify-center">
+                <IdCard className="w-4 h-4 text-brand-foreground" />
+              </div>
+              <div className="leading-tight">
+                <p className="text-[11px] uppercase tracking-wide text-brand-foreground/70 font-medium">Matrícula</p>
+                <p className="font-mono font-semibold text-sm text-brand-foreground">{enrollmentNumber}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total de Alunos" value={String(counts?.students ?? 0)} icon={Users} gradient="primary" />
