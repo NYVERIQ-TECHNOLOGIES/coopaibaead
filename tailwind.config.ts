@@ -14,8 +14,14 @@ export default {
     },
     extend: {
       fontFamily: {
-        heading: ['Outfit', 'sans-serif'],
+        heading: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
         body: ['Inter', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        elevated: "var(--shadow-elevated)",
+        glow: "var(--shadow-glow)",
       },
       colors: {
         border: "hsl(var(--border))",
