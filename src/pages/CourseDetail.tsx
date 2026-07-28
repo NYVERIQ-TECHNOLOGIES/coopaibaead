@@ -1363,13 +1363,26 @@ export default function CourseDetail() {
 
       {/* Content Viewer Dialog */}
       <Dialog open={contentDialogOpen} onOpenChange={(o) => { if (!o) { setContentLessonId(null); setContentUrl(""); setContentError(null); } setContentDialogOpen(o); }}>
-        <DialogContent className="max-w-5xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="text-base sm:text-lg">Visualizar Conteúdo</DialogTitle>
-            <DialogDescription className="sr-only">Visualização do conteúdo selecionado</DialogDescription>
-          </DialogHeader>
-          <div className={`grid gap-4 ${contentLessonId && !isAdmin ? "lg:grid-cols-[1fr_320px]" : ""}`}>
-            <div>
+        <DialogContent className="max-w-6xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto p-0 gap-0">
+          {(() => {
+            const currentLesson = modules
+              .flatMap((m: any) => m.lessons || [])
+              .find((l: any) => l.id === contentLessonId);
+            const currentModule = modules.find((m: any) => (m.lessons || []).some((l: any) => l.id === contentLessonId));
+            return (
+              <DialogHeader className="px-4 sm:px-6 pt-5 pb-4 border-b border-border/70 text-left space-y-1">
+                <DialogTitle className="font-heading text-lg sm:text-2xl font-extrabold leading-tight">
+                  {currentLesson?.title || "Visualizar Conteúdo"}
+                </DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm text-primary">
+                  {currentModule?.title || "Visualização do conteúdo selecionado"}
+                </DialogDescription>
+              </DialogHeader>
+            );
+          })()}
+          <div className={`grid gap-4 p-4 sm:p-6 ${contentLessonId && !isAdmin ? "lg:grid-cols-[1fr_320px]" : ""}`}>
+            <div className="min-w-0 rounded-2xl border border-border/70 bg-foreground/[0.03] p-2 sm:p-3">
+
               {contentLoading && (
                 <div className="flex items-center justify-center h-[40vh] rounded-lg bg-muted text-muted-foreground gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" /> Carregando...
