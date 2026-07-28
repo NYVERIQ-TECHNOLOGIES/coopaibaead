@@ -54,6 +54,11 @@ export default function CourseDetail() {
   const [expandedSections, setExpandedSections] = useState({ modules: true, evaluations: true, books: true });
   const toggleSection = (key: keyof typeof expandedSections) =>
     setExpandedSections((p) => ({ ...p, [key]: !p[key] }));
+  const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
+  const toggleModule = (id: string) =>
+    setCollapsedModules((p) => ({ ...p, [id]: !p[id] }));
+
+
 
   // ---- Fetch course ----
   const { data: course, isLoading: loadingCourse } = useQuery({
@@ -948,22 +953,22 @@ export default function CourseDetail() {
         {/* ========== MODULES & LESSONS ========== */}
         <div className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
           <button onClick={() => toggleSection("modules")}
-            className="w-full p-5 text-left hover:bg-secondary/50 transition-colors">
+            className="w-full p-5 text-left hover:bg-secondary/40 transition-colors">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" /> Conteúdo do Curso
+              <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2 text-[15px]">
+                <BookOpen className="w-4 h-4 text-primary" /> Conteúdo do Curso
               </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-primary">{progressPct}%</span>
-                {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-              </div>
+              {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
             </div>
-            <div className="mt-2.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
               <div className="h-full gradient-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              {modules.length} módulos · {totalLessons} aulas
-            </p>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="text-[11px] text-muted-foreground">
+                {modules.filter((m: any) => (m.lessons || []).length > 0 && (m.lessons || []).every((l: any) => (isAdmin ? l.completed : completedLessonIds.has(l.id)))).length} de {modules.length} módulos concluídos
+              </p>
+              <span className="text-[11px] font-bold text-primary tabular-nums">{progressPct}%</span>
+            </div>
           </button>
 
 
@@ -976,40 +981,46 @@ export default function CourseDetail() {
                   </Button>
                 </div>
               )}
-              <div className="divide-y divide-border">
+              <div className="p-3 space-y-2">
                 {modules.map((mod: any) => {
                   const modLessons = mod.lessons || [];
                   const modDone = modLessons.filter((l: any) => (isAdmin ? l.completed : completedLessonIds.has(l.id))).length;
                   const modPct = modLessons.length ? Math.round((modDone / modLessons.length) * 100) : 0;
+                  const modComplete = modLessons.length > 0 && modDone === modLessons.length;
+                  const isOpen = !collapsedModules[mod.id];
+                  const hasActive = modLessons.some((l: any) => l.id === contentLessonId);
                   return (
-                  <div key={mod.id}>
-                    <div className="flex items-start justify-between gap-2 p-4 bg-muted/5">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-heading font-semibold text-card-foreground flex items-start gap-2 text-sm leading-snug">
-                          {mod.locked && <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
-                          <span className="min-w-0 break-words">{mod.title}</span>
-                        </h3>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                          <Badge variant="outline" className="text-[10px] font-medium">{modLessons.length} aulas</Badge>
-                          <Badge
-                            variant="outline"
-                            className={`text-[10px] font-semibold ${modPct === 100 ? "bg-success/10 text-success border-success/30" : modPct > 0 ? "bg-primary/10 text-primary border-primary/30" : "text-muted-foreground"}`}
-                          >
-                            {modDone}/{modLessons.length} concluídas
-                          </Badge>
-                        </div>
-                        {modLessons.length > 0 && (
-                          <div className="mt-2 flex items-center gap-2">
-                            <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all duration-500 ${modPct === 100 ? "bg-success" : "gradient-primary"}`}
-                                style={{ width: `${modPct}%` }}
-                              />
-                            </div>
-                            <span className="text-[10px] font-semibold text-muted-foreground tabular-nums w-8 text-right">{modPct}%</span>
-                          </div>
-                        )}
-                      </div>
+                  <div
+                    key={mod.id}
+                    className={`rounded-xl border overflow-hidden transition-colors ${hasActive && isOpen ? "border-primary/40 bg-primary/[0.04]" : "border-border/70 bg-muted/[0.15]"}`}
+                  >
+                    <div className="flex items-start justify-between gap-2 p-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleModule(mod.id)}
+                        className="flex items-start gap-2.5 min-w-0 flex-1 text-left"
+                      >
+                        <span className="mt-0.5 flex-shrink-0">
+                          {mod.locked ? (
+                            <Lock className="w-4 h-4 text-muted-foreground" />
+                          ) : modComplete ? (
+                            <CheckCircle className="w-4 h-4 text-success" />
+                          ) : (
+                            <span className={`block w-4 h-4 rounded-full border-2 ${modPct > 0 ? "border-primary" : "border-muted-foreground/40"}`} />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-heading font-semibold text-[13px] leading-snug text-card-foreground break-words">
+                            {mod.title}
+                          </span>
+                          {modLessons.length > 0 && (
+                            <span className="mt-1 block text-[11px] text-muted-foreground">
+                              {modDone}/{modLessons.length} aulas · {modPct}%
+                            </span>
+                          )}
+                        </span>
+                        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
+                      </button>
                       {isAdmin && (
                         <div className="flex items-center gap-0.5 flex-shrink-0">
                           <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openNewLesson(mod.id)}><Plus className="w-3.5 h-3.5 text-primary" /></Button>
@@ -1018,17 +1029,33 @@ export default function CourseDetail() {
                         </div>
                       )}
                     </div>
-                    <div className="divide-y divide-border/50">
+                    {modLessons.length > 0 && (
+                      <div className="px-3 pb-2 -mt-1">
+                        <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${modComplete ? "bg-success" : "gradient-primary"}`}
+                            style={{ width: `${modPct}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {isOpen && (
+                    <div className="pb-1">
                       {(mod.lessons || []).map((lesson: any) => {
                         const Icon = typeIcons[lesson.type] || FileText;
                         const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
                         const attachedQuiz = lessonQuizMap.get(lesson.id);
                         const quizPassed = attachedQuiz ? passedEvalIds.has(attachedQuiz.id) : false;
                         const locked = isLessonLocked(lesson.id);
+                        const isActive = contentLessonId === lesson.id;
                         return (
                           <div key={lesson.id}>
                             <div
-                              className={`flex items-start gap-3 px-4 py-3 pl-6 sm:pl-8 transition-colors group ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/10 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
+                              className={`flex items-start gap-2.5 px-3 py-2.5 border-l-2 transition-colors group ${
+                                isActive
+                                  ? "border-primary bg-primary/10"
+                                  : "border-transparent"
+                              } ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/30 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
                               onClick={() => {
                                 if (locked) {
                                   toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
@@ -1045,30 +1072,24 @@ export default function CourseDetail() {
                                   title={locked ? "Bloqueada" : userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
                                   disabled={locked}
                                   onClick={(e) => { e.stopPropagation(); if (!locked) toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
-                                  className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${locked ? "bg-muted" : userCompleted ? "bg-success/10 hover:bg-success/20" : "bg-muted hover:bg-muted/70"}`}
+                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
                                 >
-                                  {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                                  {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : userCompleted ? <CheckCircle className="w-4 h-4 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                                 </button>
                               ) : (
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${userCompleted ? "bg-success/10" : "bg-muted"}`}>
-                                  {userCompleted ? <CheckCircle className="w-3.5 h-3.5 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  {userCompleted ? <CheckCircle className="w-4 h-4 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <p className={`text-sm leading-snug break-words ${userCompleted ? "text-muted-foreground line-through" : "text-card-foreground"}`}>{lesson.title}</p>
-                                <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                  {locked && <Badge variant="outline" className="text-[10px] gap-1"><Lock className="w-3 h-3" /> Bloqueada</Badge>}
-                                  {!locked && (
-                                    <Badge variant="outline" className={`text-[10px] font-semibold ${userCompleted ? "bg-success/10 text-success border-success/30" : "text-muted-foreground"}`}>
-                                      {userCompleted ? "Concluída" : "Pendente"}
-                                    </Badge>
-                                  )}
-                                  <Badge variant="outline" className="text-[10px]">{typeLabels[lesson.type] || lesson.type}</Badge>
-                                  {lesson.duration && <span className="text-[11px] text-muted-foreground whitespace-nowrap">{lesson.duration}</span>}
-                                  {lesson.content_url && !locked && (
-                                    <Eye className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                                  )}
-                                </div>
+                                <p className={`text-[13px] leading-snug break-words ${isActive ? "font-semibold text-primary" : userCompleted ? "text-muted-foreground" : "text-card-foreground"}`}>{lesson.title}</p>
+                                <p className="mt-0.5 text-[11px] text-muted-foreground flex flex-wrap items-center gap-1">
+                                  {lesson.duration && <span>{lesson.duration}</span>}
+                                  {lesson.duration && <span>·</span>}
+                                  <span>{typeLabels[lesson.type] || lesson.type}</span>
+                                  {locked && <span className="inline-flex items-center gap-1">· <Lock className="w-3 h-3" /> Bloqueada</span>}
+                                  {!locked && userCompleted && <span className="text-success">· Concluída</span>}
+                                </p>
                               </div>
                               {isAdmin && (
                                 <div className="flex items-center gap-0.5 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
@@ -1079,7 +1100,7 @@ export default function CourseDetail() {
                             </div>
                             {/* Inline lesson quiz CTA */}
                             {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && !locked && (
-                              <div className="flex items-center justify-between gap-3 px-4 py-2 pl-16 bg-accent/5 border-t border-border/30">
+                              <div className="flex items-center justify-between gap-3 px-3 py-2 pl-10 bg-accent/5 border-t border-border/30">
                                 <div className="flex items-center gap-2 min-w-0">
                                   <ListChecks className="w-3.5 h-3.5 text-accent flex-shrink-0" />
                                   <span className="text-xs text-card-foreground truncate">
@@ -1103,6 +1124,7 @@ export default function CourseDetail() {
                         <p className="text-xs text-muted-foreground text-center py-3">Nenhuma aula{isAdmin ? " — clique em + para adicionar" : ""}</p>
                       )}
                     </div>
+                    )}
                   </div>
                   );
                 })}
@@ -1110,6 +1132,7 @@ export default function CourseDetail() {
                   <p className="text-sm text-muted-foreground text-center py-6">Nenhum módulo criado</p>
                 )}
               </div>
+
             </div>
           )}
         </div>
