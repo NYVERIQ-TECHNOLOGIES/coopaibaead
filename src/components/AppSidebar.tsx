@@ -198,26 +198,29 @@ export default function AppSidebar() {
     const isFav = favorites.includes(item.path);
     return (
       <div key={item.path} className="group/item relative">
+        {isActive && !collapsed && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-sidebar-primary" />
+        )}
         <Link
           to={item.path}
           onClick={() => setMobileOpen(false)}
           title={collapsed ? item.label : undefined}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
             ${isActive
-              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
-              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary)/0.14)]"
+              : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
             }`}
         >
-          <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+          <item.icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? "text-sidebar-primary" : ""}`} />
           {!collapsed && (
-            <span className="text-sm font-medium truncate flex-1">{item.label}</span>
+            <span className="text-sm truncate flex-1">{item.label}</span>
           )}
           {!collapsed && opts?.showFav !== false && (
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFav(item.path); }}
               className={`opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 rounded hover:bg-sidebar-accent/60
-                ${isFav ? "!opacity-100 text-amber-400" : "text-sidebar-foreground/40 hover:text-sidebar-foreground"}`}
+                ${isFav ? "!opacity-100 text-warning" : "text-sidebar-foreground/40 hover:text-sidebar-foreground"}`}
               aria-label={isFav ? "Remover dos favoritos" : "Fixar nos favoritos"}
             >
               <Star className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
@@ -225,6 +228,7 @@ export default function AppSidebar() {
           )}
         </Link>
       </div>
+
     );
   };
 
