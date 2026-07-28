@@ -253,6 +253,7 @@ export default function SettingsPage() {
           <TabsTrigger value="security" className="gap-2"><Lock className="w-4 h-4" /> Segurança</TabsTrigger>
           <TabsTrigger value="subscription" className="gap-2"><CreditCard className="w-4 h-4" /> Assinatura</TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2"><Bell className="w-4 h-4" /> Notificações</TabsTrigger>
+          <TabsTrigger value="appearance" className="gap-2"><Palette className="w-4 h-4" /> Aparência</TabsTrigger>
           <TabsTrigger value="platform" className="gap-2"><Globe className="w-4 h-4" /> Plataforma</TabsTrigger>
         </TabsList>
 
