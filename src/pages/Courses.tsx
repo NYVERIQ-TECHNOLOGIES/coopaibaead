@@ -288,6 +288,71 @@ export default function Courses() {
         </div>
       </div>
 
+      {/* Featured */}
+      {!isLoading && filtered.length > 0 && (() => {
+        const feat = filtered[0];
+        const featProgress = progressMap[feat.id];
+        return (
+          <section className="space-y-3">
+            <h2 className="text-xl sm:text-2xl font-heading font-bold text-foreground">Cursos em Destaque</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] overflow-hidden rounded-[1.5rem] border border-border/70 bg-card shadow-elevated"
+            >
+              <Link to={`/courses/${feat.id}`} className="relative block h-52 sm:h-64 lg:h-full min-h-[13rem] bg-muted group">
+                {feat.image ? (
+                  <SignedImage path={feat.image} alt={feat.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Sem imagem</div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-foreground/45 via-transparent to-transparent" />
+                <span className="absolute top-4 left-4 rounded-full gradient-primary px-3 py-1 text-[11px] font-bold text-brand-foreground shadow-card">
+                  Novo
+                </span>
+              </Link>
+              <div className="flex flex-col justify-center gap-3 p-5 sm:p-7">
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                  <span className="rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">
+                    {(feat as any).eventual ? "Cooperado Eventual" : feat.cooperado_only ? "Formação Cooperada" : "Curso Livre"}
+                  </span>
+                  {feat.duration && (
+                    <span className="rounded-full bg-muted px-2.5 py-1 text-muted-foreground">⏱ {feat.duration}</span>
+                  )}
+                </div>
+                <h3 className="font-heading text-xl sm:text-2xl font-extrabold leading-snug text-foreground">{feat.title}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                  {feat.description || "Sem descrição"}
+                </p>
+                {typeof featProgress === "number" && (
+                  <div className="mt-1">
+                    <div className="flex justify-between text-[11px] mb-1.5">
+                      <span className="text-muted-foreground">Progresso</span>
+                      <span className="font-bold text-primary">{featProgress}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full gradient-primary rounded-full transition-all duration-500" style={{ width: `${featProgress}%` }} />
+                    </div>
+                  </div>
+                )}
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full gradient-primary text-xs font-bold text-brand-foreground">C</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">Equipe Coopaiba</p>
+                    <p className="text-[11px] text-muted-foreground">Educação cooperativista</p>
+                  </div>
+                  <Button asChild size="sm" className="ml-auto gradient-primary text-primary-foreground">
+                    <Link to={`/courses/${feat.id}`}>
+                      {typeof featProgress === "number" ? (featProgress === 100 ? "Revisar" : "Continuar") : "Começar Agora"}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </section>
+        );
+      })()}
+
       {/* Loading */}
       {isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -306,8 +371,11 @@ export default function Courses() {
 
       {/* Grid */}
       {!isLoading && (
+      <div className="space-y-3">
+      <h2 className="text-xl sm:text-2xl font-heading font-bold text-foreground">Seus Cursos</h2>
       <div className="rounded-2xl border border-border/70 bg-card/30 max-h-[calc(100vh-280px)] overflow-y-auto sidebar-scroll p-4 sm:p-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
         {filtered.map((course, i) => {
           const progress = progressMap[course.id];
           const started = typeof progress === "number";
