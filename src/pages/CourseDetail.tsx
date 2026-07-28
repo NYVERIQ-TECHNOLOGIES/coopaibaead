@@ -775,8 +775,8 @@ export default function CourseDetail() {
 
 
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6 items-start">
-        <div className="space-y-6 min-w-0">
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-4 sm:gap-6 items-start">
+        <div className="space-y-4 sm:space-y-6 min-w-0 order-2 xl:order-1">
       {/* Progress */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         className="bg-card rounded-2xl p-6 shadow-card border border-border/70">
@@ -944,7 +944,7 @@ export default function CourseDetail() {
       )}
         </div>
 
-        <aside className="space-y-4 xl:sticky xl:top-20 min-w-0">
+        <aside className="space-y-4 min-w-0 order-1 xl:order-2 xl:sticky xl:top-20">
         {/* ========== MODULES & LESSONS ========== */}
         <div className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
           <button onClick={() => toggleSection("modules")}
