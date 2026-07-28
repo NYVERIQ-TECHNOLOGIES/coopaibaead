@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard, Trash2, AlertTriangle, CreditCard } from "lucide-react";
+import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard, Trash2, AlertTriangle, CreditCard, Sun, Moon, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,7 @@ const isValidCpf = (value: string) => {
 
 export default function SettingsPage() {
   const { profile, user, role } = useAuth();
+  const { theme, setTheme } = useTheme();
   const isAdmin = role === "admin";
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -253,6 +255,7 @@ export default function SettingsPage() {
           <TabsTrigger value="security" className="gap-2"><Lock className="w-4 h-4" /> Segurança</TabsTrigger>
           <TabsTrigger value="subscription" className="gap-2"><CreditCard className="w-4 h-4" /> Assinatura</TabsTrigger>
           <TabsTrigger value="notifications" className="gap-2"><Bell className="w-4 h-4" /> Notificações</TabsTrigger>
+          <TabsTrigger value="appearance" className="gap-2"><Palette className="w-4 h-4" /> Aparência</TabsTrigger>
           <TabsTrigger value="platform" className="gap-2"><Globe className="w-4 h-4" /> Plataforma</TabsTrigger>
         </TabsList>
 
@@ -405,6 +408,35 @@ export default function SettingsPage() {
                 </div>
                 <Switch checked={notifCert} onCheckedChange={setNotifCert} />
               </div>
+            </div>
+          </Section>
+        </TabsContent>
+
+        <TabsContent value="appearance">
+          <Section title="Tema da interface" desc="Escolha entre claro, escuro ou seguir o sistema" icon={Palette}>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { value: "light", label: "Claro", icon: Sun, hint: "Interface clara e elegante" },
+                { value: "dark", label: "Escuro", icon: Moon, hint: "Grafite profundo, alto contraste" },
+                { value: "system", label: "Automático", icon: Monitor, hint: "Segue o sistema operacional" },
+              ].map(({ value, label, icon: Icon, hint }) => {
+                const active = theme === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTheme(value)}
+                    aria-pressed={active}
+                    className={`rounded-lg border p-4 text-left transition-all hover-lift ${
+                      active ? "border-primary bg-primary/5 shadow-glow" : "border-border bg-card hover:border-primary/40"
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 mb-2 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                    <p className="font-heading font-semibold text-foreground">{label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>
+                  </button>
+                );
+              })}
             </div>
           </Section>
         </TabsContent>

@@ -148,8 +148,8 @@ export default function Login() {
           className="relative z-10 text-center"
         >
           <img src={logoImg} alt="Coopaiba EAD" className="w-28 h-28 mx-auto mb-8 rounded-2xl object-contain" />
-          <h1 className="text-4xl font-heading font-bold text-primary-foreground mb-4">Coopaiba EAD</h1>
-          <p className="text-lg text-primary-foreground/80 max-w-md">
+          <h1 className="text-4xl font-heading font-bold text-brand-foreground mb-4">Coopaiba EAD</h1>
+          <p className="text-lg text-brand-foreground/80 max-w-md">
             Plataforma de educação cooperativista. Aprenda, colabore e cresça junto com sua comunidade.
           </p>
           <div className="flex justify-center gap-8 mt-12">
@@ -159,8 +159,8 @@ export default function Login() {
               { value: "95%", label: "Satisfação" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="text-2xl font-heading font-bold text-primary-foreground">{stat.value}</p>
-                <p className="text-sm text-primary-foreground/60">{stat.label}</p>
+                <p className="text-2xl font-heading font-bold text-brand-foreground">{stat.value}</p>
+                <p className="text-sm text-brand-foreground/60">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -202,7 +202,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={mfaCode.length !== 6 || verifyingMfa}
-                  className="w-full gradient-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full gradient-primary text-brand-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {verifyingMfa ? "Verificando..." : "Verificar"} {!verifyingMfa && <ArrowRight className="w-4 h-4" />}
                 </button>
@@ -282,7 +282,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full gradient-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full gradient-primary text-brand-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {loading ? "Entrando..." : "Entrar"} {!loading && <ArrowRight className="w-4 h-4" />}
                 </button>

@@ -235,7 +235,7 @@ export default function AppSidebar() {
         <img src={logoImg} alt="Coopaiba EAD" className="w-9 h-9 rounded-xl object-contain flex-shrink-0" />
         {!collapsed && (
           <div className="overflow-hidden">
-            <h1 className="font-heading text-base font-bold text-sidebar-primary-foreground leading-tight">Coopaiba EAD</h1>
+            <h1 className="font-heading text-base font-bold text-sidebar-foreground leading-tight">Coopaiba EAD</h1>
             <p className="text-[11px] text-sidebar-foreground/60">Educação Cooperativista</p>
           </div>
         )}
