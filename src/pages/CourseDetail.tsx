@@ -27,6 +27,7 @@ import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
 import { getSignedUrl } from "@/lib/storage";
 import CourseChat from "@/components/CourseChat";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
 import IntroVideoModal from "@/components/IntroVideoModal";
@@ -1361,118 +1362,254 @@ export default function CourseDetail() {
         </DialogContent>
       </Dialog>
 
-      {/* Content Viewer Dialog */}
+      {/* Content Viewer Dialog — experiência de aula (estilo player) */}
       <Dialog open={contentDialogOpen} onOpenChange={(o) => { if (!o) { setContentLessonId(null); setContentUrl(""); setContentError(null); } setContentDialogOpen(o); }}>
-        <DialogContent className="max-w-6xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto p-0 gap-0">
+        <DialogContent className="max-w-[1400px] w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[94vh] overflow-y-auto p-0 gap-0 bg-background">
           {(() => {
-            const currentLesson = modules
-              .flatMap((m: any) => m.lessons || [])
-              .find((l: any) => l.id === contentLessonId);
+            const allLessons = modules.flatMap((m: any) => m.lessons || []);
+            const currentLesson = allLessons.find((l: any) => l.id === contentLessonId);
             const currentModule = modules.find((m: any) => (m.lessons || []).some((l: any) => l.id === contentLessonId));
-            return (
-              <DialogHeader className="px-4 sm:px-6 pt-5 pb-4 border-b border-border/70 text-left space-y-1">
-                <DialogTitle className="font-heading text-lg sm:text-2xl font-extrabold leading-tight">
-                  {currentLesson?.title || "Visualizar Conteúdo"}
-                </DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-primary">
-                  {currentModule?.title || "Visualização do conteúdo selecionado"}
-                </DialogDescription>
-              </DialogHeader>
-            );
-          })()}
-          <div className={`grid gap-4 p-4 sm:p-6 ${contentLessonId && !isAdmin ? "lg:grid-cols-[1fr_320px]" : ""}`}>
-            <div className="min-w-0 rounded-2xl border border-border/70 bg-foreground/[0.03] p-2 sm:p-3">
+            const totalLessons = allLessons.length;
+            const doneLessons = allLessons.filter((l: any) => completedLessonIds.has(l.id)).length;
+            const coursePct = totalLessons ? Math.round((doneLessons / totalLessons) * 100) : 0;
 
-              {contentLoading && (
-                <div className="flex items-center justify-center h-[40vh] rounded-lg bg-muted text-muted-foreground gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" /> Carregando...
-                </div>
-              )}
-              {!contentLoading && contentError && (
-                <div className="flex flex-col items-center justify-center h-[40vh] rounded-lg bg-muted text-center px-4">
-                  <XCircle className="w-8 h-8 text-destructive mb-2" />
-                  <p className="text-sm text-foreground font-medium">Não foi possível carregar o conteúdo</p>
-                  <p className="text-xs text-muted-foreground mt-1">{contentError}</p>
-                </div>
-              )}
-              {!contentLoading && !contentError && contentUrl && (
-                contentType === "pdf" || contentUrl.match(/\.pdf($|\?)/i) ? (
-                  <div className="w-full h-[60vh] sm:h-[70vh] rounded-lg overflow-hidden border border-border bg-muted">
-                    <object data={contentUrl} type="application/pdf" className="w-full h-full">
-                      <iframe
-                        src={`https://docs.google.com/gview?url=${encodeURIComponent(contentUrl)}&embedded=true`}
-                        className="w-full h-full"
-                        title="PDF"
+            const player = (
+              <>
+                {contentLoading && (
+                  <div className="flex items-center justify-center aspect-video w-full text-primary-foreground/80 gap-2 bg-foreground/90">
+                    <Loader2 className="w-5 h-5 animate-spin" /> Carregando...
+                  </div>
+                )}
+                {!contentLoading && contentError && (
+                  <div className="flex flex-col items-center justify-center aspect-video w-full text-center px-4 bg-foreground/90">
+                    <XCircle className="w-8 h-8 text-destructive mb-2" />
+                    <p className="text-sm font-medium text-background">Não foi possível carregar o conteúdo</p>
+                    <p className="text-xs text-background/70 mt-1">{contentError}</p>
+                  </div>
+                )}
+                {!contentLoading && !contentError && contentUrl && (
+                  contentType === "pdf" || contentUrl.match(/\.pdf($|\?)/i) ? (
+                    <div className="w-full h-[62vh] bg-muted">
+                      <object data={contentUrl} type="application/pdf" className="w-full h-full">
+                        <iframe
+                          src={`https://docs.google.com/gview?url=${encodeURIComponent(contentUrl)}&embedded=true`}
+                          className="w-full h-full"
+                          title="PDF"
+                        />
+                        <div className="p-6 text-center text-sm text-muted-foreground">
+                          Não foi possível renderizar o PDF.{" "}
+                          <a href={contentUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+                            Abrir em nova aba
+                          </a>
+                        </div>
+                      </object>
+                    </div>
+                  ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg|mov|m4v)($|\?)/i) ? (
+                    <video
+                      key={contentUrl}
+                      src={contentUrl}
+                      controls
+                      preload="metadata"
+                      playsInline
+                      controlsList="nodownload"
+                      className="w-full aspect-video bg-foreground/95"
+                      onError={() => setContentError("Não foi possível reproduzir o vídeo. Verifique o formato ou tente novamente.")}
+                      onEnded={() => {
+                        if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
+                          toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                        }
+                      }}
+                      onTimeUpdate={(e) => {
+                        if (isAdmin || !contentLessonId || !user) return;
+                        if (completedLessonIds.has(contentLessonId)) return;
+                        const v = e.currentTarget;
+                        if (v.duration > 0 && v.currentTime / v.duration >= 0.98) {
+                          toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                        }
+                      }}
+                    >
+                      Seu navegador não suporta vídeos.
+                    </video>
+                  ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg|m4a)($|\?)/i) ? (
+                    <div className="w-full bg-foreground/90 py-10 px-6">
+                      <audio
+                        key={contentUrl}
+                        src={contentUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full"
+                        onEnded={() => {
+                          if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
+                            toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                          }
+                        }}
                       />
-                      <div className="p-6 text-center text-sm text-muted-foreground">
-                        Não foi possível renderizar o PDF.{" "}
-                        <a href={contentUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                          Abrir em nova aba
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-muted">
+                      <p className="text-muted-foreground mb-4">Conteúdo externo</p>
+                      <Button asChild><a href={contentUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><ExternalLink className="w-4 h-4" /> Abrir em nova aba</a></Button>
+                    </div>
+                  )
+                )}
+              </>
+            );
+
+            return (
+              <>
+                <DialogHeader className="px-4 sm:px-6 pt-5 pb-4 border-b border-border/70 text-left space-y-1">
+                  <DialogTitle className="font-heading text-lg sm:text-2xl font-extrabold leading-tight">
+                    {currentLesson?.title || "Visualizar Conteúdo"}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs sm:text-sm text-primary">
+                    {currentModule?.title || "Visualização do conteúdo selecionado"}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="grid gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_360px] items-start">
+                  {/* Palco + abas */}
+                  <div className="min-w-0 space-y-5">
+                    <div className="rounded-2xl overflow-hidden border border-border/70 bg-foreground/95 shadow-elevated">
+                      {player}
+                    </div>
+
+                    {!contentLoading && !contentError && contentUrl && (
+                      <div className="flex justify-end -mt-2">
+                        <a href={contentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                          Abrir em nova aba ↗
                         </a>
                       </div>
-                    </object>
+                    )}
+
+                    <Tabs defaultValue="descricao" className="w-full">
+                      <TabsList className="w-full justify-start overflow-x-auto rounded-xl bg-secondary/60 p-1">
+                        <TabsTrigger value="descricao" className="rounded-lg">Descrição</TabsTrigger>
+                        <TabsTrigger value="materiais" className="rounded-lg">Materiais</TabsTrigger>
+                        {contentLessonId && !isAdmin && courseId && (
+                          <TabsTrigger value="anotacoes" className="rounded-lg">Anotações</TabsTrigger>
+                        )}
+                      </TabsList>
+
+                      <TabsContent value="descricao" className="mt-4">
+                        <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-card">
+                          <h4 className="font-heading font-bold text-card-foreground mb-2">Sobre esta aula</h4>
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {currentLesson?.description || course?.description || "Conteúdo da aula selecionada."}
+                          </p>
+                          <div className="flex flex-wrap gap-2 mt-4 text-[11px] font-medium">
+                            {currentLesson?.type && (
+                              <span className="rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground">{typeLabels[currentLesson.type] || currentLesson.type}</span>
+                            )}
+                            {currentLesson?.duration && (
+                              <span className="rounded-full bg-secondary px-2.5 py-1 text-secondary-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {currentLesson.duration}</span>
+                            )}
+                            {contentLessonId && completedLessonIds.has(contentLessonId) && (
+                              <span className="rounded-full bg-success/15 text-success px-2.5 py-1 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Concluída</span>
+                            )}
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="materiais" className="mt-4">
+                        <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-card">
+                          <h4 className="font-heading font-bold text-card-foreground mb-3">Materiais para Download</h4>
+                          {books.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">Nenhum material disponível para este curso.</p>
+                          ) : (
+                            <div className="grid sm:grid-cols-2 gap-3">
+                              {books.map((b: any) => {
+                                const BIcon = bookTypeIcons[b.type] || FileText;
+                                return (
+                                  <button
+                                    key={b.id}
+                                    onClick={() => b.file_url && openContent(b.file_url, b.type)}
+                                    className="flex items-center gap-3 rounded-xl border border-border/70 bg-background p-3 text-left hover-lift"
+                                  >
+                                    <span className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                                      <BIcon className="w-4 h-4 text-primary" />
+                                    </span>
+                                    <span className="min-w-0">
+                                      <span className="block text-sm font-medium text-card-foreground truncate">{b.title}</span>
+                                      <span className="block text-[11px] text-muted-foreground">{[b.size, (b.type || "").toUpperCase()].filter(Boolean).join(" • ")}</span>
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+
+                      {contentLessonId && !isAdmin && courseId && (
+                        <TabsContent value="anotacoes" className="mt-4">
+                          <LessonNotes lessonId={contentLessonId} courseId={courseId} />
+                        </TabsContent>
+                      )}
+                    </Tabs>
                   </div>
 
-                ) : contentType === "video" || contentType === "video_aula" || contentUrl.match(/\.(mp4|webm|ogg|mov|m4v)($|\?)/i) ? (
-                  <video
-                    key={contentUrl}
-                    src={contentUrl}
-                    controls
-                    preload="metadata"
-                    playsInline
-                    controlsList="nodownload"
-                    className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh] bg-black"
-                    onError={() => setContentError("Não foi possível reproduzir o vídeo. Verifique o formato ou tente novamente.")}
-                    onEnded={() => {
-                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
-                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
-                      }
-                    }}
-                    onTimeUpdate={(e) => {
-                      if (isAdmin || !contentLessonId || !user) return;
-                      if (completedLessonIds.has(contentLessonId)) return;
-                      const v = e.currentTarget;
-                      if (v.duration > 0 && v.currentTime / v.duration >= 0.98) {
-                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
-                      }
-                    }}
-                  >
-                    Seu navegador não suporta vídeos.
-                  </video>
-                ) : contentType === "audio" || contentUrl.match(/\.(mp3|wav|ogg|m4a)($|\?)/i) ? (
-                  <audio
-                    key={contentUrl}
-                    src={contentUrl}
-                    controls
-                    preload="metadata"
-                    className="w-full mt-8"
-                    onEnded={() => {
-                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
-                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
-                      }
-                    }}
-                  />
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">Conteúdo externo</p>
-                    <Button asChild><a href={contentUrl} target="_blank" rel="noopener noreferrer" className="gap-2"><ExternalLink className="w-4 h-4" /> Abrir em nova aba</a></Button>
-                  </div>
-                )
-              )}
-              {!contentLoading && !contentError && contentUrl && (
-                <div className="flex justify-end pt-2">
-                  <a href={contentUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                    Abrir em nova aba ↗
-                  </a>
+                  {/* Sidebar Conteúdo do Curso */}
+                  <aside className="rounded-2xl border border-border/70 bg-card shadow-card overflow-hidden lg:sticky lg:top-4">
+                    <div className="p-4 border-b border-border/70">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="font-heading font-bold text-card-foreground flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-primary" /> Conteúdo do Curso
+                        </h4>
+                        <span className="text-xs font-bold text-primary">{coursePct}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-3">
+                        <div className="h-full gradient-primary rounded-full transition-all duration-500" style={{ width: `${coursePct}%` }} />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-2">{doneLessons} de {totalLessons} aulas concluídas</p>
+                    </div>
+                    <div className="max-h-[60vh] overflow-y-auto sidebar-scroll divide-y divide-border/60">
+                      {modules.map((m: any, mi: number) => (
+                        <div key={m.id} className="p-3">
+                          <p className="text-xs font-bold text-card-foreground mb-2 break-words">
+                            Módulo {mi + 1} — {m.title}
+                          </p>
+                          <div className="space-y-1">
+                            {(m.lessons || []).map((l: any) => {
+                              const active = l.id === contentLessonId;
+                              const done = completedLessonIds.has(l.id);
+                              const LIcon = typeIcons[l.type] || Play;
+                              return (
+                                <button
+                                  key={l.id}
+                                  onClick={() => l.content_url && openContent(l.content_url, l.type, l.id)}
+                                  className={`w-full text-left flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors ${
+                                    active ? "bg-secondary border border-primary/30" : "hover:bg-muted/60 border border-transparent"
+                                  }`}
+                                >
+                                  <span className={`mt-0.5 shrink-0 ${done ? "text-success" : active ? "text-primary" : "text-muted-foreground"}`}>
+                                    {done ? <CheckCircle className="w-4 h-4" /> : <LIcon className="w-4 h-4" />}
+                                  </span>
+                                  <span className="min-w-0">
+                                    <span className={`block text-[13px] leading-snug break-words ${active ? "font-bold text-primary" : "text-card-foreground"}`}>
+                                      {l.title}
+                                    </span>
+                                    <span className="block text-[11px] text-muted-foreground mt-0.5">
+                                      {[typeLabels[l.type] || l.type, l.duration].filter(Boolean).join(" • ")}
+                                    </span>
+                                  </span>
+                                </button>
+                              );
+                            })}
+                            {(m.lessons || []).length === 0 && (
+                              <p className="text-[11px] text-muted-foreground px-3 py-2">Nenhuma aula neste módulo</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </aside>
                 </div>
-              )}
-            </div>
-            {contentLessonId && !isAdmin && courseId && (
-              <LessonNotes lessonId={contentLessonId} courseId={courseId} />
-            )}
-          </div>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
+
 
       {/* ===== QUESTIONS MANAGER DIALOG ===== */}
       <Dialog open={questionsDialogOpen} onOpenChange={setQuestionsDialogOpen}>
