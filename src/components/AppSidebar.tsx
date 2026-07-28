@@ -407,8 +407,8 @@ export default function AppSidebar() {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:block relative gradient-sidebar transition-all duration-300 flex-shrink-0
-          ${collapsed ? "w-[72px]" : "w-64"}`}
+        className={`hidden lg:block relative gradient-sidebar border-r border-sidebar-border/70 transition-all duration-300 flex-shrink-0
+          ${collapsed ? "w-[76px]" : "w-[272px]"}`}
       >
         {sidebarContent}
       </aside>
