@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard, Trash2, AlertTriangle, CreditCard } from "lucide-react";
+import { Settings, User, Lock, Bell, Palette, Globe, Save, Eye, EyeOff, ShieldCheck, IdCard, Trash2, AlertTriangle, CreditCard, Sun, Moon, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,7 @@ const isValidCpf = (value: string) => {
 
 export default function SettingsPage() {
   const { profile, user, role } = useAuth();
+  const { theme, setTheme } = useTheme();
   const isAdmin = role === "admin";
   const navigate = useNavigate();
   const { toast } = useToast();
