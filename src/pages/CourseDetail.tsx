@@ -54,6 +54,11 @@ export default function CourseDetail() {
   const [expandedSections, setExpandedSections] = useState({ modules: true, evaluations: true, books: true });
   const toggleSection = (key: keyof typeof expandedSections) =>
     setExpandedSections((p) => ({ ...p, [key]: !p[key] }));
+  const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
+  const toggleModule = (id: string) =>
+    setCollapsedModules((p) => ({ ...p, [id]: !p[id] }));
+
+
 
   // ---- Fetch course ----
   const { data: course, isLoading: loadingCourse } = useQuery({
