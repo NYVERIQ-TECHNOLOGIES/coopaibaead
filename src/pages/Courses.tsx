@@ -71,7 +71,7 @@ export default function Courses() {
   const [introProgress, setIntroProgress] = useState(0);
   const imageFileRef = useRef<HTMLInputElement>(null);
   const introFileRef = useRef<HTMLInputElement>(null);
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
   const isAdmin = role === "admin";
@@ -87,6 +87,22 @@ export default function Courses() {
       return data as Course[];
     },
   });
+
+  const { data: myEnrollments = [] } = useQuery({
+    queryKey: ["my-enrollments-progress", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select("course_id, progress")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []) as { course_id: string; progress: number }[];
+    },
+  });
+
+  const progressMap: Record<string, number> = {};
+  for (const e of myEnrollments) progressMap[e.course_id] = Math.round(Number(e.progress ?? 0));
 
   const { data: deletedCourses = [] } = useQuery({
     queryKey: ["deleted-courses"],
@@ -253,20 +269,20 @@ export default function Courses() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar cursos..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground shadow-[0_1px_2px_hsl(160_20%_15%/0.03)] transition-colors focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-ring/40"
           />
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setFilter("all")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "all" ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
+        <div className="flex gap-2 rounded-xl border border-border bg-card p-1">
+          <button onClick={() => setFilter("all")} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${filter === "all" ? "bg-primary text-primary-foreground shadow-card" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}>
             Todos
           </button>
-          <button onClick={() => setFilter("cooperado")} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${filter === "cooperado" ? "bg-secondary text-secondary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
+          <button onClick={() => setFilter("cooperado")} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${filter === "cooperado" ? "bg-primary text-primary-foreground shadow-card" : "text-muted-foreground hover:text-foreground hover:bg-secondary"}`}>
             Cooperados
           </button>
         </div>
@@ -274,64 +290,105 @@ export default function Courses() {
 
       {/* Loading */}
       {isLoading && (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border/70 bg-card overflow-hidden shadow-card">
+              <div className="h-44 bg-muted shimmer" />
+              <div className="p-5 space-y-3">
+                <div className="h-4 w-3/4 rounded bg-muted shimmer" />
+                <div className="h-3 w-full rounded bg-muted shimmer" />
+                <div className="h-3 w-2/3 rounded bg-muted shimmer" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
       {/* Grid */}
-      <div className="rounded-xl border border-border bg-card/30 max-h-[calc(100vh-280px)] overflow-y-auto sidebar-scroll p-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filtered.map((course, i) => (
-          <motion.div key={course.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <div className="bg-card rounded-xl border border-border overflow-hidden shadow-card hover:shadow-elevated transition-shadow group">
-              <Link to={`/courses/${course.id}`}>
-                <div className="relative h-40 bg-muted">
+      {!isLoading && (
+      <div className="rounded-2xl border border-border/70 bg-card/30 max-h-[calc(100vh-280px)] overflow-y-auto sidebar-scroll p-4 sm:p-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filtered.map((course, i) => {
+          const progress = progressMap[course.id];
+          const started = typeof progress === "number";
+          return (
+          <motion.div key={course.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.3) }}>
+            <div className="flex h-full flex-col bg-card rounded-2xl border border-border/70 overflow-hidden shadow-card hover:shadow-elevated hover:-translate-y-1 transition-all duration-200 group">
+              <Link to={`/courses/${course.id}`} className="block">
+                <div className="relative h-44 bg-muted overflow-hidden">
                   {course.image ? (
-                    <SignedImage path={course.image} alt={course.title} className="w-full h-full object-cover" />
+                    <SignedImage path={course.image} alt={course.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">Sem imagem</div>
                   )}
-                  {course.cooperado_only && (
-                    <span className="absolute top-2 right-2 bg-secondary text-secondary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Cooperado
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent opacity-70" />
+                  <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-card/90 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-card-foreground shadow-card">
+                      {(course as any).eventual ? "Cooperado Eventual" : course.cooperado_only ? "Formação Cooperada" : "Curso Livre"}
                     </span>
-                  )}
-                  {(course as any).eventual && (
-                    <span className="absolute top-2 left-2 bg-accent text-accent-foreground text-xs px-2 py-1 rounded-full">
-                      Eventual
+                  </div>
+                  <div className="absolute top-3 right-3 flex flex-col items-end gap-1.5">
+                    {course.cooperado_only && (
+                      <span className="gradient-secondary text-brand-foreground text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-card">
+                        <Lock className="w-3 h-3" /> Cooperado
+                      </span>
+                    )}
+                  </div>
+                  {course.duration && (
+                    <span className="absolute bottom-3 right-3 rounded-full bg-foreground/70 px-2.5 py-1 text-[11px] font-semibold text-background backdrop-blur">
+                      {course.duration}
                     </span>
                   )}
                 </div>
               </Link>
-              <div className="p-4">
+              <div className="flex flex-1 flex-col p-5">
                 <Link to={`/courses/${course.id}`}>
-                  <h3 className="font-heading font-semibold text-foreground line-clamp-1 hover:text-primary transition-colors">{course.title}</h3>
+                  <h3 className="font-heading font-bold text-[15px] text-foreground line-clamp-2 group-hover:text-primary transition-colors">{course.title}</h3>
                 </Link>
-                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{course.description || "Sem descrição"}</p>
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                  {course.duration && <span className="text-xs text-muted-foreground">⏱ {course.duration}</span>}
-                  {course.is_paid ? (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {course.promotional_price != null ? (
+                <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">{course.description || "Sem descrição"}</p>
+
+                <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full gradient-primary text-[11px] font-bold text-brand-foreground">C</span>
+                  <span className="font-medium text-foreground/80">Equipe Coopaiba</span>
+                  <span className="ml-auto flex items-center gap-1 font-semibold">
+                    {course.is_paid ? (
+                      course.promotional_price != null ? (
                         <>
-                          <span className="line-through opacity-60 mr-1">
-                            R$ {Number(course.price).toFixed(2)}
-                          </span>
-                          R$ {Number(course.promotional_price).toFixed(2)}
+                          <span className="line-through opacity-60">R$ {Number(course.price).toFixed(2)}</span>
+                          <span className="text-primary">R$ {Number(course.promotional_price).toFixed(2)}</span>
                         </>
                       ) : (
-                        <>R$ {Number(course.price ?? 0).toFixed(2)}</>
-                      )}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      Gratuito
-                    </span>
-                  )}
+                        <span className="text-primary">R$ {Number(course.price ?? 0).toFixed(2)}</span>
+                      )
+                    ) : (
+                      <span className="rounded-full bg-success/12 px-2 py-0.5 text-success">Gratuito</span>
+                    )}
+                  </span>
                 </div>
+
+                {started && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-[11px] mb-1.5">
+                      <span className="text-muted-foreground">Progresso</span>
+                      <span className="font-bold text-primary">{progress}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div className="h-full gradient-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-5 flex gap-2 pt-4 border-t border-border/60">
+                  <Button asChild size="sm" className="flex-1">
+                    <Link to={`/courses/${course.id}`}>{started ? (progress === 100 ? "Revisar" : "Continuar") : "Começar"}</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="flex-1">
+                    <Link to={`/courses/${course.id}`}>Detalhes</Link>
+                  </Button>
+                </div>
+
                 {isAdmin && (
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border/60">
                     <Button size="sm" variant="outline" onClick={() => openEdit(course)}>
                       <Pencil className="w-3 h-3 mr-1" /> Editar
                     </Button>
@@ -343,9 +400,12 @@ export default function Courses() {
               </div>
             </div>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
       </div>
+      )}
+
 
 
       {!isLoading && filtered.length === 0 && (
