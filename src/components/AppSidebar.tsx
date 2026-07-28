@@ -262,7 +262,7 @@ export default function AppSidebar() {
 
 
       {/* Navigation */}
-      <nav className="flex-1 py-3 px-2 space-y-2 overflow-y-auto sidebar-scroll">
+      <nav className="flex-1 py-4 px-2.5 space-y-3 overflow-y-auto sidebar-scroll">
         {/* Favorites */}
         {!collapsed && favItems.length > 0 && query === "" && (
           <div>
