@@ -326,29 +326,30 @@ export default function AppSidebar() {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3">
+      <div className="border-t border-sidebar-border/70 p-3">
+        <div className={`flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-sidebar-accent/50 ${collapsed ? "justify-center" : ""}`}>
           <Link to="/profile" onClick={() => setMobileOpen(false)}
-            className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity">
+            className="w-10 h-10 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0 ring-2 ring-sidebar-background shadow-card hover:opacity-90 transition-opacity">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+              <img src={profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
+              <span className="text-sm font-bold text-brand-foreground">{initials}</span>
             )}
           </Link>
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
+                <p className="text-sm font-semibold text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
                 <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
               </div>
-              <button onClick={handleSignOut} title="Sair" className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
+              <button onClick={handleSignOut} title="Sair" aria-label="Sair" className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors">
                 <LogOut className="w-4 h-4" />
               </button>
             </>
           )}
         </div>
       </div>
+
 
       {/* Collapse button (desktop) */}
       <button
