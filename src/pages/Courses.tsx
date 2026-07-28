@@ -249,7 +249,7 @@ export default function Courses() {
           </p>
         </div>
         {isAdmin && (
-          <div className="flex gap-2 w-fit">
+          <div className="flex flex-wrap gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
             <Button variant="outline" onClick={() => setTrashOpen(true)}>
               <History className="w-4 h-4 mr-2" /> Excluídos
               {deletedCourses.length > 0 && (

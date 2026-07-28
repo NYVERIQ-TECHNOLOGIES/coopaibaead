@@ -445,7 +445,7 @@ export default function Certificates() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-[1.5rem] gradient-hero px-6 py-7 sm:px-8 shadow-elevated">
+      <section className="relative overflow-hidden rounded-2xl sm:rounded-[1.5rem] gradient-hero px-4 py-6 sm:px-8 sm:py-7 shadow-elevated">
         <div className="pointer-events-none absolute -right-16 -top-24 h-56 w-56 rounded-full bg-brand-foreground/10 blur-2xl" />
         <div className="relative flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -453,7 +453,7 @@ export default function Certificates() {
           <h1 className="mt-3 text-2xl lg:text-3xl font-heading font-extrabold tracking-tight text-brand-foreground">Certificados</h1>
           <p className="text-brand-foreground/75 mt-1.5 text-sm">Gerencie certificados, modelos e retirada presencial</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
           <Button variant="outline" className="gap-2" onClick={downloadAllZip} disabled={downloadingAll}>
             {downloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             {downloadingAll ? "Baixando..." : "Baixar todos"}
@@ -548,7 +548,7 @@ export default function Certificates() {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
         {[
           { label: "Total", value: certificates.length, icon: Award, gradient: "gradient-primary" },
           { label: "Disponíveis", value: emitted, icon: CheckCircle, gradient: "gradient-secondary" },
@@ -556,13 +556,13 @@ export default function Certificates() {
           { label: "Em processamento", value: pending, icon: Clock, gradient: "gradient-accent" },
         ].map((stat) => (
           <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl p-5 shadow-card border border-border/70 flex items-center gap-4 transition-all duration-200 hover:shadow-elevated hover:-translate-y-0.5">
-            <div className={`w-12 h-12 rounded-2xl ${stat.gradient} flex items-center justify-center shadow-card`}>
+            className="bg-card rounded-2xl p-4 sm:p-5 shadow-card border border-border/70 flex items-center gap-3 sm:gap-4 transition-all duration-200 hover:shadow-elevated hover:-translate-y-0.5">
+            <div className={`w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-2xl ${stat.gradient} flex items-center justify-center shadow-card`}>
               <stat.icon className="w-5 h-5 text-primary-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-2xl font-heading font-extrabold tracking-tight text-card-foreground">{stat.value}</p>
-              <p className="text-[13px] text-muted-foreground truncate">{stat.label}</p>
+              <p className="text-xl sm:text-2xl font-heading font-extrabold tracking-tight text-card-foreground">{stat.value}</p>
+              <p className="text-[12px] sm:text-[13px] text-muted-foreground truncate">{stat.label}</p>
             </div>
           </motion.div>
         ))}
@@ -891,7 +891,7 @@ function CertificatesTable({
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
-      <div className="overflow-x-auto max-h-[70vh] overflow-y-auto sidebar-scroll">
+      <div className="overflow-x-auto max-h-[65vh] sm:max-h-[70vh] overflow-y-auto sidebar-scroll overscroll-contain">
         <table className="w-full">
           <thead className="sticky top-0 z-10">
             <tr className="border-b border-border bg-secondary/70 backdrop-blur supports-[backdrop-filter]:bg-secondary/60">
