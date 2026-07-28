@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardWelcomeVideo from "@/components/DashboardWelcomeVideo";
 
-const COLORS = ["hsl(220, 70%, 45%)", "hsl(170, 50%, 40%)", "hsl(35, 90%, 55%)", "hsl(280, 60%, 50%)"];
+const COLORS = ["hsl(var(--primary))", "hsl(var(--primary-glow))", "hsl(var(--warning))", "hsl(var(--info))"];
 
 
 export default function Dashboard() {
@@ -62,27 +62,37 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <DashboardWelcomeVideo />
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Visão geral da plataforma Coopaiba EAD</p>
-        </div>
-        {enrollmentNumber && (
-          <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-card">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-              <IdCard className="w-4 h-4 text-primary" />
-            </div>
-            <div className="leading-tight">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Matrícula</p>
-              <p className="font-mono font-semibold text-sm text-foreground">{enrollmentNumber}</p>
-            </div>
+      <section className="relative overflow-hidden rounded-[1.5rem] gradient-hero px-6 py-8 sm:px-10 sm:py-10 shadow-elevated">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-brand-foreground/10 blur-2xl" />
+        <div className="pointer-events-none absolute -left-10 -bottom-24 h-56 w-56 rounded-full bg-brand-foreground/5 blur-2xl" />
+        <div className="relative flex items-start justify-between gap-6 flex-wrap">
+          <div className="max-w-xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-foreground/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-brand-foreground/90 backdrop-blur">
+              Coopaiba EAD
+            </span>
+            <h1 className="mt-4 text-3xl lg:text-4xl font-heading font-extrabold tracking-tight text-brand-foreground">Dashboard</h1>
+            <p className="text-brand-foreground/75 mt-2 text-[15px] leading-relaxed">
+              Visão geral do ecossistema de aprendizagem — cursos, cooperados e certificados em um só lugar.
+            </p>
           </div>
-        )}
-      </div>
+          {enrollmentNumber && (
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-brand-foreground/20 bg-brand-foreground/10 px-4 py-3 backdrop-blur">
+              <div className="w-10 h-10 rounded-xl bg-brand-foreground/15 flex items-center justify-center">
+                <IdCard className="w-4 h-4 text-brand-foreground" />
+              </div>
+              <div className="leading-tight">
+                <p className="text-[11px] uppercase tracking-wide text-brand-foreground/70 font-medium">Matrícula</p>
+                <p className="font-mono font-semibold text-sm text-brand-foreground">{enrollmentNumber}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard title="Total de Alunos" value={String(counts?.students ?? 0)} icon={Users} gradient="primary" />
         <StatCard title="Cooperados" value={String(counts?.cooperados ?? 0)} icon={UserCheck} gradient="secondary" />
         <StatCard title="Cursos Ativos" value={String(counts?.courses ?? 0)} icon={BookOpen} gradient="accent" />
@@ -91,14 +101,14 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-card rounded-xl p-5 shadow-card border border-border">
-          <h3 className="font-heading font-semibold text-card-foreground mb-4">Distribuição</h3>
+          className="bg-card rounded-2xl p-6 shadow-card border border-border/70">
+          <h3 className="font-heading font-bold text-card-foreground mb-5">Distribuição</h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={courseDistribution.filter(d => d.value > 0)} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
                 {courseDistribution.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
-              <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid hsl(220, 15%, 90%)", fontSize: "13px" }} />
+              <Tooltip contentStyle={{ borderRadius: "12px", border: "1px solid hsl(var(--border))", background: "hsl(var(--card))", color: "hsl(var(--card-foreground))", fontSize: "13px" }} />
             </PieChart>
           </ResponsiveContainer>
           <div className="grid grid-cols-2 gap-2 mt-2">
@@ -112,8 +122,8 @@ export default function Dashboard() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-card rounded-xl p-5 shadow-card border border-border lg:col-span-2">
-          <h3 className="font-heading font-semibold text-card-foreground mb-4">Últimos Cadastros</h3>
+          className="bg-card rounded-2xl p-6 shadow-card border border-border/70 lg:col-span-2">
+          <h3 className="font-heading font-bold text-card-foreground mb-5">Últimos Cadastros</h3>
           {recentProfiles && recentProfiles.length > 0 ? (
             <div className="space-y-3">
               {recentProfiles.map((p, i) => (
@@ -131,7 +141,7 @@ export default function Dashboard() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-card-foreground">{p.full_name || "Usuário"}</p>
+                    <p className="text-sm font-semibold text-card-foreground">{p.full_name || "Usuário"}</p>
                     <p className="text-xs text-muted-foreground">Cadastrado em {new Date(p.created_at).toLocaleDateString("pt-BR")}</p>
                   </div>
                 </div>
@@ -144,8 +154,8 @@ export default function Dashboard() {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-        className="bg-card rounded-xl p-5 shadow-card border border-border">
-        <h3 className="font-heading font-semibold text-card-foreground mb-4 flex items-center gap-2">
+        className="bg-card rounded-2xl p-6 shadow-card border border-border/70">
+        <h3 className="font-heading font-bold text-card-foreground mb-4 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-warning" /> Resumo Rápido
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -154,7 +164,7 @@ export default function Dashboard() {
             { label: "Cursos Disponíveis", count: counts?.courses ?? 0, color: "text-success" },
             { label: "Certificados Emitidos", count: counts?.certificates ?? 0, color: "text-accent" },
           ].map((alert) => (
-            <div key={alert.label} className="bg-muted/50 rounded-lg p-3">
+            <div key={alert.label} className="rounded-2xl border border-border/60 bg-secondary/60 p-4">
               <p className={`text-xl font-heading font-bold ${alert.color}`}>{alert.count}</p>
               <p className="text-sm text-muted-foreground">{alert.label}</p>
             </div>

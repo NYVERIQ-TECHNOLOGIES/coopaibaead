@@ -198,26 +198,29 @@ export default function AppSidebar() {
     const isFav = favorites.includes(item.path);
     return (
       <div key={item.path} className="group/item relative">
+        {isActive && !collapsed && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-sidebar-primary" />
+        )}
         <Link
           to={item.path}
           onClick={() => setMobileOpen(false)}
           title={collapsed ? item.label : undefined}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200
             ${isActive
-              ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
-              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary)/0.14)]"
+              : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
             }`}
         >
-          <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
+          <item.icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? "text-sidebar-primary" : ""}`} />
           {!collapsed && (
-            <span className="text-sm font-medium truncate flex-1">{item.label}</span>
+            <span className="text-sm truncate flex-1">{item.label}</span>
           )}
           {!collapsed && opts?.showFav !== false && (
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFav(item.path); }}
               className={`opacity-0 group-hover/item:opacity-100 transition-opacity p-0.5 rounded hover:bg-sidebar-accent/60
-                ${isFav ? "!opacity-100 text-amber-400" : "text-sidebar-foreground/40 hover:text-sidebar-foreground"}`}
+                ${isFav ? "!opacity-100 text-warning" : "text-sidebar-foreground/40 hover:text-sidebar-foreground"}`}
               aria-label={isFav ? "Remover dos favoritos" : "Fixar nos favoritos"}
             >
               <Star className={`w-3.5 h-3.5 ${isFav ? "fill-current" : ""}`} />
@@ -225,39 +228,41 @@ export default function AppSidebar() {
           )}
         </Link>
       </div>
+
     );
   };
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border">
-        <img src={logoImg} alt="Coopaiba EAD" className="w-9 h-9 rounded-xl object-contain flex-shrink-0" />
+      <div className={`flex items-center gap-3 px-4 py-6 border-b border-sidebar-border/70 ${collapsed ? "justify-center" : ""}`}>
+        <img src={logoImg} alt="Coopaiba EAD" className="w-11 h-11 rounded-2xl object-contain flex-shrink-0 shadow-card bg-card p-1" />
         {!collapsed && (
           <div className="overflow-hidden">
-            <h1 className="font-heading text-base font-bold text-sidebar-foreground leading-tight">Coopaiba EAD</h1>
-            <p className="text-[11px] text-sidebar-foreground/60">Educação Cooperativista</p>
+            <h1 className="font-heading text-[17px] font-extrabold tracking-tight text-sidebar-foreground leading-tight">Coopaiba EAD</h1>
+            <p className="text-[11px] text-sidebar-foreground/55">Ecossistema de Aprendizagem</p>
           </div>
         )}
       </div>
 
       {/* Search */}
       {!collapsed && (
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-4">
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-sidebar-foreground/50" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-sidebar-foreground/45" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Buscar no menu..."
-              className="w-full pl-8 pr-2 py-1.5 text-xs rounded-md bg-sidebar-accent/40 text-sidebar-foreground placeholder:text-sidebar-foreground/40 border border-sidebar-border/50 focus:outline-none focus:border-sidebar-primary/60"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-sidebar-accent/50 text-sidebar-foreground placeholder:text-sidebar-foreground/40 border border-sidebar-border/60 transition-colors focus:outline-none focus:border-sidebar-primary/50 focus:bg-sidebar-accent"
             />
           </div>
         </div>
       )}
 
+
       {/* Navigation */}
-      <nav className="flex-1 py-3 px-2 space-y-2 overflow-y-auto sidebar-scroll">
+      <nav className="flex-1 py-4 px-2.5 space-y-3 overflow-y-auto sidebar-scroll">
         {/* Favorites */}
         {!collapsed && favItems.length > 0 && query === "" && (
           <div>
@@ -321,29 +326,30 @@ export default function AppSidebar() {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3">
+      <div className="border-t border-sidebar-border/70 p-3">
+        <div className={`flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-sidebar-accent/50 ${collapsed ? "justify-center" : ""}`}>
           <Link to="/profile" onClick={() => setMobileOpen(false)}
-            className="w-9 h-9 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0 hover:opacity-80 transition-opacity">
+            className="w-10 h-10 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0 ring-2 ring-sidebar-background shadow-card hover:opacity-90 transition-opacity">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
+              <img src={profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <span className="text-sm font-bold text-secondary-foreground">{initials}</span>
+              <span className="text-sm font-bold text-brand-foreground">{initials}</span>
             )}
           </Link>
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
+                <p className="text-sm font-semibold text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
                 <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
               </div>
-              <button onClick={handleSignOut} title="Sair" className="text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors">
+              <button onClick={handleSignOut} title="Sair" aria-label="Sair" className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors">
                 <LogOut className="w-4 h-4" />
               </button>
             </>
           )}
         </div>
       </div>
+
 
       {/* Collapse button (desktop) */}
       <button
@@ -401,8 +407,8 @@ export default function AppSidebar() {
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden lg:block relative gradient-sidebar transition-all duration-300 flex-shrink-0
-          ${collapsed ? "w-[72px]" : "w-64"}`}
+        className={`hidden lg:block relative gradient-sidebar border-r border-sidebar-border/70 transition-all duration-300 flex-shrink-0
+          ${collapsed ? "w-[76px]" : "w-[272px]"}`}
       >
         {sidebarContent}
       </aside>

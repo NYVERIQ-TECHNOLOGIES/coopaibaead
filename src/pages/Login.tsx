@@ -126,7 +126,7 @@ export default function Login() {
         description="Acesse sua conta na plataforma Coopaiba EAD e continue sua jornada de educação cooperativista."
       />
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 gradient-primary relative overflow-hidden items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-1/2 gradient-hero relative overflow-hidden items-center justify-center p-12">
         <div className="absolute inset-0 opacity-10">
           {Array.from({ length: 20 }).map((_, i) => (
             <div
@@ -147,7 +147,7 @@ export default function Login() {
           transition={{ delay: 0.2 }}
           className="relative z-10 text-center"
         >
-          <img src={logoImg} alt="Coopaiba EAD" className="w-28 h-28 mx-auto mb-8 rounded-2xl object-contain" />
+          <img src={logoImg} alt="Coopaiba EAD" className="w-28 h-28 mx-auto mb-8 rounded-[1.5rem] object-contain bg-brand-foreground/10 p-3 backdrop-blur shadow-elevated" />
           <h1 className="text-4xl font-heading font-bold text-brand-foreground mb-4">Coopaiba EAD</h1>
           <p className="text-lg text-brand-foreground/80 max-w-md">
             Plataforma de educação cooperativista. Aprenda, colabore e cresça junto com sua comunidade.
@@ -168,8 +168,8 @@ export default function Login() {
       </div>
 
       {/* Right panel - form */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-background">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center p-5 sm:p-8 bg-background">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-[1.5rem] border border-border/70 bg-card p-6 sm:p-9 shadow-elevated">
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
@@ -197,12 +197,12 @@ export default function Login() {
                   value={mfaCode}
                   onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   placeholder="000000"
-                  className="w-full px-4 py-3 bg-card border border-border rounded-lg text-center text-2xl font-mono tracking-widest text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-4 py-3 bg-card border border-border rounded-xl text-center text-2xl font-mono tracking-widest text-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-ring/40"
                 />
                 <button
                   type="submit"
                   disabled={mfaCode.length !== 6 || verifyingMfa}
-                  className="w-full gradient-primary text-brand-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full gradient-primary text-brand-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-glow transition-all duration-200 hover:opacity-95 hover:-translate-y-[1px] active:scale-[0.99] disabled:opacity-50 disabled:translate-y-0"
                 >
                   {verifyingMfa ? "Verificando..." : "Verificar"} {!verifyingMfa && <ArrowRight className="w-4 h-4" />}
                 </button>
@@ -221,7 +221,7 @@ export default function Login() {
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-heading font-bold text-foreground">Bem-vindo de volta</h2>
+              <h2 className="text-[26px] font-heading font-extrabold tracking-tight text-foreground">Bem-vindo de volta</h2>
               <p className="text-muted-foreground mt-1 mb-8">Entre na sua conta para continuar</p>
 
               <form className="space-y-4" onSubmit={handleLogin}>
@@ -238,7 +238,7 @@ export default function Login() {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="seu@email.com ou 000.000.000-00"
                       required
-                      className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground shadow-[0_1px_2px_hsl(160_20%_15%/0.03)] transition-colors focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-ring/40"
                     />
                   </div>
                 </div>
@@ -256,7 +256,7 @@ export default function Login() {
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
                       required
-                      className="w-full pl-10 pr-10 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground shadow-[0_1px_2px_hsl(160_20%_15%/0.03)] transition-colors focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-ring/40"
                     />
                     <button
                       type="button"
@@ -282,7 +282,7 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full gradient-primary text-brand-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full gradient-primary text-brand-foreground py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-glow transition-all duration-200 hover:opacity-95 hover:-translate-y-[1px] active:scale-[0.99] disabled:opacity-50 disabled:translate-y-0"
                 >
                   {loading ? "Entrando..." : "Entrar"} {!loading && <ArrowRight className="w-4 h-4" />}
                 </button>
