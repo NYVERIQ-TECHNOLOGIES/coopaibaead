@@ -207,12 +207,21 @@
 @layer utilities {
   .gradient-primary {
     background: var(--gradient-primary);
+    --primary-foreground: var(--brand-foreground);
+    --secondary-foreground: var(--brand-foreground);
+    --accent-foreground: var(--brand-foreground);
   }
   .gradient-secondary {
     background: var(--gradient-secondary);
+    --primary-foreground: var(--brand-foreground);
+    --secondary-foreground: var(--brand-foreground);
+    --accent-foreground: var(--brand-foreground);
   }
   .gradient-accent {
     background: var(--gradient-accent);
+    --primary-foreground: var(--brand-foreground);
+    --secondary-foreground: var(--brand-foreground);
+    --accent-foreground: var(--brand-foreground);
   }
   .gradient-sidebar {
     background: var(--gradient-sidebar);
