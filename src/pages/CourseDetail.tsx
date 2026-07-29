@@ -1073,13 +1073,25 @@ export default function CourseDetail() {
                         const locked = isLessonLocked(lesson.id);
                         const isActive = contentLessonId === lesson.id;
                         return (
-                          <div key={lesson.id}>
+                          <div key={lesson.id} role="listitem">
                             <div
-                              className={`flex items-start gap-2.5 px-3 py-2.5 border-l-2 transition-colors group ${
+                              role={lesson.content_url || locked ? "button" : undefined}
+                              tabIndex={lesson.content_url || locked ? 0 : undefined}
+                              aria-disabled={locked || undefined}
+                              aria-current={isActive ? "true" : undefined}
+                              aria-label={`Aula ${lesson.title}, ${typeLabels[lesson.type] || lesson.type}${lesson.duration ? `, ${lesson.duration}` : ""}${locked ? ", bloqueada" : userCompleted ? ", concluída" : ""}`}
+                              className={`flex items-start gap-2.5 px-3 py-3 min-h-11 border-l-2 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
                                 isActive
                                   ? "border-primary bg-primary/10"
                                   : "border-transparent"
                               } ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/30 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
+                              onKeyDown={(e) => {
+                                if (!(lesson.content_url || locked)) return;
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  (e.currentTarget as HTMLDivElement).click();
+                                }
+                              }}
                               onClick={() => {
                                 if (locked) {
                                   toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
@@ -1094,14 +1106,16 @@ export default function CourseDetail() {
                                 <button
                                   type="button"
                                   title={locked ? "Bloqueada" : userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                                  aria-label={locked ? `Aula ${lesson.title} bloqueada` : `${userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}: ${lesson.title}`}
+                                  aria-pressed={!locked ? userCompleted : undefined}
                                   disabled={locked}
                                   onClick={(e) => { e.stopPropagation(); if (!locked) toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
-                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
+                                  className="w-9 h-9 -m-2 rounded-full flex items-center justify-center flex-shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
-                                  {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : userCompleted ? <CheckCircle className="w-4 h-4 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                                  {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" /> : userCompleted ? <CheckCircle className="w-4 h-4 text-success" aria-hidden="true" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />}
                                 </button>
                               ) : (
-                                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                                   {userCompleted ? <CheckCircle className="w-4 h-4 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                                 </div>
                               )}
@@ -1109,19 +1123,20 @@ export default function CourseDetail() {
                                 <p className={`text-[13px] leading-snug break-words ${isActive ? "font-semibold text-primary" : userCompleted ? "text-muted-foreground" : "text-card-foreground"}`}>{lesson.title}</p>
                                 <p className="mt-0.5 text-[11px] text-muted-foreground flex flex-wrap items-center gap-1">
                                   {lesson.duration && <span>{lesson.duration}</span>}
-                                  {lesson.duration && <span>·</span>}
+                                  {lesson.duration && <span aria-hidden="true">·</span>}
                                   <span>{typeLabels[lesson.type] || lesson.type}</span>
-                                  {locked && <span className="inline-flex items-center gap-1">· <Lock className="w-3 h-3" /> Bloqueada</span>}
-                                  {!locked && userCompleted && <span className="text-success">· Concluída</span>}
+                                  {locked && <span className="inline-flex items-center gap-1"><span aria-hidden="true">·</span> <Lock className="w-3 h-3" aria-hidden="true" /> Bloqueada</span>}
+                                  {!locked && userCompleted && <span className="text-success"><span aria-hidden="true">· </span>Concluída</span>}
                                 </p>
                               </div>
                               {isAdmin && (
-                                <div className="flex items-center gap-0.5 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" /></Button>
-                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                                <div className="flex items-center gap-0.5 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                  <Button size="sm" variant="ghost" aria-label={`Editar aula ${lesson.title}`} className="h-9 w-9 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" aria-hidden="true" /></Button>
+                                  <Button size="sm" variant="ghost" aria-label={`Excluir aula ${lesson.title}`} className="h-9 w-9 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" aria-hidden="true" /></Button>
                                 </div>
                               )}
                             </div>
+
                             {/* Inline lesson quiz CTA */}
                             {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && !locked && (
                               <div className="flex items-center justify-between gap-3 px-3 py-2 pl-10 bg-accent/5 border-t border-border/30">
