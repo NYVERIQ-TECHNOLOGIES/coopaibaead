@@ -1004,15 +1004,19 @@ export default function CourseDetail() {
                   return (
                   <div
                     key={mod.id}
+                    role="listitem"
                     className={`rounded-xl border overflow-hidden transition-colors ${hasActive && isOpen ? "border-primary/40 bg-primary/[0.04]" : "border-border/70 bg-muted/[0.15]"}`}
                   >
                     <div className="flex items-start justify-between gap-2 p-3">
                       <button
                         type="button"
                         onClick={() => toggleModule(mod.id)}
-                        className="flex items-start gap-2.5 min-w-0 flex-1 text-left"
+                        aria-expanded={isOpen}
+                        aria-controls={`module-lessons-${mod.id}`}
+                        aria-label={`Módulo ${mod.title}${mod.locked ? ", bloqueado" : ""}${modLessons.length ? `, ${modDone} de ${modLessons.length} aulas concluídas, ${modPct}%` : ""}. ${isOpen ? "Recolher" : "Expandir"} aulas`}
+                        className="flex items-start gap-2.5 min-w-0 flex-1 text-left min-h-11 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        <span className="mt-0.5 flex-shrink-0">
+                        <span className="mt-0.5 flex-shrink-0" aria-hidden="true">
                           {mod.locked ? (
                             <Lock className="w-4 h-4 text-muted-foreground" />
                           ) : modComplete ? (
@@ -1031,19 +1035,26 @@ export default function CourseDetail() {
                             </span>
                           )}
                         </span>
-                        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
+                        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" />}
                       </button>
                       {isAdmin && (
                         <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openNewLesson(mod.id)}><Plus className="w-3.5 h-3.5 text-primary" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditModule(mod)}><Edit className="w-3.5 h-3.5" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteModuleMut.mutate(mod.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                          <Button size="sm" variant="ghost" aria-label={`Adicionar aula em ${mod.title}`} className="h-9 w-9 p-0" onClick={() => openNewLesson(mod.id)}><Plus className="w-3.5 h-3.5 text-primary" aria-hidden="true" /></Button>
+                          <Button size="sm" variant="ghost" aria-label={`Editar módulo ${mod.title}`} className="h-9 w-9 p-0" onClick={() => openEditModule(mod)}><Edit className="w-3.5 h-3.5" aria-hidden="true" /></Button>
+                          <Button size="sm" variant="ghost" aria-label={`Excluir módulo ${mod.title}`} className="h-9 w-9 p-0" onClick={() => deleteModuleMut.mutate(mod.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" aria-hidden="true" /></Button>
                         </div>
                       )}
                     </div>
                     {modLessons.length > 0 && (
                       <div className="px-3 pb-2 -mt-1">
-                        <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-1 w-full rounded-full bg-muted overflow-hidden"
+                          role="progressbar"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={modPct}
+                          aria-label={`Progresso do módulo ${mod.title}: ${modPct}%`}
+                        >
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${modComplete ? "bg-success" : "gradient-primary"}`}
                             style={{ width: `${modPct}%` }}
@@ -1052,7 +1063,8 @@ export default function CourseDetail() {
                       </div>
                     )}
                     {isOpen && (
-                    <div className="pb-1">
+                    <div className="pb-1" id={`module-lessons-${mod.id}`} role="list" aria-label={`Aulas de ${mod.title}`}>
+
                       {(mod.lessons || []).map((lesson: any) => {
                         const Icon = typeIcons[lesson.type] || FileText;
                         const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
