@@ -949,18 +949,28 @@ export default function CourseDetail() {
       )}
         </div>
 
-        <aside className="space-y-4 min-w-0 order-1 xl:order-2 xl:sticky xl:top-20">
+        <aside className="space-y-4 min-w-0 order-1 xl:order-2 xl:sticky xl:top-20" aria-label="Conteúdo do curso">
         {/* ========== MODULES & LESSONS ========== */}
         <div className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
           <button onClick={() => toggleSection("modules")}
-            className="w-full p-5 text-left hover:bg-secondary/40 transition-colors">
+            type="button"
+            aria-expanded={expandedSections.modules}
+            aria-controls="course-content-panel"
+            className="w-full p-5 text-left hover:bg-secondary/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2 text-[15px]">
-                <BookOpen className="w-4 h-4 text-primary" /> Conteúdo do Curso
+                <BookOpen className="w-4 h-4 text-primary" aria-hidden="true" /> Conteúdo do Curso
               </h2>
-              {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
             </div>
-            <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPct}
+              aria-label={`Progresso do curso: ${progressPct}%`}
+            >
               <div className="h-full gradient-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
@@ -970,6 +980,7 @@ export default function CourseDetail() {
               <span className="text-[11px] font-bold text-primary tabular-nums">{progressPct}%</span>
             </div>
           </button>
+
 
 
           {expandedSections.modules && (
