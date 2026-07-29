@@ -949,18 +949,28 @@ export default function CourseDetail() {
       )}
         </div>
 
-        <aside className="space-y-4 min-w-0 order-1 xl:order-2 xl:sticky xl:top-20">
+        <aside className="space-y-4 min-w-0 order-1 xl:order-2 xl:sticky xl:top-20" aria-label="Conteúdo do curso">
         {/* ========== MODULES & LESSONS ========== */}
         <div className="bg-card rounded-2xl shadow-card border border-border/70 overflow-hidden">
           <button onClick={() => toggleSection("modules")}
-            className="w-full p-5 text-left hover:bg-secondary/40 transition-colors">
+            type="button"
+            aria-expanded={expandedSections.modules}
+            aria-controls="course-content-panel"
+            className="w-full p-5 text-left hover:bg-secondary/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
             <div className="flex items-center justify-between gap-2">
               <h2 className="font-heading font-bold text-card-foreground flex items-center gap-2 text-[15px]">
-                <BookOpen className="w-4 h-4 text-primary" /> Conteúdo do Curso
+                <BookOpen className="w-4 h-4 text-primary" aria-hidden="true" /> Conteúdo do Curso
               </h2>
-              {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+              {expandedSections.modules ? <ChevronUp className="w-4 h-4 text-muted-foreground" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" aria-hidden="true" />}
             </div>
-            <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+            <div
+              className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressPct}
+              aria-label={`Progresso do curso: ${progressPct}%`}
+            >
               <div className="h-full gradient-primary rounded-full transition-all" style={{ width: `${progressPct}%` }} />
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
@@ -972,16 +982,18 @@ export default function CourseDetail() {
           </button>
 
 
+
           {expandedSections.modules && (
-            <div className="border-t border-border">
+            <div className="border-t border-border" id="course-content-panel">
               {isAdmin && (
                 <div className="p-3 border-b border-border bg-muted/10">
                   <Button size="sm" onClick={openNewModule} className="gradient-primary text-primary-foreground gap-1">
-                    <Plus className="w-3 h-3" /> Novo Módulo
+                    <Plus className="w-3 h-3" aria-hidden="true" /> Novo Módulo
                   </Button>
                 </div>
               )}
-              <div className="p-3 space-y-2">
+              <div className="p-3 space-y-2" role="list" aria-label="Módulos do curso">
+
                 {modules.map((mod: any) => {
                   const modLessons = mod.lessons || [];
                   const modDone = modLessons.filter((l: any) => (isAdmin ? l.completed : completedLessonIds.has(l.id))).length;
@@ -992,15 +1004,19 @@ export default function CourseDetail() {
                   return (
                   <div
                     key={mod.id}
+                    role="listitem"
                     className={`rounded-xl border overflow-hidden transition-colors ${hasActive && isOpen ? "border-primary/40 bg-primary/[0.04]" : "border-border/70 bg-muted/[0.15]"}`}
                   >
                     <div className="flex items-start justify-between gap-2 p-3">
                       <button
                         type="button"
                         onClick={() => toggleModule(mod.id)}
-                        className="flex items-start gap-2.5 min-w-0 flex-1 text-left"
+                        aria-expanded={isOpen}
+                        aria-controls={`module-lessons-${mod.id}`}
+                        aria-label={`Módulo ${mod.title}${mod.locked ? ", bloqueado" : ""}${modLessons.length ? `, ${modDone} de ${modLessons.length} aulas concluídas, ${modPct}%` : ""}. ${isOpen ? "Recolher" : "Expandir"} aulas`}
+                        className="flex items-start gap-2.5 min-w-0 flex-1 text-left min-h-11 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        <span className="mt-0.5 flex-shrink-0">
+                        <span className="mt-0.5 flex-shrink-0" aria-hidden="true">
                           {mod.locked ? (
                             <Lock className="w-4 h-4 text-muted-foreground" />
                           ) : modComplete ? (
@@ -1019,19 +1035,26 @@ export default function CourseDetail() {
                             </span>
                           )}
                         </span>
-                        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
+                        {isOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" /> : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" aria-hidden="true" />}
                       </button>
                       {isAdmin && (
                         <div className="flex items-center gap-0.5 flex-shrink-0">
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openNewLesson(mod.id)}><Plus className="w-3.5 h-3.5 text-primary" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEditModule(mod)}><Edit className="w-3.5 h-3.5" /></Button>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteModuleMut.mutate(mod.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+                          <Button size="sm" variant="ghost" aria-label={`Adicionar aula em ${mod.title}`} className="h-9 w-9 p-0" onClick={() => openNewLesson(mod.id)}><Plus className="w-3.5 h-3.5 text-primary" aria-hidden="true" /></Button>
+                          <Button size="sm" variant="ghost" aria-label={`Editar módulo ${mod.title}`} className="h-9 w-9 p-0" onClick={() => openEditModule(mod)}><Edit className="w-3.5 h-3.5" aria-hidden="true" /></Button>
+                          <Button size="sm" variant="ghost" aria-label={`Excluir módulo ${mod.title}`} className="h-9 w-9 p-0" onClick={() => deleteModuleMut.mutate(mod.id)}><Trash2 className="w-3.5 h-3.5 text-destructive" aria-hidden="true" /></Button>
                         </div>
                       )}
                     </div>
                     {modLessons.length > 0 && (
                       <div className="px-3 pb-2 -mt-1">
-                        <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-1 w-full rounded-full bg-muted overflow-hidden"
+                          role="progressbar"
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-valuenow={modPct}
+                          aria-label={`Progresso do módulo ${mod.title}: ${modPct}%`}
+                        >
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${modComplete ? "bg-success" : "gradient-primary"}`}
                             style={{ width: `${modPct}%` }}
@@ -1040,7 +1063,8 @@ export default function CourseDetail() {
                       </div>
                     )}
                     {isOpen && (
-                    <div className="pb-1">
+                    <div className="pb-1" id={`module-lessons-${mod.id}`} role="list" aria-label={`Aulas de ${mod.title}`}>
+
                       {(mod.lessons || []).map((lesson: any) => {
                         const Icon = typeIcons[lesson.type] || FileText;
                         const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
@@ -1049,13 +1073,25 @@ export default function CourseDetail() {
                         const locked = isLessonLocked(lesson.id);
                         const isActive = contentLessonId === lesson.id;
                         return (
-                          <div key={lesson.id}>
+                          <div key={lesson.id} role="listitem">
                             <div
-                              className={`flex items-start gap-2.5 px-3 py-2.5 border-l-2 transition-colors group ${
+                              role={lesson.content_url || locked ? "button" : undefined}
+                              tabIndex={lesson.content_url || locked ? 0 : undefined}
+                              aria-disabled={locked || undefined}
+                              aria-current={isActive ? "true" : undefined}
+                              aria-label={`Aula ${lesson.title}, ${typeLabels[lesson.type] || lesson.type}${lesson.duration ? `, ${lesson.duration}` : ""}${locked ? ", bloqueada" : userCompleted ? ", concluída" : ""}`}
+                              className={`flex items-start gap-2.5 px-3 py-3 min-h-11 border-l-2 transition-colors group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring ${
                                 isActive
                                   ? "border-primary bg-primary/10"
                                   : "border-transparent"
                               } ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/30 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
+                              onKeyDown={(e) => {
+                                if (!(lesson.content_url || locked)) return;
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  (e.currentTarget as HTMLDivElement).click();
+                                }
+                              }}
                               onClick={() => {
                                 if (locked) {
                                   toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
@@ -1070,14 +1106,16 @@ export default function CourseDetail() {
                                 <button
                                   type="button"
                                   title={locked ? "Bloqueada" : userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
+                                  aria-label={locked ? `Aula ${lesson.title} bloqueada` : `${userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}: ${lesson.title}`}
+                                  aria-pressed={!locked ? userCompleted : undefined}
                                   disabled={locked}
                                   onClick={(e) => { e.stopPropagation(); if (!locked) toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
-                                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
+                                  className="w-9 h-9 -m-2 rounded-full flex items-center justify-center flex-shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
-                                  {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" /> : userCompleted ? <CheckCircle className="w-4 h-4 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
+                                  {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" /> : userCompleted ? <CheckCircle className="w-4 h-4 text-success" aria-hidden="true" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />}
                                 </button>
                               ) : (
-                                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                                   {userCompleted ? <CheckCircle className="w-4 h-4 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
                                 </div>
                               )}
@@ -1085,19 +1123,20 @@ export default function CourseDetail() {
                                 <p className={`text-[13px] leading-snug break-words ${isActive ? "font-semibold text-primary" : userCompleted ? "text-muted-foreground" : "text-card-foreground"}`}>{lesson.title}</p>
                                 <p className="mt-0.5 text-[11px] text-muted-foreground flex flex-wrap items-center gap-1">
                                   {lesson.duration && <span>{lesson.duration}</span>}
-                                  {lesson.duration && <span>·</span>}
+                                  {lesson.duration && <span aria-hidden="true">·</span>}
                                   <span>{typeLabels[lesson.type] || lesson.type}</span>
-                                  {locked && <span className="inline-flex items-center gap-1">· <Lock className="w-3 h-3" /> Bloqueada</span>}
-                                  {!locked && userCompleted && <span className="text-success">· Concluída</span>}
+                                  {locked && <span className="inline-flex items-center gap-1"><span aria-hidden="true">·</span> <Lock className="w-3 h-3" aria-hidden="true" /> Bloqueada</span>}
+                                  {!locked && userCompleted && <span className="text-success"><span aria-hidden="true">· </span>Concluída</span>}
                                 </p>
                               </div>
                               {isAdmin && (
-                                <div className="flex items-center gap-0.5 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" /></Button>
-                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" /></Button>
+                                <div className="flex items-center gap-0.5 flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                  <Button size="sm" variant="ghost" aria-label={`Editar aula ${lesson.title}`} className="h-9 w-9 p-0" onClick={() => openEditLesson(mod.id, lesson)}><Edit className="w-3 h-3" aria-hidden="true" /></Button>
+                                  <Button size="sm" variant="ghost" aria-label={`Excluir aula ${lesson.title}`} className="h-9 w-9 p-0" onClick={() => deleteLessonMut.mutate(lesson.id)}><Trash2 className="w-3 h-3 text-destructive" aria-hidden="true" /></Button>
                                 </div>
                               )}
                             </div>
+
                             {/* Inline lesson quiz CTA */}
                             {attachedQuiz && attachedQuiz.status === "publicada" && !isAdmin && !locked && (
                               <div className="flex items-center justify-between gap-3 px-3 py-2 pl-10 bg-accent/5 border-t border-border/30">
