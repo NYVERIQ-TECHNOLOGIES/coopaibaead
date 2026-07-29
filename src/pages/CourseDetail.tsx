@@ -984,15 +984,16 @@ export default function CourseDetail() {
 
 
           {expandedSections.modules && (
-            <div className="border-t border-border">
+            <div className="border-t border-border" id="course-content-panel">
               {isAdmin && (
                 <div className="p-3 border-b border-border bg-muted/10">
                   <Button size="sm" onClick={openNewModule} className="gradient-primary text-primary-foreground gap-1">
-                    <Plus className="w-3 h-3" /> Novo Módulo
+                    <Plus className="w-3 h-3" aria-hidden="true" /> Novo Módulo
                   </Button>
                 </div>
               )}
-              <div className="p-3 space-y-2">
+              <div className="p-3 space-y-2" role="list" aria-label="Módulos do curso">
+
                 {modules.map((mod: any) => {
                   const modLessons = mod.lessons || [];
                   const modDone = modLessons.filter((l: any) => (isAdmin ? l.completed : completedLessonIds.has(l.id))).length;
