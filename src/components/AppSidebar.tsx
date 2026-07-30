@@ -235,7 +235,7 @@ export default function AppSidebar() {
   const sidebarContent = (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className={`flex items-center gap-3 px-4 py-6 border-b border-sidebar-border/70 ${collapsed ? "justify-center" : ""}`}>
+      <div className={`lg:hidden flex items-center gap-3 px-4 py-6 border-b border-sidebar-border/70 ${collapsed ? "justify-center" : ""}`}>
         <img src={logoImg} alt="Coopaiba EAD" className="w-11 h-11 rounded-2xl object-contain flex-shrink-0 shadow-card bg-card p-1" />
         {!collapsed && (
           <div className="overflow-hidden">
