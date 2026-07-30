@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import logoImg from "@/assets/logo-coopaiba.png";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardCheck,
-  BarChart3, Library, Award, Settings,
+  BarChart3, Library, Settings,
   ChevronLeft, ChevronRight, LogOut, Shield, ShieldCheck, Menu, X, Upload,
   MessageSquare, Activity, Headphones, UserX, CreditCard, Sparkles,
   Search, Star, ChevronDown, GraduationCap, Leaf, UsersRound,
@@ -38,7 +38,6 @@ const groups: NavGroup[] = [
     icon: LayoutDashboard,
     defaultOpen: true,
     items: [
-      { label: "Dashboard", icon: LayoutDashboard, path: "/app", adminOnly: true, moderatorAllowed: true },
       { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
     ],
   },
@@ -48,10 +47,8 @@ const groups: NavGroup[] = [
     icon: GraduationCap,
     defaultOpen: true,
     items: [
-      { label: "Cursos", icon: BookOpen, path: "/courses" },
       { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
       { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
-      { label: "Certificados", icon: Award, path: "/certificates" },
       { label: "Fórum", icon: MessageSquare, path: "/forum" },
     ],
   },
