@@ -95,44 +95,23 @@ export default function StudentDashboard() {
   return (
     <div className="space-y-6">
       <DashboardWelcomeVideo />
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-border/70 bg-card shadow-card p-5 sm:p-7"
-      >
-        <div className="flex items-center justify-between gap-5 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="text-2xl lg:text-[32px] font-heading font-extrabold tracking-tight text-foreground">
-              Olá, {firstName}!
-            </h1>
-            <p className="text-muted-foreground mt-1.5 text-sm sm:text-[15px]">
-              Continue de onde parou e avance nos seus objetivos.
-            </p>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            {enrollmentNumber && (
-              <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <IdCard className="w-4 h-4 text-primary" />
-                </div>
-                <div className="leading-tight">
-                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Matrícula</p>
-                  <p className="font-mono font-semibold text-xs text-foreground">{enrollmentNumber}</p>
-                </div>
-              </div>
-            )}
-            {continueEnrollment && (
-              <Link
-                to={`/courses/${continueEnrollment.course_id}`}
-                className="inline-flex items-center gap-2 rounded-full gradient-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold shadow-card transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <Play className="w-4 h-4" /> Retomar Última Aula
-              </Link>
-            )}
-          </div>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Olá, {firstName}! 👋</h1>
+          <p className="text-muted-foreground mt-1">Continue de onde parou</p>
         </div>
-      </motion.section>
-
+        {enrollmentNumber && (
+          <div className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 shadow-card">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <IdCard className="w-4 h-4 text-primary" />
+            </div>
+            <div className="leading-tight">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Matrícula</p>
+              <p className="font-mono font-semibold text-sm text-foreground">{enrollmentNumber}</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {continueEnrollment && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
