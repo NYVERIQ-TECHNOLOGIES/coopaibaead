@@ -549,6 +549,55 @@ export default function SettingsPage() {
               </div>
             </Section>
           )}
+
+          {isAdmin && (
+            <Section title="Cooperativas" desc="Cadastre as cooperativas exibidas no formulário de cadastro" icon={Globe}>
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    value={newCoop}
+                    onChange={(e) => setNewCoop(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCoop(); } }}
+                    placeholder="Nome da nova cooperativa"
+                    maxLength={120}
+                  />
+                  <Button onClick={addCoop} disabled={savingCoop} className="gap-2 sm:w-auto w-full">
+                    <Save className="w-4 h-4" /> {savingCoop ? "Salvando..." : "Cadastrar"}
+                  </Button>
+                </div>
+
+                <div className="rounded-2xl border border-border divide-y divide-border max-h-72 overflow-y-auto">
+                  {coops.length === 0 && (
+                    <p className="text-sm text-muted-foreground p-4">Nenhuma cooperativa cadastrada.</p>
+                  )}
+                  {coops.map((c) => (
+                    <div key={c.id} className="flex items-center gap-3 p-3">
+                      <span className="flex-1 text-sm text-foreground truncate">{c.name}</span>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={c.active}
+                          onCheckedChange={(v) => toggleCoop(c.id, v)}
+                          aria-label={`Ativar ${c.name}`}
+                        />
+                        <span className="text-xs text-muted-foreground w-14">{c.active ? "Ativa" : "Inativa"}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeCoop(c.id)}
+                          aria-label={`Remover ${c.name}`}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Apenas cooperativas ativas aparecem na página de cadastro.
+                </p>
+              </div>
+            </Section>
+          )}
         </TabsContent>
       </Tabs>
 
