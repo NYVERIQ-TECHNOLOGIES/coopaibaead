@@ -127,6 +127,65 @@ export default function SettingsPage() {
       toast({ title: "Vídeo de boas-vindas atualizado" });
     }
   };
+  // ---- Cooperativas (admin) ----
+  const [coops, setCoops] = useState<{ id: string; name: string; active: boolean }[]>([]);
+  const [newCoop, setNewCoop] = useState("");
+  const [savingCoop, setSavingCoop] = useState(false);
+
+  const loadCoops = useCallback(async () => {
+    const { data } = await supabase.from("cooperativas").select("id, name, active").order("name");
+    setCoops(data || []);
+  }, []);
+
+  useEffect(() => {
+    if (isAdmin) loadCoops();
+  }, [isAdmin, loadCoops]);
+
+  const addCoop = async () => {
+    const name = newCoop.trim();
+    if (name.length < 2) {
+      toast({ title: "Nome inválido", description: "Informe o nome da cooperativa.", variant: "destructive" });
+      return;
+    }
+    if (name.length > 120) {
+      toast({ title: "Nome muito longo", description: "Máximo de 120 caracteres.", variant: "destructive" });
+      return;
+    }
+    if (coops.some((c) => c.name.toLowerCase() === name.toLowerCase())) {
+      toast({ title: "Já cadastrada", description: "Essa cooperativa já existe.", variant: "destructive" });
+      return;
+    }
+    setSavingCoop(true);
+    const { error } = await supabase.from("cooperativas").insert({ name, active: true });
+    setSavingCoop(false);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    setNewCoop("");
+    toast({ title: "Cooperativa cadastrada", description: "Já aparece na página de cadastro." });
+    loadCoops();
+  };
+
+  const toggleCoop = async (id: string, active: boolean) => {
+    const { error } = await supabase.from("cooperativas").update({ active }).eq("id", id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCoops((cs) => cs.map((c) => (c.id === id ? { ...c, active } : c)));
+  };
+
+  const removeCoop = async (id: string) => {
+    const { error } = await supabase.from("cooperativas").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      return;
+    }
+    setCoops((cs) => cs.filter((c) => c.id !== id));
+    toast({ title: "Cooperativa removida" });
+  };
+
   const resetWelcomeSeen = () => {
     try { localStorage.removeItem("intro_seen_dashboard_v1"); } catch {}
     toast({ title: "Pronto", description: "O vídeo será exibido novamente no próximo acesso ao dashboard." });
