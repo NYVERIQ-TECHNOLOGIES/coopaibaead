@@ -2324,6 +2324,10 @@ export type Database = {
         Returns: undefined
       }
       restore_deleted_course: { Args: { _course_id: string }; Returns: Json }
+      set_certificate_delivery_mode: {
+        Args: { _certificate_ids: string[]; _mode: string }
+        Returns: number
+      }
       submit_exam_answers: {
         Args: { _answers: Json; _evaluation_id: string }
         Returns: Json
