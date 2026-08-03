@@ -1047,6 +1047,17 @@ function CertificatesTable({
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {cert.status !== "cancelado" && (
+                            <DropdownMenuItem onClick={() => onToggleDelivery?.(cert)} className="gap-2">
+                              {cert.delivery_mode === "download" ? (
+                                <><ClipboardCheck className="w-4 h-4" /> Exigir retirada na cooperativa</>
+                              ) : (
+                                <><Download className="w-4 h-4" /> Liberar para download</>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+
+                          {cert.status !== "cancelado" && (
                             <DropdownMenuItem onClick={() => onReissue?.(cert)} className="gap-2">
                               <RefreshCw className="w-4 h-4" /> Reemitir
                             </DropdownMenuItem>
