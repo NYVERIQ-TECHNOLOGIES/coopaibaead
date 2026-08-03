@@ -456,9 +456,12 @@ export default function Courses() {
                 </div>
 
                 {isAdmin && (
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border/60">
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/60">
                     <Button size="sm" variant="outline" onClick={() => openEdit(course)}>
                       <Pencil className="w-3 h-3 mr-1" /> Editar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setFieldDayCourse({ id: course.id, title: course.title })}>
+                      <MapPin className="w-3 h-3 mr-1" /> Dia de Campo
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => setDeleteId(course.id)}>
                       <Trash2 className="w-3 h-3 mr-1" /> Remover
