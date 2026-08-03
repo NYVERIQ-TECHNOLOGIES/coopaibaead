@@ -60,10 +60,10 @@ export default function UserMenu() {
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/perfil")} className="cursor-pointer gap-2">
+        <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer gap-2">
           <User className="h-4 w-4" /> Perfil
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/configuracoes")} className="cursor-pointer gap-2">
+        <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer gap-2">
           <Settings className="h-4 w-4" /> Configurações
         </DropdownMenuItem>
         <DropdownMenuSeparator />
