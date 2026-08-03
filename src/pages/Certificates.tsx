@@ -938,7 +938,7 @@ function AdminFilters(props: {
 
 function CertificatesTable({
   filtered, isLoading, isStaff, isAdmin, formatIssuerProfile,
-  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit, onDownload,
+  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit, onDownload, onToggleDelivery,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
   formatIssuerProfile?: (c: any) => string;
@@ -947,6 +947,8 @@ function CertificatesTable({
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
   onAudit?: (c: any) => void;
   onDownload?: (c: any) => void;
+  onToggleDelivery?: (c: any) => void;
+
 }) {
   if (isLoading) return (
     <div className="rounded-2xl border border-border/70 bg-card p-5 space-y-3 shadow-card">
