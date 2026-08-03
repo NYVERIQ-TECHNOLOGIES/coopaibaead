@@ -58,6 +58,33 @@ export default function Certificates() {
   const [cancelReason, setCancelReason] = useState("");
   const [auditCert, setAuditCert] = useState<Cert | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [changingDelivery, setChangingDelivery] = useState(false);
+
+  const setDeliveryMode = async (ids: string[], mode: "download" | "retirada") => {
+    if (ids.length === 0) {
+      toast({ title: "Nenhum certificado elegível", variant: "destructive" });
+      return;
+    }
+    setChangingDelivery(true);
+    try {
+      const { data, error } = await supabase.rpc("set_certificate_delivery_mode", {
+        _certificate_ids: ids,
+        _mode: mode,
+      });
+      if (error) throw error;
+      toast({
+        title: mode === "download" ? "Liberado para download" : "Restrito à retirada na cooperativa",
+        description: `${data ?? ids.length} certificado(s) atualizados.`,
+      });
+      qc.invalidateQueries({ queryKey: ["certificates"] });
+    } catch (e: any) {
+      toast({ title: "Erro ao alterar entrega", description: e.message, variant: "destructive" });
+    } finally {
+      setChangingDelivery(false);
+    }
+  };
+
+
 
   const downloadAllZip = async () => {
     const eligible = filtered.filter((c: any) =>
@@ -537,6 +564,42 @@ export default function Certificates() {
             )}
 
             {isAdmin && (
+              <>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  disabled={changingDelivery}
+                  onClick={() => {
+                    const ids = filtered
+                      .filter((c: any) => c.status !== "cancelado" && c.delivery_mode !== "download")
+                      .map((c: any) => c.id);
+                    if (!confirm(`Liberar ${ids.length} certificado(s) para o próprio aluno baixar?`)) return;
+                    setDeliveryMode(ids, "download");
+                  }}
+                >
+                  {changingDelivery ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Liberar todos p/ download
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  disabled={changingDelivery}
+                  onClick={() => {
+                    const ids = filtered
+                      .filter((c: any) => c.status !== "cancelado" && c.delivery_mode === "download")
+                      .map((c: any) => c.id);
+                    if (!confirm(`Voltar ${ids.length} certificado(s) para retirada na cooperativa?`)) return;
+                    setDeliveryMode(ids, "retirada");
+                  }}
+                >
+                  <ClipboardCheck className="w-4 h-4" /> Restringir todos p/ retirada
+                </Button>
+              </>
+            )}
+
+
+
+            {isAdmin && (
               <Button asChild variant="outline" className="gap-2">
                 <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
               </Button>
@@ -603,6 +666,10 @@ export default function Certificates() {
                   onReissue={(c) => reissueCert.mutate(c)}
                   onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
                   onAudit={(c) => setAuditCert(c)}
+                  onToggleDelivery={(c) =>
+                    setDeliveryMode([c.id], c.delivery_mode === "download" ? "retirada" : "download")
+                  }
+
                 />
               </div>
             </div>
@@ -871,7 +938,7 @@ function AdminFilters(props: {
 
 function CertificatesTable({
   filtered, isLoading, isStaff, isAdmin, formatIssuerProfile,
-  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit, onDownload,
+  onPickup, onPrint, onReceipt, onReissue, onCancel, onAudit, onDownload, onToggleDelivery,
 }: {
   filtered: any[]; isLoading: boolean; isStaff: boolean; isAdmin: boolean;
   formatIssuerProfile?: (c: any) => string;
@@ -880,6 +947,8 @@ function CertificatesTable({
   onReissue?: (c: any) => void; onCancel?: (c: any) => void;
   onAudit?: (c: any) => void;
   onDownload?: (c: any) => void;
+  onToggleDelivery?: (c: any) => void;
+
 }) {
   if (isLoading) return (
     <div className="rounded-2xl border border-border/70 bg-card p-5 space-y-3 shadow-card">
@@ -903,12 +972,14 @@ function CertificatesTable({
               <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Emissão</th>
               <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Solicitado por</th>
               <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Status</th>
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Entrega</th>
               <th className="text-right py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Ações</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={isStaff ? 9 : 7} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+              <tr><td colSpan={isStaff ? 10 : 8} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+
             ) : filtered.map((cert, i) => {
               const name = cert.profiles?.full_name ?? cert.student_name_snapshot ?? "—";
               const cpf = cert.profiles?.cpf ?? cert.student_cpf_snapshot ?? "—";
@@ -940,8 +1011,18 @@ function CertificatesTable({
                       {CERT_STATUS_LABEL[cert.status] || cert.status}
                     </span>
                   </td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
+                      cert.delivery_mode === "download"
+                        ? "text-success border-success/30 bg-success/10"
+                        : "text-muted-foreground border-border bg-muted/40"
+                    }`}>
+                      {cert.delivery_mode === "download" ? "Download liberado" : "Retirada na cooperativa"}
+                    </span>
+                  </td>
                   <td className="py-3 px-4 text-right">
                     {isAdmin ? (
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="w-4 h-4" /></Button>
@@ -965,6 +1046,17 @@ function CertificatesTable({
                             <History className="w-4 h-4" /> Histórico
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          {cert.status !== "cancelado" && (
+                            <DropdownMenuItem onClick={() => onToggleDelivery?.(cert)} className="gap-2">
+                              {cert.delivery_mode === "download" ? (
+                                <><ClipboardCheck className="w-4 h-4" /> Exigir retirada na cooperativa</>
+                              ) : (
+                                <><Download className="w-4 h-4" /> Liberar para download</>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+
                           {cert.status !== "cancelado" && (
                             <DropdownMenuItem onClick={() => onReissue?.(cert)} className="gap-2">
                               <RefreshCw className="w-4 h-4" /> Reemitir
