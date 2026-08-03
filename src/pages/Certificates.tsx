@@ -972,12 +972,14 @@ function CertificatesTable({
               <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Emissão</th>
               <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Solicitado por</th>
               <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Status</th>
+              <th className="text-left py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Entrega</th>
               <th className="text-right py-3.5 px-4 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">Ações</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
-              <tr><td colSpan={isStaff ? 9 : 7} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+              <tr><td colSpan={isStaff ? 10 : 8} className="text-center py-8 text-muted-foreground">Nenhum certificado encontrado</td></tr>
+
             ) : filtered.map((cert, i) => {
               const name = cert.profiles?.full_name ?? cert.student_name_snapshot ?? "—";
               const cpf = cert.profiles?.cpf ?? cert.student_cpf_snapshot ?? "—";
