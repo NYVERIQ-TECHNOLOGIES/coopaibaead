@@ -58,6 +58,33 @@ export default function Certificates() {
   const [cancelReason, setCancelReason] = useState("");
   const [auditCert, setAuditCert] = useState<Cert | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
+  const [changingDelivery, setChangingDelivery] = useState(false);
+
+  const setDeliveryMode = async (ids: string[], mode: "download" | "retirada") => {
+    if (ids.length === 0) {
+      toast({ title: "Nenhum certificado elegível", variant: "destructive" });
+      return;
+    }
+    setChangingDelivery(true);
+    try {
+      const { data, error } = await supabase.rpc("set_certificate_delivery_mode", {
+        _certificate_ids: ids,
+        _mode: mode,
+      });
+      if (error) throw error;
+      toast({
+        title: mode === "download" ? "Liberado para download" : "Restrito à retirada na cooperativa",
+        description: `${data ?? ids.length} certificado(s) atualizados.`,
+      });
+      qc.invalidateQueries({ queryKey: ["certificates"] });
+    } catch (e: any) {
+      toast({ title: "Erro ao alterar entrega", description: e.message, variant: "destructive" });
+    } finally {
+      setChangingDelivery(false);
+    }
+  };
+
+
 
   const downloadAllZip = async () => {
     const eligible = filtered.filter((c: any) =>
