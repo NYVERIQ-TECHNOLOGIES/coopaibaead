@@ -26,6 +26,7 @@ type ProfileRow = {
 
 type EnrollmentRow = {
   id: string;
+  course_id: string;
   progress: number;
   status: string;
   enrolled_at: string;
@@ -35,6 +36,7 @@ type EnrollmentRow = {
 type CertificateRow = {
   id: string;
   code: string;
+  course_id: string | null;
   status: string;
   delivery_mode: string;
   issued_at: string | null;
@@ -47,6 +49,19 @@ const maskCpf = (cpf?: string | null) => {
   if (d.length !== 11) return cpf;
   return `${d.slice(0, 3)}.***.***-${d.slice(9)}`;
 };
+
+const certStatusLabel = (s: string) =>
+  ({
+    pendente: "Solicitado",
+    emitido: "Emitido",
+    disponivel_retirada: "Pronto para retirada",
+    retirado: "Retirado",
+    cancelado: "Cancelado",
+    erro: "Erro na emissão",
+  } as Record<string, string>)[s] || s;
+
+const certStatusVariant = (s: string): "default" | "secondary" | "outline" | "destructive" =>
+  s === "cancelado" || s === "erro" ? "destructive" : s === "pendente" ? "outline" : "secondary";
 
 const fmtDate = (v?: string | null) =>
   v ? new Date(v).toLocaleDateString("pt-BR", { timeZone: "UTC" }) : "—";
@@ -66,6 +81,7 @@ export default function ProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Security
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changing, setChanging] = useState(false);
@@ -91,30 +107,71 @@ export default function ProfilePage() {
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
-  useEffect(() => {
+  const loadProgress = useCallback(async () => {
     if (!user) return;
-    let active = true;
-    (async () => {
-      setLoadingProgress(true);
-      const [{ data: enr }, { data: certs }] = await Promise.all([
+    setLoadingProgress(true);
+    const [{ data: enr }, { data: certs }] = await Promise.all([
+      supabase
+        .from("enrollments")
+        .select("id, course_id, progress, status, enrolled_at, courses(title, duration)")
+        .eq("user_id", user.id)
+        .order("enrolled_at", { ascending: false }),
+      supabase
+        .from("certificates")
+        .select("id, code, status, delivery_mode, issued_at, course_id, course_title_snapshot")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    const rows = (enr as any[]) || [];
+    const courseIds = rows.map((r) => r.course_id).filter(Boolean);
+    let computed: Record<string, number> = {};
+
+    if (courseIds.length) {
+      const [{ data: modules }, { data: completions }] = await Promise.all([
         supabase
-          .from("enrollments")
-          .select("id, progress, status, enrolled_at, courses(title, duration)")
-          .eq("user_id", user.id)
-          .order("enrolled_at", { ascending: false }),
-        supabase
-          .from("certificates")
-          .select("id, code, status, delivery_mode, issued_at, course_title_snapshot")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
+          .from("course_modules")
+          .select("id, course_id, course_lessons(id)")
+          .in("course_id", courseIds),
+        supabase.from("lesson_completions").select("lesson_id").eq("user_id", user.id),
       ]);
-      if (!active) return;
-      setEnrollments((enr as any) || []);
-      setCertificates((certs as any) || []);
-      setLoadingProgress(false);
-    })();
-    return () => { active = false; };
+      const doneSet = new Set(((completions as any[]) || []).map((c) => c.lesson_id));
+      const perCourse: Record<string, { total: number; done: number }> = {};
+      ((modules as any[]) || []).forEach((m) => {
+        const acc = (perCourse[m.course_id] ||= { total: 0, done: 0 });
+        (m.course_lessons || []).forEach((l: any) => {
+          acc.total += 1;
+          if (doneSet.has(l.id)) acc.done += 1;
+        });
+      });
+      computed = Object.fromEntries(
+        Object.entries(perCourse).map(([cid, v]) => [
+          cid,
+          v.total > 0 ? Math.round((v.done / v.total) * 100) : 0,
+        ])
+      );
+    }
+
+    const certByCourse = new Set(((certs as any[]) || []).map((c) => c.course_id).filter(Boolean));
+
+    setEnrollments(
+      rows.map((r) => {
+        const auto = computed[r.course_id] ?? 0;
+        const concluded = r.status === "concluido" || certByCourse.has(r.course_id);
+        return {
+          ...r,
+          progress: concluded ? 100 : Math.max(r.progress ?? 0, auto),
+        } as EnrollmentRow;
+      })
+    );
+    setCertificates(((certs as any[]) || []) as CertificateRow[]);
+    setLoadingProgress(false);
   }, [user]);
+
+  useEffect(() => {
+    loadProgress();
+  }, [loadProgress]);
+
 
   const initials = fullName
     ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -146,11 +203,20 @@ export default function ProfilePage() {
       toast({ title: "Informe seu nome completo", variant: "destructive" });
       return;
     }
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phoneDigits && (phoneDigits.length < 10 || phoneDigits.length > 11)) {
+      toast({ title: "Telefone inválido", description: "Informe DDD + número.", variant: "destructive" });
+      return;
+    }
+    if (!row?.data_nascimento && nascimento && new Date(nascimento) > new Date()) {
+      toast({ title: "Data de nascimento inválida", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const payload: Record<string, unknown> = {
       full_name: fullName.trim(),
       cooperativa: cooperativa.trim() || null,
-      phone: phone.trim() || null,
+      phone: phoneDigits || null,
     };
     if (!row?.data_nascimento && nascimento) payload.data_nascimento = nascimento;
     const { error } = await supabase.from("profiles").update(payload as any).eq("user_id", user.id);
@@ -164,6 +230,11 @@ export default function ProfilePage() {
   };
 
   const changePassword = async () => {
+    if (!user?.email) return;
+    if (!currentPassword) {
+      toast({ title: "Informe sua senha atual", variant: "destructive" });
+      return;
+    }
     if (newPassword.length < 8) {
       toast({ title: "A senha deve ter ao menos 8 caracteres", variant: "destructive" });
       return;
@@ -172,12 +243,31 @@ export default function ProfilePage() {
       toast({ title: "As senhas não coincidem", variant: "destructive" });
       return;
     }
+    if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      toast({ title: "A senha deve conter letras e números", variant: "destructive" });
+      return;
+    }
+    if (newPassword === currentPassword) {
+      toast({ title: "A nova senha deve ser diferente da atual", variant: "destructive" });
+      return;
+    }
     setChanging(true);
+    // Reautenticação: confirma a senha atual antes de permitir a troca
+    const { error: reauthError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (reauthError) {
+      setChanging(false);
+      toast({ title: "Senha atual incorreta", variant: "destructive" });
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setChanging(false);
     if (error) {
       toast({ title: "Erro ao alterar senha", description: error.message, variant: "destructive" });
     } else {
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       toast({ title: "Senha alterada com sucesso!" });
@@ -323,10 +413,19 @@ export default function ProfilePage() {
                 <KeyRound className="w-5 h-5 text-primary" /> Alterar senha
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Use ao menos 8 caracteres, com letras e números.
+                Confirme sua senha atual e use ao menos 8 caracteres, com letras e números.
               </p>
             </div>
             <div className="grid gap-4">
+              <div>
+                <Label>Senha atual</Label>
+                <Input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
               <div>
                 <Label>Nova senha</Label>
                 <Input
@@ -429,12 +528,12 @@ export default function ProfilePage() {
                             {c.issued_at ? `Emitido em ${fmtDate(c.issued_at)}` : "Aguardando emissão"}
                           </p>
                         </div>
-                        <Badge
-                          variant={c.delivery_mode === "download" ? "default" : "outline"}
-                          className="shrink-0"
-                        >
-                          {c.delivery_mode === "download" ? "Download liberado" : "Retirada na cooperativa"}
-                        </Badge>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <Badge variant={certStatusVariant(c.status)}>{certStatusLabel(c.status)}</Badge>
+                          <Badge variant={c.delivery_mode === "download" ? "default" : "outline"}>
+                            {c.delivery_mode === "download" ? "Download liberado" : "Retirada na cooperativa"}
+                          </Badge>
+                        </div>
                       </div>
                     ))}
                   </div>
