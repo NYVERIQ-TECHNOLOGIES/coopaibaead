@@ -74,10 +74,16 @@ export function CompleteProfileModal() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("cpf, data_nascimento, phone")
+        .select("cpf, data_nascimento, phone, is_test_user")
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled || !data) return;
+      // Exceção: usuários de teste ignoram totalmente a validação de cadastro
+      if ((data as { is_test_user?: boolean }).is_test_user) {
+        setMissing(null);
+        setOpen(false);
+        return;
+      }
       const m: Missing = {
         cpf: !data.cpf || data.cpf.trim().length === 0,
         data_nascimento: !data.data_nascimento,
