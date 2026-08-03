@@ -116,7 +116,7 @@ export default function AppSidebar() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, user, role, signOut } = useAuth();
+  const { role, signOut } = useAuth();
   const isAdmin = role === "admin";
   const isModerator = role === "moderador";
   const isCooperado = role === "cooperado";
@@ -160,9 +160,6 @@ export default function AppSidebar() {
     setOpenGroups(o => ({ ...o, [id]: !o[id] }));
   };
 
-  const initials = profile?.full_name
-    ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
-    : "U";
 
   const handleSignOut = async () => {
     await signOut();
