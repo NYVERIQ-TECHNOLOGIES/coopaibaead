@@ -91,30 +91,71 @@ export default function ProfilePage() {
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
-  useEffect(() => {
+  const loadProgress = useCallback(async () => {
     if (!user) return;
-    let active = true;
-    (async () => {
-      setLoadingProgress(true);
-      const [{ data: enr }, { data: certs }] = await Promise.all([
+    setLoadingProgress(true);
+    const [{ data: enr }, { data: certs }] = await Promise.all([
+      supabase
+        .from("enrollments")
+        .select("id, course_id, progress, status, enrolled_at, courses(title, duration)")
+        .eq("user_id", user.id)
+        .order("enrolled_at", { ascending: false }),
+      supabase
+        .from("certificates")
+        .select("id, code, status, delivery_mode, issued_at, course_id, course_title_snapshot")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+    ]);
+
+    const rows = (enr as any[]) || [];
+    const courseIds = rows.map((r) => r.course_id).filter(Boolean);
+    let computed: Record<string, number> = {};
+
+    if (courseIds.length) {
+      const [{ data: modules }, { data: completions }] = await Promise.all([
         supabase
-          .from("enrollments")
-          .select("id, progress, status, enrolled_at, courses(title, duration)")
-          .eq("user_id", user.id)
-          .order("enrolled_at", { ascending: false }),
-        supabase
-          .from("certificates")
-          .select("id, code, status, delivery_mode, issued_at, course_title_snapshot")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
+          .from("course_modules")
+          .select("id, course_id, course_lessons(id)")
+          .in("course_id", courseIds),
+        supabase.from("lesson_completions").select("lesson_id").eq("user_id", user.id),
       ]);
-      if (!active) return;
-      setEnrollments((enr as any) || []);
-      setCertificates((certs as any) || []);
-      setLoadingProgress(false);
-    })();
-    return () => { active = false; };
+      const doneSet = new Set(((completions as any[]) || []).map((c) => c.lesson_id));
+      const perCourse: Record<string, { total: number; done: number }> = {};
+      ((modules as any[]) || []).forEach((m) => {
+        const acc = (perCourse[m.course_id] ||= { total: 0, done: 0 });
+        (m.course_lessons || []).forEach((l: any) => {
+          acc.total += 1;
+          if (doneSet.has(l.id)) acc.done += 1;
+        });
+      });
+      computed = Object.fromEntries(
+        Object.entries(perCourse).map(([cid, v]) => [
+          cid,
+          v.total > 0 ? Math.round((v.done / v.total) * 100) : 0,
+        ])
+      );
+    }
+
+    const certByCourse = new Set(((certs as any[]) || []).map((c) => c.course_id).filter(Boolean));
+
+    setEnrollments(
+      rows.map((r) => {
+        const auto = computed[r.course_id] ?? 0;
+        const concluded = r.status === "concluido" || certByCourse.has(r.course_id);
+        return {
+          ...r,
+          progress: concluded ? 100 : Math.max(r.progress ?? 0, auto),
+        } as EnrollmentRow;
+      })
+    );
+    setCertificates(((certs as any[]) || []) as CertificateRow[]);
+    setLoadingProgress(false);
   }, [user]);
+
+  useEffect(() => {
+    loadProgress();
+  }, [loadProgress]);
+
 
   const initials = fullName
     ? fullName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
