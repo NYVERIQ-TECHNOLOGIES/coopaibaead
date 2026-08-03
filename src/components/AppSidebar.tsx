@@ -116,7 +116,7 @@ export default function AppSidebar() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, user, role, signOut } = useAuth();
+  const { role, signOut } = useAuth();
   const isAdmin = role === "admin";
   const isModerator = role === "moderador";
   const isCooperado = role === "cooperado";
@@ -160,9 +160,6 @@ export default function AppSidebar() {
     setOpenGroups(o => ({ ...o, [id]: !o[id] }));
   };
 
-  const initials = profile?.full_name
-    ? profile.full_name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()
-    : "U";
 
   const handleSignOut = async () => {
     await signOut();
@@ -301,27 +298,27 @@ export default function AppSidebar() {
         )}
       </nav>
 
-      {/* User section */}
+      {/* Bottom actions */}
       <div className="border-t border-sidebar-border/70 p-3">
-        <div className={`flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-sidebar-accent/50 ${collapsed ? "justify-center" : ""}`}>
-          <Link to="/profile" onClick={() => setMobileOpen(false)}
-            className="w-10 h-10 rounded-full gradient-secondary flex items-center justify-center flex-shrink-0 ring-2 ring-sidebar-background shadow-card hover:opacity-90 transition-opacity">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-10 h-10 rounded-full object-cover" />
-            ) : (
-              <span className="text-sm font-bold text-brand-foreground">{initials}</span>
-            )}
-          </Link>
+        <div className={`flex items-center rounded-2xl p-2 transition-colors hover:bg-sidebar-accent/50 ${collapsed ? "justify-center" : ""}`}>
           {!collapsed && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-sidebar-foreground truncate">{profile?.full_name || "Usuário"}</p>
-                <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email}</p>
-              </div>
-              <button onClick={handleSignOut} title="Sair" aria-label="Sair" className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors">
-                <LogOut className="w-4 h-4" />
-              </button>
-            </>
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 text-sm font-medium text-sidebar-foreground/80 hover:text-sidebar-foreground transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sair da conta</span>
+            </button>
+          )}
+          {collapsed && (
+            <button
+              onClick={handleSignOut}
+              title="Sair"
+              aria-label="Sair"
+              className="rounded-lg p-1.5 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           )}
         </div>
       </div>
