@@ -31,6 +31,19 @@ export default function PresencaEvento() {
     refetchInterval: 60_000,
   });
 
+  const { data: cursosVinculados = [] } = useQuery({
+    queryKey: ["presenca_evento_cursos", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("presenca_evento_cursos" as any)
+        .select("curso_id, courses:curso_id(id, title)")
+        .eq("evento_id", id!);
+      if (error) throw error;
+      return ((data as any[]) || []).map((r) => r.courses).filter(Boolean);
+    },
+  });
+
 
   const { data: assinaturas = [] } = useQuery({
     queryKey: ["presenca_assinaturas", id],
