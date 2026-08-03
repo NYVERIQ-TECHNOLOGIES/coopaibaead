@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Pencil, Trash2, Lock, Upload, Loader2, Image, History, RotateCcw } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Lock, Upload, Loader2, Image, History, RotateCcw, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
