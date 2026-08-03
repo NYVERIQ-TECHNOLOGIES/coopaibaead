@@ -491,6 +491,12 @@ export default function Courses() {
         </div>
       )}
 
+      <DiaDeCampoDialog
+        course={fieldDayCourse}
+        open={!!fieldDayCourse}
+        onOpenChange={(o) => { if (!o) setFieldDayCourse(null); }}
+      />
+
       {/* Save Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
