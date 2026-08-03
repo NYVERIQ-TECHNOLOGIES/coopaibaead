@@ -666,6 +666,10 @@ export default function Certificates() {
                   onReissue={(c) => reissueCert.mutate(c)}
                   onCancel={(c) => { setCancelCert(c); setCancelReason(""); }}
                   onAudit={(c) => setAuditCert(c)}
+                  onToggleDelivery={(c) =>
+                    setDeliveryMode([c.id], c.delivery_mode === "download" ? "retirada" : "download")
+                  }
+
                 />
               </div>
             </div>
