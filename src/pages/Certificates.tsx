@@ -1011,8 +1011,18 @@ function CertificatesTable({
                       {CERT_STATUS_LABEL[cert.status] || cert.status}
                     </span>
                   </td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
+                      cert.delivery_mode === "download"
+                        ? "text-success border-success/30 bg-success/10"
+                        : "text-muted-foreground border-border bg-muted/40"
+                    }`}>
+                      {cert.delivery_mode === "download" ? "Download liberado" : "Retirada na cooperativa"}
+                    </span>
+                  </td>
                   <td className="py-3 px-4 text-right">
                     {isAdmin ? (
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button size="sm" variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="w-4 h-4" /></Button>
