@@ -19,6 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import SignedImage from "@/components/SignedImage";
+import DiaDeCampoDialog from "@/components/DiaDeCampoDialog";
 
 interface Course {
   id: string;
