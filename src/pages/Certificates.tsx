@@ -564,6 +564,42 @@ export default function Certificates() {
             )}
 
             {isAdmin && (
+              <>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  disabled={changingDelivery}
+                  onClick={() => {
+                    const ids = filtered
+                      .filter((c: any) => c.status !== "cancelado" && c.delivery_mode !== "download")
+                      .map((c: any) => c.id);
+                    if (!confirm(`Liberar ${ids.length} certificado(s) para o próprio aluno baixar?`)) return;
+                    setDeliveryMode(ids, "download");
+                  }}
+                >
+                  {changingDelivery ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Liberar todos p/ download
+                </Button>
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  disabled={changingDelivery}
+                  onClick={() => {
+                    const ids = filtered
+                      .filter((c: any) => c.status !== "cancelado" && c.delivery_mode === "download")
+                      .map((c: any) => c.id);
+                    if (!confirm(`Voltar ${ids.length} certificado(s) para retirada na cooperativa?`)) return;
+                    setDeliveryMode(ids, "retirada");
+                  }}
+                >
+                  <ClipboardCheck className="w-4 h-4" /> Restringir todos p/ retirada
+                </Button>
+              </>
+            )}
+
+
+
+            {isAdmin && (
               <Button asChild variant="outline" className="gap-2">
                 <Link to="/certificates/configuracoes"><Settings className="w-4 h-4" /> Retirada</Link>
               </Button>
