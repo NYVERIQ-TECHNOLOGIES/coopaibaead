@@ -52,6 +52,7 @@ import PresencaNovo from "@/pages/PresencaNovo";
 import PresencaEvento from "@/pages/PresencaEvento";
 import PresencaRelatorios from "@/pages/PresencaRelatorios";
 import PresencaAssinar from "@/pages/PresencaAssinar";
+import CursoEntrar from "@/pages/CursoEntrar";
 
 import CooperadosEventuaisList from "@/pages/CooperadosEventuaisList";
 import CooperadosEventuaisDetalhe from "@/pages/CooperadosEventuaisDetalhe";
