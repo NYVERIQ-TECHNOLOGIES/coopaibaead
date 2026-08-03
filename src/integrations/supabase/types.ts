@@ -2291,6 +2291,7 @@ export type Database = {
         Args: { _course_id: string; _lesson_id: string }
         Returns: undefined
       }
+      matricular_via_link: { Args: { _course_id: string }; Returns: Json }
       register_certificate_pickup: {
         Args: {
           _attendant_name: string

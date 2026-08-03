@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Pencil, Trash2, Lock, Upload, Loader2, Image, History, RotateCcw } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Lock, Upload, Loader2, Image, History, RotateCcw, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import SignedImage from "@/components/SignedImage";
+import DiaDeCampoDialog from "@/components/DiaDeCampoDialog";
 
 interface Course {
   id: string;
@@ -62,6 +63,7 @@ export default function Courses() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [preserveHistory, setPreserveHistory] = useState(true);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [fieldDayCourse, setFieldDayCourse] = useState<{ id: string; title: string } | null>(null);
 
 
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -456,9 +458,12 @@ export default function Courses() {
                 </div>
 
                 {isAdmin && (
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border/60">
+                  <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/60">
                     <Button size="sm" variant="outline" onClick={() => openEdit(course)}>
                       <Pencil className="w-3 h-3 mr-1" /> Editar
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setFieldDayCourse({ id: course.id, title: course.title })}>
+                      <MapPin className="w-3 h-3 mr-1" /> Dia de Campo
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => setDeleteId(course.id)}>
                       <Trash2 className="w-3 h-3 mr-1" /> Remover
@@ -486,6 +491,12 @@ export default function Courses() {
           </p>
         </div>
       )}
+
+      <DiaDeCampoDialog
+        course={fieldDayCourse}
+        open={!!fieldDayCourse}
+        onOpenChange={(o) => { if (!o) setFieldDayCourse(null); }}
+      />
 
       {/* Save Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
