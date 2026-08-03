@@ -33,10 +33,10 @@ export default function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="flex items-center gap-2 pl-2 pr-1 py-1 rounded-full border border-border bg-card hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label="Menu do usuário"
+          className="flex items-center gap-2 min-h-11 sm:min-h-0 min-w-11 sm:min-w-0 justify-center pl-1 pr-1 sm:pl-2 py-1 rounded-full border border-border bg-card hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          aria-label={`Menu do usuário: ${displayName}`}
         >
-          <Avatar className="h-7 w-7">
+          <Avatar className="h-8 w-8 sm:h-7 sm:w-7">
             <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
               {getInitials(displayName)}
@@ -54,21 +54,26 @@ export default function UserMenu() {
           </div>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-3 py-2">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        collisionPadding={12}
+        className="z-50 w-[min(16rem,calc(100vw-1.5rem))]"
+      >
+        <div className="px-3 py-2" aria-hidden="true">
           <p className="text-sm font-medium truncate">{displayName}</p>
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer gap-2">
-          <User className="h-4 w-4" /> Perfil
+        <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer gap-2 min-h-11 sm:min-h-9 focus-visible:ring-2 focus-visible:ring-ring">
+          <User className="h-4 w-4" aria-hidden="true" /> Perfil
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer gap-2">
-          <Settings className="h-4 w-4" /> Configurações
+        <DropdownMenuItem onClick={() => navigate("/settings")} className="cursor-pointer gap-2 min-h-11 sm:min-h-9 focus-visible:ring-2 focus-visible:ring-ring">
+          <Settings className="h-4 w-4" aria-hidden="true" /> Configurações
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer gap-2 text-destructive focus:text-destructive">
-          <LogOut className="h-4 w-4" /> Sair
+        <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer gap-2 min-h-11 sm:min-h-9 text-destructive focus:text-destructive focus-visible:ring-2 focus-visible:ring-ring">
+          <LogOut className="h-4 w-4" aria-hidden="true" /> Sair
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
