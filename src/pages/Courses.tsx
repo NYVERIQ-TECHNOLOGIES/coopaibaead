@@ -62,6 +62,7 @@ export default function Courses() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [preserveHistory, setPreserveHistory] = useState(true);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [fieldDayCourse, setFieldDayCourse] = useState<{ id: string; title: string } | null>(null);
 
 
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
