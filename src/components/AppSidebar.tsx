@@ -48,10 +48,7 @@ const groups: NavGroup[] = [
     icon: GraduationCap,
     defaultOpen: true,
     items: [
-      { label: "Cursos", icon: BookOpen, path: "/courses" },
-      { label: "Alunos", icon: Users, path: "/students", adminOnly: true, moderatorAllowed: true },
-      { label: "Presença", icon: ClipboardCheck, path: "/attendance", adminOnly: true },
-      { label: "Certificados", icon: Award, path: "/certificates" },
+      { label: "Ensino & Cooperados", icon: GraduationCap, path: "/ensino", moderatorAllowed: true, cooperadoAllowed: true },
       { label: "Fórum", icon: MessageSquare, path: "/forum" },
     ],
   },
@@ -66,30 +63,11 @@ const groups: NavGroup[] = [
     ],
   },
   {
-    id: "campo",
-    label: "Campo & Eventos",
-    icon: Leaf,
-    items: [
-      { label: "Dia de Campo", icon: Leaf, path: "/presenca", adminOnly: true, moderatorAllowed: true, cooperadoAllowed: true },
-    ],
-  },
-  {
-    id: "cooperados",
-    label: "Cooperados",
-    icon: UsersRound,
-    items: [
-      { label: "Cooperados Eventuais", icon: Sparkles, path: "/cooperados-eventuais", cooperadoExcluded: true },
-      { label: "Gestão Eventuais", icon: Sparkles, path: "/admin/cooperados-eventuais", adminOnly: true },
-      { label: "Autorizar Cooperados", icon: ShieldCheck, path: "/admin/cooperados-pendentes", adminOnly: true },
-    ],
-  },
-  {
     id: "gestao",
     label: "Gestão",
     icon: TrendingUp,
     items: [
       { label: "Relatórios", icon: BarChart3, path: "/reports", adminOnly: true },
-      { label: "Assinaturas", icon: CreditCard, path: "/subscriptions", adminOnly: true },
     ],
   },
   {
@@ -97,9 +75,7 @@ const groups: NavGroup[] = [
     label: "Administração",
     icon: Wrench,
     items: [
-      { label: "Administradores", icon: Shield, path: "/admins", adminOnly: true },
-      { label: "Configurações", icon: Settings, path: "/settings", moderatorAllowed: true },
-      { label: "Logs de Acesso", icon: Activity, path: "/admin-logs", adminOnly: true },
+      { label: "Administração", icon: Wrench, path: "/administracao", moderatorAllowed: true },
     ],
   },
   {
