@@ -59,6 +59,8 @@ import CooperadosEventuaisDetalhe from "@/pages/CooperadosEventuaisDetalhe";
 import AdminCampanhas from "@/pages/admin/AdminCampanhas";
 import AdminCampanhaDetalhe from "@/pages/admin/AdminCampanhaDetalhe";
 import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
+import AdministracaoHub from "@/pages/AdministracaoHub";
+import EnsinoHub from "@/pages/EnsinoHub";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -129,6 +131,8 @@ const App = () => (
               <Route path="/presenca/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaEvento /></ProtectedRoute>} />
               <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin"]}><SupplementaryMaterials /></ProtectedRoute>} />
               <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
+              <Route path="/administracao" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><AdministracaoHub /></ProtectedRoute>} />
+              <Route path="/ensino" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><EnsinoHub /></ProtectedRoute>} />
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
               <Route path="/admin-logs" element={<ProtectedRoute allowedRoles={["admin"]}><AdminLogs /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute allowedRoles={["admin"]}><Reports /></ProtectedRoute>} />
