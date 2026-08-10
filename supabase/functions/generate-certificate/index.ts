@@ -233,6 +233,8 @@ Deno.serve(async (req) => {
       }
     } catch { /* no signature */ }
 
+    const syllabus = await fetchSyllabus(supabaseAdmin, course_id);
+
     const pdfBytes = await buildCertificatePdf({
       studentName, studentCpf,
       enrollmentNumber: profile.enrollment_number || null,
@@ -243,7 +245,7 @@ Deno.serve(async (req) => {
       logoUrl: logoSignedUrl,
       presidentSigUrl,
       coordSigUrl,
-      certCode, verifyUrl,
+      certCode, verifyUrl, syllabus,
     });
 
 
@@ -385,6 +387,7 @@ interface CertData {
 
   certCode: string;
   verifyUrl: string;
+  syllabus?: SyllabusModule[];
 }
 
 async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
@@ -640,6 +643,9 @@ async function buildCertificatePdf(data: CertData): Promise<Uint8Array> {
   page.drawText("Código de validação", { x: 48, y: 70, size: 8, font: fontRegular, color: muted });
   page.drawText(data.certCode, { x: 48, y: 56, size: 12, font: fontBold, color: blue });
 
+  // Verso: conteúdo programático + carga horária
+  await drawSyllabusPages(pdfDoc, rgb, { fontBold, fontRegular, fontItalic }, data);
+
   const bytes = await pdfDoc.save();
   return new Uint8Array(bytes);
 }
@@ -675,4 +681,146 @@ function wrapText(text: string, font: any, size: number, maxWidth: number): stri
   }
   if (current) lines.push(current);
   return lines;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Conteúdo programático (verso do certificado)
+// ──────────────────────────────────────────────────────────────────────────────
+interface SyllabusLesson { title: string; duration: string | null }
+interface SyllabusModule { title: string; lessons: SyllabusLesson[]; minutes: number }
+
+function parseDurationToMinutes(d: string | null): number {
+  if (!d) return 0;
+  const s = String(d).toLowerCase().replace(",", ".");
+  let total = 0;
+  const h = s.match(/([\d.]+)\s*(h|hora)/);
+  const m = s.match(/([\d.]+)\s*(min|m\b)/);
+  if (h) total += parseFloat(h[1]) * 60;
+  if (m) total += parseFloat(m[1]);
+  if (!h && !m) {
+    const clock = s.match(/^(\d{1,2}):(\d{2})$/);
+    if (clock) total += parseInt(clock[1]) * 60 + parseInt(clock[2]);
+    else {
+      const n = s.match(/([\d.]+)/);
+      if (n) total += parseFloat(n[1]);
+    }
+  }
+  return Math.round(total);
+}
+
+function formatMinutes(min: number): string {
+  if (!min) return "—";
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h && m) return `${h}h${String(m).padStart(2, "0")}`;
+  if (h) return `${h}h`;
+  return `${m}min`;
+}
+
+async function fetchSyllabus(admin: any, courseId: string): Promise<SyllabusModule[]> {
+  try {
+    const { data: mods } = await admin
+      .from("course_modules").select("id, title, sort_order")
+      .eq("course_id", courseId).order("sort_order", { ascending: true });
+    if (!mods || mods.length === 0) return [];
+    const { data: lessons } = await admin
+      .from("course_lessons").select("module_id, title, duration, sort_order")
+      .in("module_id", mods.map((m: any) => m.id))
+      .order("sort_order", { ascending: true });
+    return mods.map((m: any) => {
+      const ls = (lessons || []).filter((l: any) => l.module_id === m.id);
+      return {
+        title: m.title,
+        lessons: ls.map((l: any) => ({ title: l.title, duration: l.duration || null })),
+        minutes: ls.reduce((s: number, l: any) => s + parseDurationToMinutes(l.duration), 0),
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function drawSyllabusPages(pdfDoc: any, rgb: any, fonts: any, data: CertData) {
+  const modules = data.syllabus || [];
+  if (modules.length === 0) return;
+
+  const W = 841.89, H = 595.28;
+  const { fontBold, fontRegular, fontItalic } = fonts;
+  const green = rgb(BRAND.green.r, BRAND.green.g, BRAND.green.b);
+  const blue = rgb(BRAND.blue.r, BRAND.blue.g, BRAND.blue.b);
+  const yellow = rgb(BRAND.yellow.r, BRAND.yellow.g, BRAND.yellow.b);
+  const ink = rgb(BRAND.ink.r, BRAND.ink.g, BRAND.ink.b);
+  const muted = rgb(BRAND.muted.r, BRAND.muted.g, BRAND.muted.b);
+
+  const totalMinutes = modules.reduce((s, m) => s + m.minutes, 0);
+  const colW = (W - 96 - 30) / 2;
+  const colX = [48, 48 + colW + 30];
+
+  let page: any = null;
+  let col = 0;
+  let y = 0;
+
+  const newPage = () => {
+    page = pdfDoc.addPage([W, H]);
+    page.drawRectangle({ x: 18, y: 18, width: W - 36, height: H - 36, borderColor: green, borderWidth: 3 });
+    page.drawRectangle({ x: 28, y: 28, width: W - 56, height: H - 56, borderColor: blue, borderWidth: 0.8 });
+    page.drawText("CONTEÚDO PROGRAMÁTICO", { x: 48, y: H - 62, size: 16, font: fontBold, color: green });
+    page.drawRectangle({ x: 48, y: H - 72, width: 120, height: 4, color: yellow });
+    const t = data.courseTitle;
+    const tw = fontBold.widthOfTextAtSize(t, 11);
+    page.drawText(t.length > 70 ? t.slice(0, 70) + "…" : t, { x: 48, y: H - 92, size: 11, font: fontBold, color: ink });
+    const ch = `Carga horária total: ${data.courseDuration}${totalMinutes ? `  ·  Conteúdo mapeado: ${formatMinutes(totalMinutes)}` : ""}`;
+    page.drawText(ch, { x: 48, y: H - 108, size: 9.5, font: fontRegular, color: blue });
+    const right = `Certificado ${data.certCode}`;
+    const rw = fontRegular.widthOfTextAtSize(right, 9);
+    page.drawText(right, { x: W - 48 - rw, y: H - 62, size: 9, font: fontRegular, color: muted });
+    const foot = `${data.studentName} · COOPAIBA — Programa de Educação Cooperativa (PEC) · Valide em coopaiba.com.br`;
+    const fw = fontItalic.widthOfTextAtSize(foot, 7.5);
+    page.drawText(foot, { x: W / 2 - fw / 2, y: 38, size: 7.5, font: fontItalic, color: muted });
+    col = 0;
+    y = H - 135;
+    void tw;
+  };
+
+  const ensure = (needed: number) => {
+    if (!page) { newPage(); return; }
+    if (y - needed < 58) {
+      if (col === 0) { col = 1; y = H - 135; }
+      else newPage();
+    }
+  };
+
+  newPage();
+
+  modules.forEach((m, i) => {
+    ensure(34);
+    const x = colX[col];
+    const head = `${i + 1}. ${m.title}`;
+    const headLines = wrapText(head, fontBold, 10.5, colW - 60);
+    for (const ln of headLines) {
+      ensure(16);
+      page.drawText(ln, { x: colX[col], y, size: 10.5, font: fontBold, color: blue });
+      y -= 14;
+    }
+    if (m.minutes > 0) {
+      const lbl = formatMinutes(m.minutes);
+      const lw = fontRegular.widthOfTextAtSize(lbl, 8.5);
+      page.drawText(lbl, { x: colX[col] + colW - lw, y: y + 14, size: 8.5, font: fontRegular, color: green });
+    }
+    for (const l of m.lessons) {
+      const lines = wrapText(`•  ${l.title}`, fontRegular, 9, colW - 55);
+      for (const ln of lines) {
+        ensure(13);
+        page.drawText(ln, { x: colX[col] + 8, y, size: 9, font: fontRegular, color: ink });
+        y -= 12;
+      }
+      if (l.duration) {
+        const dl = String(l.duration);
+        const dw = fontRegular.widthOfTextAtSize(dl, 8);
+        page.drawText(dl, { x: colX[col] + colW - dw, y: y + 12, size: 8, font: fontRegular, color: muted });
+      }
+    }
+    y -= 8;
+    void x;
+  });
 }
