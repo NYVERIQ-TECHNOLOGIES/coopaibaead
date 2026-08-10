@@ -233,6 +233,8 @@ Deno.serve(async (req) => {
       }
     } catch { /* no signature */ }
 
+    const syllabus = await fetchSyllabus(supabaseAdmin, course_id);
+
     const pdfBytes = await buildCertificatePdf({
       studentName, studentCpf,
       enrollmentNumber: profile.enrollment_number || null,
@@ -243,7 +245,7 @@ Deno.serve(async (req) => {
       logoUrl: logoSignedUrl,
       presidentSigUrl,
       coordSigUrl,
-      certCode, verifyUrl,
+      certCode, verifyUrl, syllabus,
     });
 
 

@@ -137,6 +137,8 @@ async function reissueOne(admin: any, asUser: any, certificate_id: string) {
       }
     } catch { /* no signature */ }
 
+    const syllabus = await fetchSyllabus(admin, cert.course_id);
+
     let pdfBytes: Uint8Array;
     try {
       pdfBytes = await buildCertificatePdf({
@@ -145,7 +147,7 @@ async function reissueOne(admin: any, asUser: any, certificate_id: string) {
         cooperativa: cert.cooperativa_snapshot || profile?.cooperativa || null,
         courseTitle, courseDuration, startStr, endStr, dateStr,
         templateUrl: templateSignedUrl, logoUrl: logoSignedUrl, presidentSigUrl, coordSigUrl,
-        certCode: cert.code, verifyUrl,
+        certCode: cert.code, verifyUrl, syllabus,
       });
 
     } catch (e: any) {
