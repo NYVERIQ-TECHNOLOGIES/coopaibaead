@@ -785,6 +785,7 @@ export type Database = {
       course_lessons: {
         Row: {
           completed: boolean
+          content_text: string | null
           content_url: string | null
           created_at: string
           duration: string | null
@@ -797,6 +798,7 @@ export type Database = {
         }
         Insert: {
           completed?: boolean
+          content_text?: string | null
           content_url?: string | null
           created_at?: string
           duration?: string | null
@@ -809,6 +811,7 @@ export type Database = {
         }
         Update: {
           completed?: boolean
+          content_text?: string | null
           content_url?: string | null
           created_at?: string
           duration?: string | null
