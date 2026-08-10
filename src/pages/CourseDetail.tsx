@@ -31,9 +31,10 @@ import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
 import IntroVideoModal from "@/components/IntroVideoModal";
 import CourseSurveySection from "@/components/CourseSurveySection";
+import LessonText from "@/components/LessonText";
 
-const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen };
-const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link" };
+const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen, texto: FileText };
+const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link", texto: "Leitura" };
 const evalTypeLabels: Record<string, string> = { prova: "Prova", exercicio: "Exercício", simulado: "Simulado" };
 const evalStatusStyles: Record<string, string> = {
   rascunho: "bg-muted text-muted-foreground",
@@ -218,6 +219,7 @@ export default function CourseDetail() {
   const [lessonType, setLessonType] = useState("video");
   const [lessonDuration, setLessonDuration] = useState("");
   const [lessonContentUrl, setLessonContentUrl] = useState("");
+  const [lessonContentText, setLessonContentText] = useState("");
 
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
@@ -225,6 +227,7 @@ export default function CourseDetail() {
   const [contentLoading, setContentLoading] = useState(false);
   const [contentError, setContentError] = useState<string | null>(null);
   const [contentLessonId, setContentLessonId] = useState<string | null>(null);
+  const [contentText, setContentText] = useState<string | null>(null);
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
   const [editEvalId, setEditEvalId] = useState<string | null>(null);
@@ -330,10 +333,10 @@ export default function CourseDetail() {
   const saveLessonMut = useMutation({
     mutationFn: async () => {
       if (editLessonId) {
-        const { error } = await supabase.from("course_lessons").update({ title: lessonTitle, type: lessonType, duration: lessonDuration, content_url: lessonContentUrl || null }).eq("id", editLessonId);
+        const { error } = await supabase.from("course_lessons").update({ title: lessonTitle, type: lessonType, duration: lessonDuration, content_url: lessonContentUrl || null, content_text: lessonContentText || null }).eq("id", editLessonId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("course_lessons").insert({ module_id: lessonModuleId!, title: lessonTitle, type: lessonType, duration: lessonDuration || "10min", content_url: lessonContentUrl || null });
+        const { error } = await supabase.from("course_lessons").insert({ module_id: lessonModuleId!, title: lessonTitle, type: lessonType, duration: lessonDuration || "10min", content_url: lessonContentUrl || null, content_text: lessonContentText || null });
         if (error) throw error;
       }
     },
@@ -465,8 +468,8 @@ export default function CourseDetail() {
   // ---- Helpers ----
   const openNewModule = () => { setEditModuleId(null); setModuleTitle(""); setModuleLocked(false); setModuleDialogOpen(true); };
   const openEditModule = (m: any) => { setEditModuleId(m.id); setModuleTitle(m.title); setModuleLocked(m.locked); setModuleDialogOpen(true); };
-  const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonDialogOpen(true); };
-  const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonDialogOpen(true); };
+  const openNewLesson = (moduleId: string) => { setEditLessonId(null); setLessonModuleId(moduleId); setLessonTitle(""); setLessonType("video"); setLessonDuration(""); setLessonContentUrl(""); setLessonContentText(""); setLessonDialogOpen(true); };
+  const openEditLesson = (moduleId: string, l: any) => { setEditLessonId(l.id); setLessonModuleId(moduleId); setLessonTitle(l.title); setLessonType(l.type); setLessonDuration(l.duration || ""); setLessonContentUrl(l.content_url || ""); setLessonContentText(l.content_text || ""); setLessonDialogOpen(true); };
   const openNewEval = (moduleId: string | null = null) => { setEditEvalId(null); setEvalTitle(""); setEvalType("prova"); setEvalDuration(60); setEvalQuestions(10); setEvalLessonIds([]); setEvalModuleId(moduleId); setEvalDialogOpen(true); };
   const openEditEval = async (ev: any) => {
     setEditEvalId(ev.id); setEvalTitle(ev.title); setEvalType(ev.type); setEvalDuration(ev.duration); setEvalQuestions(ev.questions);
@@ -479,11 +482,17 @@ export default function CourseDetail() {
   const openNewBook = () => { setEditBookId(null); setBookTitle(""); setBookType("pdf"); setBookSize(""); setBookCooperado(false); setBookFileUrl(""); setBookDialogOpen(true); };
   const openEditBook = (b: any) => { setEditBookId(b.id); setBookTitle(b.title); setBookType(b.type); setBookSize(b.size || ""); setBookCooperado(b.cooperado_only); setBookFileUrl(b.file_url || ""); setBookDialogOpen(true); };
 
-  const openContent = async (url: string, type: string, lessonId?: string) => {
+  const openContent = async (url: string, type: string, lessonId?: string, text?: string | null) => {
     setContentType(type);
     setContentLessonId(lessonId ?? null);
     setContentDialogOpen(true);
     setContentError(null);
+    setContentText(text ?? null);
+    if (text) {
+      setContentUrl("");
+      setContentLoading(false);
+      if (!url) return;
+    }
     if (!url) {
       setContentUrl("");
       setContentError("URL do conteúdo não encontrada.");
@@ -1075,8 +1084,8 @@ export default function CourseDetail() {
                         return (
                           <div key={lesson.id} role="listitem">
                             <div
-                              role={lesson.content_url || locked ? "button" : undefined}
-                              tabIndex={lesson.content_url || locked ? 0 : undefined}
+                              role={lesson.content_url || lesson.content_text || locked ? "button" : undefined}
+                              tabIndex={lesson.content_url || lesson.content_text || locked ? 0 : undefined}
                               aria-disabled={locked || undefined}
                               aria-current={isActive ? "true" : undefined}
                               aria-label={`Aula ${lesson.title}, ${typeLabels[lesson.type] || lesson.type}${lesson.duration ? `, ${lesson.duration}` : ""}${locked ? ", bloqueada" : userCompleted ? ", concluída" : ""}`}
@@ -1084,9 +1093,9 @@ export default function CourseDetail() {
                                 isActive
                                   ? "border-primary bg-primary/10"
                                   : "border-transparent"
-                              } ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/30 ${lesson.content_url ? "cursor-pointer" : ""}`}`}
+                              } ${locked ? "opacity-60 cursor-not-allowed" : `hover:bg-muted/30 ${lesson.content_url || lesson.content_text ? "cursor-pointer" : ""}`}`}
                               onKeyDown={(e) => {
-                                if (!(lesson.content_url || locked)) return;
+                                if (!(lesson.content_url || lesson.content_text || locked)) return;
                                 if (e.key === "Enter" || e.key === " ") {
                                   e.preventDefault();
                                   (e.currentTarget as HTMLDivElement).click();
@@ -1097,8 +1106,8 @@ export default function CourseDetail() {
                                   toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
                                   return;
                                 }
-                                if (lesson.content_url) {
-                                  openContent(lesson.content_url, lesson.type, lesson.id);
+                                if (lesson.content_url || lesson.content_text) {
+                                  openContent(lesson.content_url, lesson.type, lesson.id, lesson.content_text);
                                   markLessonAccess(lesson.id);
                                 }
                               }}>
@@ -1226,6 +1235,7 @@ export default function CourseDetail() {
                     <SelectItem value="pdf">PDF</SelectItem>
                     <SelectItem value="audio">Áudio</SelectItem>
                     <SelectItem value="quiz">Quiz</SelectItem>
+                    <SelectItem value="texto">Leitura (texto)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1233,6 +1243,15 @@ export default function CourseDetail() {
                 <Label>Duração</Label>
                 <Input value={lessonDuration} onChange={(e) => setLessonDuration(e.target.value)} placeholder="Ex: 15min" />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Conteúdo em texto (opcional)</Label>
+              <Textarea
+                value={lessonContentText}
+                onChange={(e) => setLessonContentText(e.target.value)}
+                rows={8}
+                placeholder="Texto didático da aula. Suporta # títulos, - listas, **negrito** e > destaques."
+              />
             </div>
             <div className="space-y-2">
               <Label>Conteúdo da Aula</Label>
@@ -1424,7 +1443,7 @@ export default function CourseDetail() {
       </Dialog>
 
       {/* Content Viewer Dialog */}
-      <Dialog open={contentDialogOpen} onOpenChange={(o) => { if (!o) { setContentLessonId(null); setContentUrl(""); setContentError(null); } setContentDialogOpen(o); }}>
+      <Dialog open={contentDialogOpen} onOpenChange={(o) => { if (!o) { setContentLessonId(null); setContentUrl(""); setContentError(null); setContentText(null); } setContentDialogOpen(o); }}>
         <DialogContent className="max-w-6xl w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] max-h-[92vh] overflow-y-auto p-0 gap-0">
           {(() => {
             const currentLesson = modules
@@ -1455,6 +1474,11 @@ export default function CourseDetail() {
                   <XCircle className="w-8 h-8 text-destructive mb-2" />
                   <p className="text-sm text-foreground font-medium">Não foi possível carregar o conteúdo</p>
                   <p className="text-xs text-muted-foreground mt-1">{contentError}</p>
+                </div>
+              )}
+              {!contentLoading && contentText && (
+                <div className="rounded-xl bg-card border border-border/70 p-4 sm:p-6 max-h-[70vh] overflow-y-auto">
+                  <LessonText content={contentText} />
                 </div>
               )}
               {!contentLoading && !contentError && contentUrl && (
