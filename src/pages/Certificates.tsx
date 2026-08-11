@@ -219,11 +219,23 @@ export default function Certificates() {
   const { data: students = [] } = useQuery({
     queryKey: ["students-for-cert"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
-      return data ?? [];
+      const all: { user_id: string; full_name: string }[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, cpf")
+          .order("full_name")
+          .range(from, from + pageSize - 1);
+        const rows = (data ?? []) as any[];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
+      }
+      return all;
     },
     enabled: isAdmin,
   });
+
 
   const { data: courses = [] } = useQuery({
     queryKey: ["courses-for-cert"],
