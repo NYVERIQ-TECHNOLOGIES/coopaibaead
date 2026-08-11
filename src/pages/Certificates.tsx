@@ -320,17 +320,44 @@ export default function Certificates() {
 
   const generateCert = useMutation({
     mutationFn: async () => {
-      if (!selectedStudent || !selectedCourse) throw new Error("Selecione aluno e curso");
-      return callGenerate({ user_id: selectedStudent, course_id: selectedCourse });
+      if (selectedStudents.length === 0 || !selectedCourse) throw new Error("Selecione ao menos um aluno e o curso");
+      const ids = [...selectedStudents];
+      setBulkProgress({ done: 0, total: ids.length });
+      const results: any[] = [];
+      const errors: string[] = [];
+      let cursor = 0;
+      const worker = async () => {
+        while (cursor < ids.length) {
+          const uid = ids[cursor++];
+          try {
+            const r = await callGenerate({ user_id: uid, course_id: selectedCourse });
+            results.push(r);
+          } catch (e: any) {
+            errors.push(e.message);
+          }
+          setBulkProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(2, ids.length) }, worker));
+      return { results, errors };
     },
-    onSuccess: (data) => {
+    onSuccess: ({ results, errors }) => {
       qc.invalidateQueries({ queryKey: ["certificates"] });
-      setGenerateOpen(false); setSelectedStudent(""); setSelectedCourse("");
-      toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code} — disponível para retirada presencial.` });
-      if (isAdmin) openPdfSafely(data.certificate.code);
+      setBulkProgress(null);
+      setGenerateOpen(false); setSelectedStudents([]); setStudentSearch(""); setSelectedCourse("");
+      toast({
+        title: `${results.length} certificado(s) gerado(s)`,
+        description: errors.length ? `${errors.length} falha(s): ${errors[0]}` : "Disponíveis para retirada presencial.",
+        variant: errors.length ? "destructive" : undefined,
+      });
+      if (isAdmin && results.length === 1) openPdfSafely(results[0].certificate.code);
     },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      setBulkProgress(null);
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    },
   });
+
 
   const reissueCert = useMutation({
     mutationFn: async (cert: Cert) => {
