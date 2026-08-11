@@ -48,7 +48,9 @@ export default function Certificates() {
   const [generateOpen, setGenerateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateFile, setTemplateFile] = useState<File | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState("");
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
@@ -318,17 +320,44 @@ export default function Certificates() {
 
   const generateCert = useMutation({
     mutationFn: async () => {
-      if (!selectedStudent || !selectedCourse) throw new Error("Selecione aluno e curso");
-      return callGenerate({ user_id: selectedStudent, course_id: selectedCourse });
+      if (selectedStudents.length === 0 || !selectedCourse) throw new Error("Selecione ao menos um aluno e o curso");
+      const ids = [...selectedStudents];
+      setBulkProgress({ done: 0, total: ids.length });
+      const results: any[] = [];
+      const errors: string[] = [];
+      let cursor = 0;
+      const worker = async () => {
+        while (cursor < ids.length) {
+          const uid = ids[cursor++];
+          try {
+            const r = await callGenerate({ user_id: uid, course_id: selectedCourse });
+            results.push(r);
+          } catch (e: any) {
+            errors.push(e.message);
+          }
+          setBulkProgress((p) => (p ? { ...p, done: p.done + 1 } : p));
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(2, ids.length) }, worker));
+      return { results, errors };
     },
-    onSuccess: (data) => {
+    onSuccess: ({ results, errors }) => {
       qc.invalidateQueries({ queryKey: ["certificates"] });
-      setGenerateOpen(false); setSelectedStudent(""); setSelectedCourse("");
-      toast({ title: "Certificado gerado!", description: `Código: ${data.certificate.code} — disponível para retirada presencial.` });
-      if (isAdmin) openPdfSafely(data.certificate.code);
+      setBulkProgress(null);
+      setGenerateOpen(false); setSelectedStudents([]); setStudentSearch(""); setSelectedCourse("");
+      toast({
+        title: `${results.length} certificado(s) gerado(s)`,
+        description: errors.length ? `${errors.length} falha(s): ${errors[0]}` : "Disponíveis para retirada presencial.",
+        variant: errors.length ? "destructive" : undefined,
+      });
+      if (isAdmin && results.length === 1) openPdfSafely(results[0].certificate.code);
     },
-    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
+    onError: (e: any) => {
+      setBulkProgress(null);
+      toast({ title: "Erro", description: e.message, variant: "destructive" });
+    },
   });
+
 
   const reissueCert = useMutation({
     mutationFn: async (cert: Cert) => {
@@ -779,17 +808,70 @@ export default function Certificates() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Gerar Certificado</DialogTitle>
-            <DialogDescription>Selecione o aluno e o curso para gerar o certificado em PDF automaticamente.</DialogDescription>
+            <DialogDescription>Selecione um ou mais alunos e o curso para gerar os certificados em PDF automaticamente.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>Aluno</Label>
-              <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-                <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
-                <SelectContent>
-                  {students.map((s) => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || "Sem nome"}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Alunos ({selectedStudents.length} selecionado(s))</Label>
+                {selectedStudents.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSelectedStudents([])}>
+                    Limpar
+                  </Button>
+                )}
+              </div>
+              <Input
+                placeholder="Buscar aluno..."
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                className="mb-2"
+              />
+              {(() => {
+                const list = students.filter((s: any) =>
+                  (s.full_name || "").toLowerCase().includes(studentSearch.toLowerCase())
+                );
+                const allSelected = list.length > 0 && list.every((s: any) => selectedStudents.includes(s.user_id));
+                return (
+                  <>
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline mb-2"
+                      onClick={() =>
+                        setSelectedStudents((prev) =>
+                          allSelected
+                            ? prev.filter((id) => !list.some((s: any) => s.user_id === id))
+                            : Array.from(new Set([...prev, ...list.map((s: any) => s.user_id)]))
+                        )
+                      }
+                    >
+                      {allSelected ? "Desmarcar todos os exibidos" : "Selecionar todos os exibidos"}
+                    </button>
+                    <div className="max-h-56 overflow-y-auto rounded-xl border border-border divide-y divide-border/60">
+                      {list.length === 0 && (
+                        <p className="p-3 text-sm text-muted-foreground">Nenhum aluno encontrado.</p>
+                      )}
+                      {list.map((s: any) => {
+                        const checked = selectedStudents.includes(s.user_id);
+                        return (
+                          <label key={s.user_id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-muted/50">
+                            <input
+                              type="checkbox"
+                              className="rounded border-border"
+                              checked={checked}
+                              onChange={() =>
+                                setSelectedStudents((prev) =>
+                                  checked ? prev.filter((id) => id !== s.user_id) : [...prev, s.user_id]
+                                )
+                              }
+                            />
+                            <span className="text-sm text-foreground">{s.full_name || "Sem nome"}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
             <div>
               <Label>Curso</Label>
@@ -803,10 +885,15 @@ export default function Certificates() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setGenerateOpen(false)}>Cancelar</Button>
-            <Button onClick={() => generateCert.mutate()} disabled={generateCert.isPending || !selectedStudent || !selectedCourse}>
-              {generateCert.isPending ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando...</>) : (<><Download className="w-4 h-4 mr-2" /> Gerar PDF</>)}
+            <Button onClick={() => generateCert.mutate()} disabled={generateCert.isPending || selectedStudents.length === 0 || !selectedCourse}>
+              {generateCert.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Gerando {bulkProgress ? `${bulkProgress.done}/${bulkProgress.total}` : ""}...</>
+              ) : (
+                <><Download className="w-4 h-4 mr-2" /> Gerar {selectedStudents.length > 1 ? `${selectedStudents.length} PDFs` : "PDF"}</>
+              )}
             </Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
 
