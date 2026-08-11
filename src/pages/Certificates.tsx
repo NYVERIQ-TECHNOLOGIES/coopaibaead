@@ -143,18 +143,27 @@ export default function Certificates() {
   const { data: certificates = [], isLoading } = useQuery({
     queryKey: ["certificates", isAdmin, user?.id],
     queryFn: async () => {
-      let query = supabase
-        .from("certificates")
-        .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf, data_nascimento)")
-        .order("created_at", { ascending: false });
-      if (!isStaff && user) {
-        query = query.eq("user_id", user.id);
+      const all: any[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        let query = supabase
+          .from("certificates")
+          .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf, data_nascimento)")
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (!isStaff && user) {
+          query = query.eq("user_id", user.id);
+        }
+        const { data } = await query;
+        const rows = data ?? [];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
       }
-      const { data } = await query;
-      return data ?? [];
+      return all;
     },
     enabled: isStaff || !!user,
   });
+
 
   // Enrich with requester role labels (issued_by → role)
   const issuerIds = useMemo(() => {
