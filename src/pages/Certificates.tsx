@@ -33,6 +33,8 @@ type Cert = any;
 
 export default function Certificates() {
   const [search, setSearch] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [filterCourse, setFilterCourse] = useState<string>("todos");
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -143,18 +145,27 @@ export default function Certificates() {
   const { data: certificates = [], isLoading } = useQuery({
     queryKey: ["certificates", isAdmin, user?.id],
     queryFn: async () => {
-      let query = supabase
-        .from("certificates")
-        .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf, data_nascimento)")
-        .order("created_at", { ascending: false });
-      if (!isStaff && user) {
-        query = query.eq("user_id", user.id);
+      const all: any[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        let query = supabase
+          .from("certificates")
+          .select("*, courses(title), profiles!certificates_user_id_profiles_fkey(full_name, cpf, data_nascimento)")
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (!isStaff && user) {
+          query = query.eq("user_id", user.id);
+        }
+        const { data } = await query;
+        const rows = data ?? [];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
       }
-      const { data } = await query;
-      return data ?? [];
+      return all;
     },
     enabled: isStaff || !!user,
   });
+
 
   // Enrich with requester role labels (issued_by → role)
   const issuerIds = useMemo(() => {
@@ -210,11 +221,23 @@ export default function Certificates() {
   const { data: students = [] } = useQuery({
     queryKey: ["students-for-cert"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("user_id, full_name").order("full_name");
-      return data ?? [];
+      const all: { user_id: string; full_name: string }[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, cpf")
+          .order("full_name")
+          .range(from, from + pageSize - 1);
+        const rows = (data ?? []) as any[];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
+      }
+      return all;
     },
     enabled: isAdmin,
   });
+
 
   const { data: courses = [] } = useQuery({
     queryKey: ["courses-for-cert"],
@@ -787,10 +810,31 @@ export default function Certificates() {
               <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                 <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
                 <SelectContent>
-                  {students.map((s) => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || "Sem nome"}</SelectItem>)}
+                  <div className="p-2 sticky top-0 bg-popover z-10">
+                    <Input
+                      placeholder="Buscar por nome ou CPF..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {students
+                    .filter((s: any) => {
+                      const q = studentSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (s.full_name || "").toLowerCase().includes(q) || (s.cpf || "").replace(/\D/g, "").includes(q.replace(/\D/g, ""));
+                    })
+                    .slice(0, 300)
+                    .map((s: any) => (
+                      <SelectItem key={s.user_id} value={s.user_id}>
+                        {s.full_name || "Sem nome"}{s.cpf ? ` — ${s.cpf}` : ""}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">{students.length} alunos cadastrados</p>
             </div>
+
             <div>
               <Label>Curso</Label>
               <Select value={selectedCourse} onValueChange={setSelectedCourse}>
