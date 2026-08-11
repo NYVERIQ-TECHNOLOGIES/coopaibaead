@@ -48,7 +48,9 @@ export default function Certificates() {
   const [generateOpen, setGenerateOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateFile, setTemplateFile] = useState<File | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState("");
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
   const [selectedCourse, setSelectedCourse] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
