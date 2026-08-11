@@ -33,6 +33,8 @@ type Cert = any;
 
 export default function Certificates() {
   const [search, setSearch] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [filterCourse, setFilterCourse] = useState<string>("todos");
   const [filterDateFrom, setFilterDateFrom] = useState("");
