@@ -808,10 +808,31 @@ export default function Certificates() {
               <Select value={selectedStudent} onValueChange={setSelectedStudent}>
                 <SelectTrigger><SelectValue placeholder="Selecione o aluno" /></SelectTrigger>
                 <SelectContent>
-                  {students.map((s) => <SelectItem key={s.user_id} value={s.user_id}>{s.full_name || "Sem nome"}</SelectItem>)}
+                  <div className="p-2 sticky top-0 bg-popover z-10">
+                    <Input
+                      placeholder="Buscar por nome ou CPF..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {students
+                    .filter((s: any) => {
+                      const q = studentSearch.trim().toLowerCase();
+                      if (!q) return true;
+                      return (s.full_name || "").toLowerCase().includes(q) || (s.cpf || "").replace(/\D/g, "").includes(q.replace(/\D/g, ""));
+                    })
+                    .slice(0, 300)
+                    .map((s: any) => (
+                      <SelectItem key={s.user_id} value={s.user_id}>
+                        {s.full_name || "Sem nome"}{s.cpf ? ` — ${s.cpf}` : ""}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">{students.length} alunos cadastrados</p>
             </div>
+
             <div>
               <Label>Curso</Label>
               <Select value={selectedCourse} onValueChange={setSelectedCourse}>
