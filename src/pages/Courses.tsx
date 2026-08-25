@@ -35,6 +35,7 @@ interface Course {
   standalone_access_days: number | null;
   premium_enabled: boolean;
   progressive_unlock?: boolean;
+  is_active?: boolean;
   created_at: string;
 }
 
@@ -53,6 +54,7 @@ const emptyForm = {
   premium_enabled: true,
   progressive_unlock: false,
   is_open: true,
+  is_active: true,
 };
 
 
@@ -167,6 +169,7 @@ export default function Courses() {
         premium_enabled: values.premium_enabled,
         progressive_unlock: values.progressive_unlock,
         is_open: values.is_open,
+        is_active: values.is_active,
       };
 
       if (editingCourse) {
@@ -229,6 +232,7 @@ export default function Courses() {
       premium_enabled: c.premium_enabled ?? true,
       progressive_unlock: (c as any).progressive_unlock ?? false,
       is_open: (c as any).is_open ?? true,
+      is_active: (c as any).is_active ?? true,
     });
 
     setDialogOpen(true);
@@ -312,6 +316,11 @@ export default function Courses() {
                 <span className="absolute top-4 left-4 rounded-full gradient-primary px-3 py-1 text-[11px] font-bold text-brand-foreground shadow-card">
                   Novo
                 </span>
+                {(feat as any).is_active === false && (
+                  <span className="absolute top-4 right-4 rounded-full bg-warning/90 px-3 py-1 text-[11px] font-bold text-warning-foreground shadow-card">
+                    Oculto
+                  </span>
+                )}
               </Link>
               <div className="flex flex-col justify-center gap-3 p-5 sm:p-7">
                 <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
@@ -401,6 +410,11 @@ export default function Courses() {
                     {course.cooperado_only && (
                       <span className="gradient-secondary text-brand-foreground text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-card">
                         <Lock className="w-3 h-3" /> Cooperado
+                      </span>
+                    )}
+                    {(course as any).is_active === false && (
+                      <span className="bg-warning/90 text-warning-foreground text-[11px] font-bold px-2.5 py-1 rounded-full shadow-card">
+                        Oculto
                       </span>
                     )}
                   </div>
@@ -665,6 +679,16 @@ export default function Courses() {
                 <Label>Curso aberto</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Quando desativado, o curso fica fechado. Somente administradores podem alterar esta opção.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+              <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+              <div>
+                <Label>Curso visível (ativo)</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Quando desativado, o curso fica oculto para alunos e cooperados. Apenas administradores e moderadores continuam vendo.
                 </p>
               </div>
             </div>
