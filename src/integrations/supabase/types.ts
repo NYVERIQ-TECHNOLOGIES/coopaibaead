@@ -2156,6 +2156,7 @@ export type Database = {
         Args: { _cpf?: string; _data_nascimento?: string; _phone?: string }
         Returns: undefined
       }
+      cpf_ja_cadastrado: { Args: { _cpf: string }; Returns: boolean }
       delete_course_with_options: {
         Args: { _course_id: string; _preserve_history?: boolean }
         Returns: Json
