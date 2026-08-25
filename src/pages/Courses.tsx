@@ -316,6 +316,11 @@ export default function Courses() {
                 <span className="absolute top-4 left-4 rounded-full gradient-primary px-3 py-1 text-[11px] font-bold text-brand-foreground shadow-card">
                   Novo
                 </span>
+                {(feat as any).is_active === false && (
+                  <span className="absolute top-4 right-4 rounded-full bg-warning/90 px-3 py-1 text-[11px] font-bold text-warning-foreground shadow-card">
+                    Oculto
+                  </span>
+                )}
               </Link>
               <div className="flex flex-col justify-center gap-3 p-5 sm:p-7">
                 <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold">
@@ -405,6 +410,11 @@ export default function Courses() {
                     {course.cooperado_only && (
                       <span className="gradient-secondary text-brand-foreground text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-card">
                         <Lock className="w-3 h-3" /> Cooperado
+                      </span>
+                    )}
+                    {(course as any).is_active === false && (
+                      <span className="bg-warning/90 text-warning-foreground text-[11px] font-bold px-2.5 py-1 rounded-full shadow-card">
+                        Oculto
                       </span>
                     )}
                   </div>

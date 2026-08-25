@@ -24,6 +24,7 @@ export default function CursosPublic() {
         .from("courses")
         .select("id, title, description, image, duration, cooperado_only, eventual")
         .eq("eventual", false)
+        .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(24);
       setCourses((data as PublicCourse[]) || []);
