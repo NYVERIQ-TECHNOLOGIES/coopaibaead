@@ -35,6 +35,7 @@ interface Course {
   standalone_access_days: number | null;
   premium_enabled: boolean;
   progressive_unlock?: boolean;
+  is_active?: boolean;
   created_at: string;
 }
 
@@ -53,6 +54,7 @@ const emptyForm = {
   premium_enabled: true,
   progressive_unlock: false,
   is_open: true,
+  is_active: true,
 };
 
 
@@ -167,6 +169,7 @@ export default function Courses() {
         premium_enabled: values.premium_enabled,
         progressive_unlock: values.progressive_unlock,
         is_open: values.is_open,
+        is_active: values.is_active,
       };
 
       if (editingCourse) {
@@ -229,6 +232,7 @@ export default function Courses() {
       premium_enabled: c.premium_enabled ?? true,
       progressive_unlock: (c as any).progressive_unlock ?? false,
       is_open: (c as any).is_open ?? true,
+      is_active: (c as any).is_active ?? true,
     });
 
     setDialogOpen(true);
@@ -665,6 +669,16 @@ export default function Courses() {
                 <Label>Curso aberto</Label>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Quando desativado, o curso fica fechado. Somente administradores podem alterar esta opção.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+              <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+              <div>
+                <Label>Curso visível (ativo)</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Quando desativado, o curso fica oculto para alunos e cooperados. Apenas administradores e moderadores continuam vendo.
                 </p>
               </div>
             </div>
