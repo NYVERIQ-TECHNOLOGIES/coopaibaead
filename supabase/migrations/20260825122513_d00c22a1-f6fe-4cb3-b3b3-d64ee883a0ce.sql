@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.cpf_ja_cadastrado(text);
