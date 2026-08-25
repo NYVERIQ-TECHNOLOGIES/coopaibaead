@@ -269,6 +269,30 @@ export default function Register() {
 
 
     // ====== Fluxo ALUNO: signup padrão com e-mail real ======
+    const { data: cpfCheck, error: cpfCheckError } = await supabase.functions.invoke(
+      "check-cpf-availability",
+      { body: { cpf: cleanCpf } },
+    );
+
+    if (cpfCheckError || (cpfCheck && (cpfCheck as { error?: string }).error)) {
+      const message =
+        (cpfCheck as { error?: string } | null)?.error ||
+        "Não foi possível validar o CPF. Tente novamente.";
+      toast({ title: "Erro ao validar CPF", description: message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
+
+    if ((cpfCheck as { available?: boolean } | null)?.available === false) {
+      toast({
+        title: "CPF já cadastrado",
+        description: "Este CPF já pertence a uma conta. Entre com seus dados ou recupere sua senha.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
@@ -283,7 +307,16 @@ export default function Register() {
     });
 
     if (error) {
-      toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
+      const duplicateCpf =
+        error.message.includes("profiles_cpf_unique_idx") ||
+        error.message.toLowerCase().includes("duplicate key");
+      toast({
+        title: duplicateCpf ? "CPF já cadastrado" : "Erro ao criar conta",
+        description: duplicateCpf
+          ? "Este CPF já pertence a uma conta. Entre com seus dados ou recupere sua senha."
+          : error.message,
+        variant: "destructive",
+      });
       setLoading(false);
       return;
     }
