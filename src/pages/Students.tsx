@@ -221,11 +221,17 @@ export default function Students() {
 
   const fetchEmails = async (userIds: string[]): Promise<Record<string, string>> => {
     if (userIds.length === 0) return {};
-    const { data, error } = await supabase.functions.invoke("list-user-emails", {
-      body: { user_ids: userIds },
-    });
-    if (error) throw error;
-    return ((data as any)?.emails ?? {}) as Record<string, string>;
+    const result: Record<string, string> = {};
+    const CHUNK = 200;
+    for (let i = 0; i < userIds.length; i += CHUNK) {
+      const chunk = userIds.slice(i, i + CHUNK);
+      const { data, error } = await supabase.functions.invoke("list-user-emails", {
+        body: { user_ids: chunk },
+      });
+      if (error) throw error;
+      Object.assign(result, ((data as any)?.emails ?? {}) as Record<string, string>);
+    }
+    return result;
   };
 
   // Carrega e-mails de todos os alunos exibidos
@@ -238,6 +244,7 @@ export default function Students() {
         // silencioso: a tabela ainda funciona sem e-mails
       });
   }, [students]);
+
 
   const exportCSV = async () => {
     try {
