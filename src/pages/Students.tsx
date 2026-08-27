@@ -221,11 +221,17 @@ export default function Students() {
 
   const fetchEmails = async (userIds: string[]): Promise<Record<string, string>> => {
     if (userIds.length === 0) return {};
-    const { data, error } = await supabase.functions.invoke("list-user-emails", {
-      body: { user_ids: userIds },
-    });
-    if (error) throw error;
-    return ((data as any)?.emails ?? {}) as Record<string, string>;
+    const result: Record<string, string> = {};
+    const CHUNK = 200;
+    for (let i = 0; i < userIds.length; i += CHUNK) {
+      const chunk = userIds.slice(i, i + CHUNK);
+      const { data, error } = await supabase.functions.invoke("list-user-emails", {
+        body: { user_ids: chunk },
+      });
+      if (error) throw error;
+      Object.assign(result, ((data as any)?.emails ?? {}) as Record<string, string>);
+    }
+    return result;
   };
 
   // Carrega e-mails de todos os alunos exibidos
@@ -238,6 +244,7 @@ export default function Students() {
         // silencioso: a tabela ainda funciona sem e-mails
       });
   }, [students]);
+
 
   const exportCSV = async () => {
     try {
@@ -563,7 +570,7 @@ export default function Students() {
                          </span>
                        </td>
                         <td className="py-3 px-4">
-                          {role === "admin" && emailMap[s.user_id] && (
+                          {role === "admin" && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -573,7 +580,7 @@ export default function Students() {
                                 setResetPwdFor({
                                   id: s.user_id,
                                   name: s.full_name || "Usuário",
-                                  email: emailMap[s.user_id],
+                                  email: emailMap[s.user_id] || "",
                                 })
                               }
                             >
@@ -581,6 +588,7 @@ export default function Students() {
                             </Button>
                           )}
                         </td>
+
                        <td className="py-3 px-4">
                         {isSelf || isAdmin || isModerator ? (
                           <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : s.role === "moderador" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
