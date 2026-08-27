@@ -563,7 +563,7 @@ export default function Students() {
                          </span>
                        </td>
                         <td className="py-3 px-4">
-                          {role === "admin" && emailMap[s.user_id] && (
+                          {role === "admin" && (
                             <Button
                               size="sm"
                               variant="outline"
@@ -573,7 +573,7 @@ export default function Students() {
                                 setResetPwdFor({
                                   id: s.user_id,
                                   name: s.full_name || "Usuário",
-                                  email: emailMap[s.user_id],
+                                  email: emailMap[s.user_id] || "",
                                 })
                               }
                             >
@@ -581,6 +581,7 @@ export default function Students() {
                             </Button>
                           )}
                         </td>
+
                        <td className="py-3 px-4">
                         {isSelf || isAdmin || isModerator ? (
                           <span className={`text-xs font-medium px-2 py-1 rounded-full ${s.role === "cooperado" ? "bg-secondary/10 text-secondary" : s.role === "admin" ? "bg-destructive/10 text-destructive" : s.role === "moderador" ? "bg-amber-500/10 text-amber-600" : "bg-primary/10 text-primary"}`}>
