@@ -952,9 +952,13 @@ export default function CourseDetail() {
         )}
       </div>
 
+      {/* ========== AULAS AO VIVO ========== */}
+      {courseId && <CourseLiveClasses courseId={courseId} />}
+
       {/* ========== COURSE CHAT ========== */}
       {course && courseId && (
         <CourseChat courseId={courseId} cooperadoOnly={course.cooperado_only} />
+
       )}
         </div>
 
