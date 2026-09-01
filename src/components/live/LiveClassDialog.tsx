@@ -257,16 +257,47 @@ export default function LiveClassDialog({
 
           <div className="space-y-1.5">
             <Label>Transmissão</Label>
-            <Select value={provider} onValueChange={(v) => setProvider(v as typeof provider)}>
+            <Select
+              value={provider}
+              onValueChange={(v) => {
+                const next = v as typeof provider;
+                setProvider(next);
+                if (next === "sala_instantanea") setMeetUrl(gerarLinkSala(title));
+                if (next === "link_externo" && meetUrl.includes("meet.jit.si")) setMeetUrl("");
+              }}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="google_meet" disabled={!googleConnected}>
                   Google Meet {googleConnected ? "" : "(conecte sua conta Google)"}
                 </SelectItem>
-                <SelectItem value="link_externo">Link de reunião existente</SelectItem>
+                <SelectItem value="sala_instantanea">Criar link da sala automaticamente</SelectItem>
+                <SelectItem value="link_externo">Colar link de reunião existente</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {provider === "sala_instantanea" && (
+            <div className="space-y-1.5">
+              <Label>Link gerado</Label>
+              <div className="flex gap-2">
+                <Input value={meetUrl} readOnly className="font-mono text-xs" />
+                <Button type="button" variant="outline" size="icon"
+                  title="Gerar outro link"
+                  onClick={() => setMeetUrl(gerarLinkSala(title))}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <Button type="button" variant="outline" size="icon"
+                  title="Copiar link"
+                  onClick={() => { navigator.clipboard.writeText(meetUrl); toast.success("Link copiado."); }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sala criada na hora, sem precisar de conta Google. Basta compartilhar com os alunos.
+              </p>
+            </div>
+          )}
 
           {provider === "link_externo" && (
             <div className="space-y-1.5">
@@ -275,6 +306,7 @@ export default function LiveClassDialog({
                 placeholder="https://meet.google.com/abc-defg-hij" />
             </div>
           )}
+
 
           <div className="flex items-center justify-between rounded-xl border border-border p-3">
             <div>
