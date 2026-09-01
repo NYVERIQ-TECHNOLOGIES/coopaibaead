@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, Video } from "lucide-react";
+import { Copy, Loader2, RefreshCw, Video } from "lucide-react";
 
 export interface LiveClassRow {
   id: string;
@@ -31,6 +31,14 @@ export interface LiveClassRow {
   status: string;
   recording_status: string;
   teacher_id: string;
+}
+
+export function gerarLinkSala(titulo: string) {
+  const base = (titulo || "aula")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24) || "aula";
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `https://meet.jit.si/coopaiba-${base}-${rand}`;
 }
 
 function toLocalInput(iso: string) {
@@ -61,7 +69,7 @@ export default function LiveClassDialog({
   const [duration, setDuration] = useState(60);
   const [openBefore, setOpenBefore] = useState(15);
   const [recording, setRecording] = useState(true);
-  const [provider, setProvider] = useState<"google_meet" | "link_externo">("google_meet");
+  const [provider, setProvider] = useState<"google_meet" | "link_externo" | "sala_instantanea">("google_meet");
   const [meetUrl, setMeetUrl] = useState("");
   const [startNow, setStartNow] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -95,7 +103,11 @@ export default function LiveClassDialog({
       setDuration(editing.duration_minutes);
       setOpenBefore(editing.open_minutes_before);
       setRecording(editing.recording_enabled);
-      setProvider(editing.provider === "link_externo" ? "link_externo" : "google_meet");
+      setProvider(
+        editing.provider === "link_externo" || editing.provider === "sala_instantanea"
+          ? (editing.provider as "link_externo" | "sala_instantanea")
+          : "google_meet",
+      );
       setMeetUrl(editing.meet_url ?? "");
       setStartNow(false);
     } else {
@@ -107,8 +119,8 @@ export default function LiveClassDialog({
       setDuration(60);
       setOpenBefore(15);
       setRecording(true);
-      setProvider(googleConnected ? "google_meet" : "link_externo");
-      setMeetUrl("");
+      setProvider(googleConnected ? "google_meet" : "sala_instantanea");
+      setMeetUrl(googleConnected ? "" : gerarLinkSala(""));
       setStartNow(false);
     }
   }, [open, editing, googleConnected]);
@@ -116,7 +128,7 @@ export default function LiveClassDialog({
   async function save() {
     if (!courseId) return toast.error("Escolha o curso.");
     if (title.trim().length < 3) return toast.error("Informe um título para a aula.");
-    if (provider === "link_externo" && !meetUrl.trim()) {
+    if (provider !== "google_meet" && !meetUrl.trim()) {
       return toast.error("Informe o link da reunião.");
     }
     setSaving(true);
@@ -133,7 +145,7 @@ export default function LiveClassDialog({
         open_minutes_before: openBefore,
         recording_enabled: recording,
         provider,
-        meet_url: provider === "link_externo" ? meetUrl.trim() : (editing?.meet_url ?? null),
+        meet_url: provider !== "google_meet" ? meetUrl.trim() : (editing?.meet_url ?? null),
         status: startNow ? "ao_vivo" : (editing?.status ?? "agendada"),
         started_at: startNow ? new Date().toISOString() : undefined,
       };
