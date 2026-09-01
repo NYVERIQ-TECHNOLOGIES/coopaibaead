@@ -47,7 +47,9 @@ export default function EnsinoHub() {
       el: <CooperadosEventuaisTab isAdmin={isAdmin} />,
       show: !isCooperado,
     },
+    { value: "aulas-ao-vivo", label: "Aulas ao Vivo", el: <LiveClasses />, show: isAdmin || isModerator },
     { value: "autorizar", label: "Autorizar Cooperados", el: <AdminCooperadosPendentes />, show: isAdmin },
+
   ].filter(t => t.show);
 
   const current = params.get("tab") && tabs.some(t => t.value === params.get("tab"))
