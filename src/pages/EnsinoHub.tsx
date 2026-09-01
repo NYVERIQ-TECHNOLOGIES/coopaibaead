@@ -9,6 +9,8 @@ import PresencaList from "@/pages/PresencaList";
 import CooperadosEventuaisList from "@/pages/CooperadosEventuaisList";
 import AdminCampanhas from "@/pages/admin/AdminCampanhas";
 import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
+import LiveClasses from "@/pages/LiveClasses";
+
 
 function CooperadosEventuaisTab({ isAdmin }: { isAdmin: boolean }) {
   const [params, setParams] = useSearchParams();
