@@ -33,6 +33,8 @@ import Register from "@/pages/Register";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import OAuthConsent from "@/pages/OAuthConsent";
+import GoogleReturn from "@/pages/oauth/GoogleReturn";
+
 import ValidateCertificate from "@/pages/ValidateCertificate";
 import CertificatePickup from "@/pages/CertificatePickup";
 import CertificatePickupSettings from "@/pages/CertificatePickupSettings";
