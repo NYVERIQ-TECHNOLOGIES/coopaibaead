@@ -79,6 +79,8 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+            <Route path="/oauth/google/return" element={<GoogleReturn />} />
+
             <Route path="/checkout/return" element={<CheckoutReturn />} />
             <Route path="/p/:codigo" element={<PresencaAssinar />} />
             <Route path="/curso/:id/entrar" element={<CursoEntrar />} />
