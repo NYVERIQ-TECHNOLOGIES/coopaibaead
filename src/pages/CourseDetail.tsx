@@ -27,6 +27,8 @@ import StudentExamDialog from "@/components/StudentExamDialog";
 import SignedImage from "@/components/SignedImage";
 import { getSignedUrl } from "@/lib/storage";
 import CourseChat from "@/components/CourseChat";
+import CourseLiveClasses from "@/components/live/CourseLiveClasses";
+
 import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
 import IntroVideoModal from "@/components/IntroVideoModal";
@@ -506,6 +508,15 @@ export default function CourseDetail() {
     setContentLoading(true);
     setContentUrl("");
     try {
+      // Gravações de aulas ao vivo ficam em um bucket próprio e privado
+      if (/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(mp4|webm|mov|m4v)$/i.test(url)) {
+        const { data, error } = await supabase.functions.invoke("live-recording-url", {
+          body: { storagePath: url },
+        });
+        if (error || !data?.url) setContentError(data?.error || "Não foi possível carregar a gravação.");
+        else setContentUrl(data.url);
+        return;
+      }
       const signed = await getSignedUrl(url, "media", 3600);
       if (!signed) {
         setContentError("Não foi possível gerar a URL do arquivo.");
@@ -517,6 +528,7 @@ export default function CourseDetail() {
     } finally {
       setContentLoading(false);
     }
+
   };
 
   const openQuestions = (ev: any) => {
@@ -952,9 +964,13 @@ export default function CourseDetail() {
         )}
       </div>
 
+      {/* ========== AULAS AO VIVO ========== */}
+      {courseId && <CourseLiveClasses courseId={courseId} />}
+
       {/* ========== COURSE CHAT ========== */}
       {course && courseId && (
         <CourseChat courseId={courseId} cooperadoOnly={course.cooperado_only} />
+
       )}
         </div>
 

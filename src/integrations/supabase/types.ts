@@ -56,6 +56,36 @@ export type Database = {
         }
         Relationships: []
       }
+      app_user_connections: {
+        Row: {
+          account_email: string | null
+          connection_key_ciphertext: string
+          connector_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_email?: string | null
+          connection_key_ciphertext: string
+          connector_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_email?: string | null
+          connection_key_ciphertext?: string
+          connector_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       archived_course_completions: {
         Row: {
           archived_at: string
@@ -2101,36 +2131,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      teacher_google_connections: {
-        Row: {
-          account_email: string | null
-          connected_at: string
-          connection_key: string | null
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          account_email?: string | null
-          connected_at?: string
-          connection_key?: string | null
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          account_email?: string | null
-          connected_at?: string
-          connection_key?: string | null
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       user_mfa_factors: {
         Row: {

@@ -1,0 +1,298 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { Loader2, Video } from "lucide-react";
+
+export interface LiveClassRow {
+  id: string;
+  course_id: string;
+  module_id: string | null;
+  title: string;
+  description: string | null;
+  scheduled_at: string;
+  duration_minutes: number;
+  provider: string;
+  meet_url: string | null;
+  recording_enabled: boolean;
+  open_minutes_before: number;
+  status: string;
+  recording_status: string;
+  teacher_id: string;
+}
+
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  const off = d.getTimezoneOffset();
+  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+}
+
+export default function LiveClassDialog({
+  open,
+  onOpenChange,
+  editing,
+  googleConnected,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  editing: LiveClassRow | null;
+  googleConnected: boolean;
+  onSaved: () => void;
+}) {
+  const { user } = useAuth();
+  const [courseId, setCourseId] = useState("");
+  const [moduleId, setModuleId] = useState<string>("later");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [when, setWhen] = useState(toLocalInput(new Date(Date.now() + 3600000).toISOString()));
+  const [duration, setDuration] = useState(60);
+  const [openBefore, setOpenBefore] = useState(15);
+  const [recording, setRecording] = useState(true);
+  const [provider, setProvider] = useState<"google_meet" | "link_externo">("google_meet");
+  const [meetUrl, setMeetUrl] = useState("");
+  const [startNow, setStartNow] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const { data: courses = [] } = useQuery({
+    queryKey: ["live-course-options"],
+    queryFn: async () => {
+      const { data } = await supabase.from("courses").select("id, title").order("title");
+      return data ?? [];
+    },
+  });
+
+  const { data: modules = [] } = useQuery({
+    queryKey: ["live-module-options", courseId],
+    enabled: !!courseId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("course_modules").select("id, title").eq("course_id", courseId).order("sort_order");
+      return data ?? [];
+    },
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (editing) {
+      setCourseId(editing.course_id);
+      setModuleId(editing.module_id ?? "later");
+      setTitle(editing.title);
+      setDescription(editing.description ?? "");
+      setWhen(toLocalInput(editing.scheduled_at));
+      setDuration(editing.duration_minutes);
+      setOpenBefore(editing.open_minutes_before);
+      setRecording(editing.recording_enabled);
+      setProvider(editing.provider === "link_externo" ? "link_externo" : "google_meet");
+      setMeetUrl(editing.meet_url ?? "");
+      setStartNow(false);
+    } else {
+      setCourseId("");
+      setModuleId("later");
+      setTitle("");
+      setDescription("");
+      setWhen(toLocalInput(new Date(Date.now() + 3600000).toISOString()));
+      setDuration(60);
+      setOpenBefore(15);
+      setRecording(true);
+      setProvider(googleConnected ? "google_meet" : "link_externo");
+      setMeetUrl("");
+      setStartNow(false);
+    }
+  }, [open, editing, googleConnected]);
+
+  async function save() {
+    if (!courseId) return toast.error("Escolha o curso.");
+    if (title.trim().length < 3) return toast.error("Informe um título para a aula.");
+    if (provider === "link_externo" && !meetUrl.trim()) {
+      return toast.error("Informe o link da reunião.");
+    }
+    setSaving(true);
+    try {
+      const scheduledAt = startNow ? new Date().toISOString() : new Date(when).toISOString();
+      const payload = {
+        course_id: courseId,
+        module_id: moduleId === "later" ? null : moduleId,
+        teacher_id: editing?.teacher_id ?? user!.id,
+        title: title.trim(),
+        description: description.trim() || null,
+        scheduled_at: scheduledAt,
+        duration_minutes: duration,
+        open_minutes_before: openBefore,
+        recording_enabled: recording,
+        provider,
+        meet_url: provider === "link_externo" ? meetUrl.trim() : (editing?.meet_url ?? null),
+        status: startNow ? "ao_vivo" : (editing?.status ?? "agendada"),
+        started_at: startNow ? new Date().toISOString() : undefined,
+      };
+
+      let liveId = editing?.id;
+      if (editing) {
+        const { error } = await supabase.from("live_classes").update(payload).eq("id", editing.id);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase.from("live_classes").insert(payload).select("id").single();
+        if (error) throw error;
+        liveId = data.id;
+      }
+
+      if (provider === "google_meet" && liveId && !payload.meet_url) {
+        const { data, error } = await supabase.functions.invoke("live-class-create-meet", {
+          body: { liveClassId: liveId },
+        });
+        if (error || data?.error) {
+          toast.warning(
+            "A aula foi salva, mas não foi possível criar a sala do Google Meet automaticamente. Você pode tentar novamente ou colar um link manualmente.",
+          );
+        } else {
+          toast.success("Aula salva e sala do Google Meet criada.");
+          onSaved();
+          onOpenChange(false);
+          setSaving(false);
+          return;
+        }
+      }
+
+      toast.success(editing ? "Aula atualizada." : "Aula ao vivo criada.");
+      onSaved();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error((e as Error).message ?? "Não foi possível salvar a aula.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Video className="h-5 w-5 text-primary" />
+            {editing ? "Editar aula ao vivo" : "Nova aula ao vivo"}
+          </DialogTitle>
+          <DialogDescription>
+            Agende ou inicie agora. A gravação pode virar uma aula do curso depois.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label>Curso</Label>
+            <Select value={courseId} onValueChange={(v) => { setCourseId(v); setModuleId("later"); }}>
+              <SelectTrigger><SelectValue placeholder="Selecione o curso" /></SelectTrigger>
+              <SelectContent>
+                {courses.map((c: { id: string; title: string }) => (
+                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Módulo</Label>
+            <Select value={moduleId} onValueChange={setModuleId} disabled={!courseId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="later">Decidir depois</SelectItem>
+                {modules.map((m: { id: string; title: string }) => (
+                  <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Você poderá escolher o módulo na hora de publicar a gravação.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Título</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex.: Aula ao vivo — Módulo 2" />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Descrição</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+          </div>
+
+          <div className="flex items-center justify-between rounded-xl border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">Iniciar agora</p>
+              <p className="text-xs text-muted-foreground">A aula fica ao vivo imediatamente.</p>
+            </div>
+            <Switch checked={startNow} onCheckedChange={setStartNow} />
+          </div>
+
+          {!startNow && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Data e hora</Label>
+                <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Duração (min)</Label>
+                <Input type="number" min={10} step={5} value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label>Abrir a sala antes (min)</Label>
+            <Input type="number" min={0} max={120} value={openBefore}
+              onChange={(e) => setOpenBefore(Number(e.target.value))} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Transmissão</Label>
+            <Select value={provider} onValueChange={(v) => setProvider(v as typeof provider)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="google_meet" disabled={!googleConnected}>
+                  Google Meet {googleConnected ? "" : "(conecte sua conta Google)"}
+                </SelectItem>
+                <SelectItem value="link_externo">Link de reunião existente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {provider === "link_externo" && (
+            <div className="space-y-1.5">
+              <Label>Link da reunião</Label>
+              <Input value={meetUrl} onChange={(e) => setMeetUrl(e.target.value)}
+                placeholder="https://meet.google.com/abc-defg-hij" />
+            </div>
+          )}
+
+          <div className="flex items-center justify-between rounded-xl border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">Gravar a aula</p>
+              <p className="text-xs text-muted-foreground">A gravação poderá virar uma aula do curso.</p>
+            </div>
+            <Switch checked={recording} onCheckedChange={setRecording} />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button onClick={save} disabled={saving}>
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {editing ? "Salvar" : "Criar aula"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -24,3 +24,23 @@ verify_jwt = false
 [functions.admin-reset-password]
 verify_jwt = false
 
+[functions.google-connect-start]
+verify_jwt = false
+
+[functions.google-connect-complete]
+verify_jwt = false
+
+[functions.google-connection-status]
+verify_jwt = false
+
+[functions.live-class-create-meet]
+verify_jwt = false
+
+[functions.live-class-recording]
+verify_jwt = false
+
+[functions.live-recording-url]
+verify_jwt = false
+
+[functions.live-classes-notify]
+verify_jwt = false

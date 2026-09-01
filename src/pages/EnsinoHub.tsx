@@ -9,6 +9,8 @@ import PresencaList from "@/pages/PresencaList";
 import CooperadosEventuaisList from "@/pages/CooperadosEventuaisList";
 import AdminCampanhas from "@/pages/admin/AdminCampanhas";
 import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
+import LiveClasses from "@/pages/LiveClasses";
+
 
 function CooperadosEventuaisTab({ isAdmin }: { isAdmin: boolean }) {
   const [params, setParams] = useSearchParams();
@@ -47,7 +49,9 @@ export default function EnsinoHub() {
       el: <CooperadosEventuaisTab isAdmin={isAdmin} />,
       show: !isCooperado,
     },
+    { value: "aulas-ao-vivo", label: "Aulas ao Vivo", el: <LiveClasses />, show: isAdmin || isModerator },
     { value: "autorizar", label: "Autorizar Cooperados", el: <AdminCooperadosPendentes />, show: isAdmin },
+
   ].filter(t => t.show);
 
   const current = params.get("tab") && tabs.some(t => t.value === params.get("tab"))
