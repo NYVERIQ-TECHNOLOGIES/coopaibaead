@@ -225,6 +225,11 @@ export default function ProfilePage() {
       cooperativa: cooperativa.trim() || null,
       phone: phoneDigits || null,
     };
+    if (isProfessor) {
+      payload.bio = bio.trim() || null;
+      payload.area_atuacao = areaAtuacao.trim() || null;
+      payload.especialidade = especialidade.trim() || null;
+    }
     if (!row?.data_nascimento && nascimento) payload.data_nascimento = nascimento;
     const { error } = await supabase.from("profiles").update(payload as any).eq("user_id", user.id);
     setSaving(false);
