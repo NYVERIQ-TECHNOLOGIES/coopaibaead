@@ -50,7 +50,6 @@ export default function CourseDetail() {
   const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const isAdmin = role === "admin";
   const [generatingCert, setGeneratingCert] = useState(false);
   const [replayIntro, setReplayIntro] = useState(false);
 
@@ -73,6 +72,11 @@ export default function CourseDetail() {
     },
     enabled: !!courseId,
   });
+
+  // Gestor do curso: administrador global ou o professor dono do curso
+  const isOwnerProfessor =
+    role === "professor" && !!user?.id && (course as any)?.created_by === user.id;
+  const isAdmin = role === "admin" || isOwnerProfessor;
 
   // ---- Fetch modules with lessons ----
   const { data: modules = [], isLoading: loadingModules } = useQuery({

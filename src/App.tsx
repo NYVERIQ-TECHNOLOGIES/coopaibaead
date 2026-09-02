@@ -63,6 +63,9 @@ import AdminCampanhaDetalhe from "@/pages/admin/AdminCampanhaDetalhe";
 import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
 import AdministracaoHub from "@/pages/AdministracaoHub";
 import EnsinoHub from "@/pages/EnsinoHub";
+import LiveClasses from "@/pages/LiveClasses";
+import ProfessorDashboard from "@/pages/professor/ProfessorDashboard";
+import ProfessorRelatorios from "@/pages/professor/ProfessorRelatorios";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -106,20 +109,23 @@ const App = () => (
               
               <Route path="/app" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Dashboard /></ProtectedRoute>} />
               <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
+              <Route path="/professor" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorDashboard /></ProtectedRoute>} />
+              <Route path="/professor/relatorios" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorRelatorios /></ProtectedRoute>} />
+              <Route path="/live-classes" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor"]}><LiveClasses /></ProtectedRoute>} />
 
-              {/* Acessível a alunos, cooperados e admins */}
-              <Route path="/courses" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Courses /></ProtectedRoute>} />
-              <Route path="/courses/:id" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><CourseDetail /></ProtectedRoute>} />
-              <Route path="/library" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><LibraryPage /></ProtectedRoute>} />
-              <Route path="/forum" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Forum /></ProtectedRoute>} />
-              <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
+              {/* Acessível a alunos, cooperados, professores e admins */}
+              <Route path="/courses" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><Courses /></ProtectedRoute>} />
+              <Route path="/courses/:id" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><CourseDetail /></ProtectedRoute>} />
+              <Route path="/library" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><LibraryPage /></ProtectedRoute>} />
+              <Route path="/forum" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><Forum /></ProtectedRoute>} />
+              <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
 
               {/* Disponível a todos autenticados */}
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
 
               {/* Certificados: alunos veem apenas os próprios; admins gerenciam tudo */}
-              <Route path="/certificates" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><Certificates /></ProtectedRoute>} />
+              <Route path="/certificates" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor", "aluno", "cooperado"]}><Certificates /></ProtectedRoute>} />
               <Route path="/certificates/configuracoes" element={<ProtectedRoute allowedRoles={["admin"]}><CertificatePickupSettings /></ProtectedRoute>} />
               <Route path="/certificates/relatorios" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><CertificateReports /></ProtectedRoute>} />
               <Route path="/certificates/:code/retirada" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><CertificatePickup /></ProtectedRoute>} />
@@ -133,8 +139,8 @@ const App = () => (
               <Route path="/presenca/:id/editar" element={<ProtectedRoute allowedRoles={["admin"]}><PresencaNovo /></ProtectedRoute>} />
               <Route path="/presenca/relatorios" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaRelatorios /></ProtectedRoute>} />
               <Route path="/presenca/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaEvento /></ProtectedRoute>} />
-              <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin"]}><SupplementaryMaterials /></ProtectedRoute>} />
-              <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
+              <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin", "professor"]}><SupplementaryMaterials /></ProtectedRoute>} />
+              <Route path="/media" element={<ProtectedRoute allowedRoles={["admin", "professor"]}><MediaManager /></ProtectedRoute>} />
               <Route path="/administracao" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><AdministracaoHub /></ProtectedRoute>} />
               <Route path="/ensino" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><EnsinoHub /></ProtectedRoute>} />
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />

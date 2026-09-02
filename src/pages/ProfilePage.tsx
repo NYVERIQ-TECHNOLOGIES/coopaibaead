@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -75,6 +76,10 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
   const [phone, setPhone] = useState("");
   const [nascimento, setNascimento] = useState("");
+  const [bio, setBio] = useState("");
+  const [areaAtuacao, setAreaAtuacao] = useState("");
+  const [especialidade, setEspecialidade] = useState("");
+  const isProfessor = role === "professor";
   const [row, setRow] = useState<ProfileRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -95,13 +100,16 @@ export default function ProfilePage() {
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
-      .select("enrollment_number, phone, cpf, data_nascimento, is_active, created_at")
+      .select("enrollment_number, phone, cpf, data_nascimento, is_active, created_at, bio, area_atuacao, especialidade")
       .eq("user_id", user.id)
       .maybeSingle();
     if (data) {
       setRow(data as ProfileRow);
       setPhone(data.phone || "");
       setNascimento(data.data_nascimento || "");
+      setBio((data as any).bio || "");
+      setAreaAtuacao((data as any).area_atuacao || "");
+      setEspecialidade((data as any).especialidade || "");
     }
   }, [user]);
 
@@ -218,6 +226,11 @@ export default function ProfilePage() {
       cooperativa: cooperativa.trim() || null,
       phone: phoneDigits || null,
     };
+    if (isProfessor) {
+      payload.bio = bio.trim() || null;
+      payload.area_atuacao = areaAtuacao.trim() || null;
+      payload.especialidade = especialidade.trim() || null;
+    }
     if (!row?.data_nascimento && nascimento) payload.data_nascimento = nascimento;
     const { error } = await supabase.from("profiles").update(payload as any).eq("user_id", user.id);
     setSaving(false);
@@ -391,6 +404,36 @@ export default function ProfilePage() {
                   Usado para notificar quando seu certificado estiver disponível para retirada.
                 </p>
               </div>
+              {isProfessor && (
+                <>
+                  <div>
+                    <Label>Área de atuação</Label>
+                    <Input
+                      value={areaAtuacao}
+                      onChange={(e) => setAreaAtuacao(e.target.value)}
+                      placeholder="Ex.: Cooperativismo"
+                    />
+                  </div>
+                  <div>
+                    <Label>Especialidade</Label>
+                    <Input
+                      value={especialidade}
+                      onChange={(e) => setEspecialidade(e.target.value)}
+                      placeholder="Ex.: Gestão financeira"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label>Mini biografia</Label>
+                    <Textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      rows={4}
+                      maxLength={600}
+                      placeholder="Fale um pouco sobre sua trajetória profissional"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex items-center justify-between flex-wrap gap-3">

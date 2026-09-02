@@ -1910,13 +1910,16 @@ export type Database = {
       }
       profiles: {
         Row: {
+          area_atuacao: string | null
           avatar_url: string | null
+          bio: string | null
           cooperativa: string | null
           cpf: string | null
           created_at: string
           data_nascimento: string | null
           deactivated_at: string | null
           enrollment_number: string | null
+          especialidade: string | null
           full_name: string
           id: string
           is_active: boolean
@@ -1926,13 +1929,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          area_atuacao?: string | null
           avatar_url?: string | null
+          bio?: string | null
           cooperativa?: string | null
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           deactivated_at?: string | null
           enrollment_number?: string | null
+          especialidade?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
@@ -1942,13 +1948,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          area_atuacao?: string | null
           avatar_url?: string | null
+          bio?: string | null
           cooperativa?: string | null
           cpf?: string | null
           created_at?: string
           data_nascimento?: string | null
           deactivated_at?: string | null
           enrollment_number?: string | null
+          especialidade?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
@@ -2473,6 +2482,7 @@ export type Database = {
           possible_user_name: string
         }[]
       }
+      get_professor_stats: { Args: { _professor_id?: string }; Returns: Json }
       get_public_profiles: {
         Args: { _user_ids: string[] }
         Returns: {
@@ -2533,6 +2543,23 @@ export type Database = {
         Args: { _enrollment_number: string; _user_id: string }
         Returns: undefined
       }
+      list_professors: {
+        Args: never
+        Returns: {
+          area_atuacao: string
+          avatar_url: string
+          created_at: string
+          especialidade: string
+          full_name: string
+          is_active: boolean
+          phone: string
+          total_certificates: number
+          total_courses: number
+          total_revenue: number
+          total_students: number
+          user_id: string
+        }[]
+      }
       list_public_profiles: {
         Args: never
         Returns: {
@@ -2555,6 +2582,14 @@ export type Database = {
         Returns: undefined
       }
       matricular_via_link: { Args: { _course_id: string }; Returns: Json }
+      owns_course: {
+        Args: { _course_id: string; _user_id: string }
+        Returns: boolean
+      }
+      owns_module: {
+        Args: { _module_id: string; _user_id: string }
+        Returns: boolean
+      }
       publicar_gravacao_como_aula: {
         Args: {
           _description?: string
@@ -2626,7 +2661,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "aluno" | "cooperado" | "moderador"
+      app_role: "admin" | "aluno" | "cooperado" | "moderador" | "professor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2754,7 +2789,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "aluno", "cooperado", "moderador"],
+      app_role: ["admin", "aluno", "cooperado", "moderador", "professor"],
     },
   },
 } as const

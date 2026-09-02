@@ -36,6 +36,7 @@ interface Course {
   premium_enabled: boolean;
   progressive_unlock?: boolean;
   is_active?: boolean;
+  created_by?: string | null;
   created_at: string;
 }
 
@@ -79,6 +80,10 @@ export default function Courses() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const isAdmin = role === "admin";
+  const isProfessor = role === "professor";
+  const canCreate = isAdmin || isProfessor;
+  const canManage = (c: Course) =>
+    isAdmin || (isProfessor && !!user?.id && c.created_by === user.id);
 
   const { data: courses = [], isLoading } = useQuery({
     queryKey: ["courses"],
@@ -176,7 +181,10 @@ export default function Courses() {
         const { error } = await supabase.from("courses").update(payload).eq("id", editingCourse.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("courses").insert(payload);
+        // O responsável pelo curso é sempre o usuário autenticado que o cria
+        const { error } = await supabase
+          .from("courses")
+          .insert({ ...payload, created_by: user?.id ?? null });
         if (error) throw error;
       }
     },
@@ -242,6 +250,8 @@ export default function Courses() {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || c.cooperado_only;
     const hideEventual = !isAdmin && (c as any).eventual;
+    // Professor visualiza apenas os cursos que ele mesmo criou
+    if (isProfessor && c.created_by !== user?.id) return false;
     return matchSearch && matchFilter && !hideEventual;
   });
 
@@ -249,21 +259,29 @@ export default function Courses() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Cursos</h1>
+          <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">
+            {isProfessor ? "Meus Cursos" : "Cursos"}
+          </h1>
           <p className="text-muted-foreground mt-1">
-            {isAdmin ? "Gerencie os cursos da plataforma" : "Explore os cursos disponíveis"}
+            {isAdmin
+              ? "Gerencie os cursos da plataforma"
+              : isProfessor
+                ? "Crie e gerencie os cursos sob sua responsabilidade"
+                : "Explore os cursos disponíveis"}
           </p>
         </div>
-        {isAdmin && (
+        {canCreate && (
           <div className="flex flex-wrap gap-2 w-full sm:w-auto [&>*]:flex-1 sm:[&>*]:flex-none">
-            <Button variant="outline" onClick={() => setTrashOpen(true)}>
-              <History className="w-4 h-4 mr-2" /> Excluídos
-              {deletedCourses.length > 0 && (
-                <span className="ml-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
-                  {deletedCourses.length}
-                </span>
-              )}
-            </Button>
+            {isAdmin && (
+              <Button variant="outline" onClick={() => setTrashOpen(true)}>
+                <History className="w-4 h-4 mr-2" /> Excluídos
+                {deletedCourses.length > 0 && (
+                  <span className="ml-2 text-xs bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                    {deletedCourses.length}
+                  </span>
+                )}
+              </Button>
+            )}
             <Button onClick={openNew} className="gradient-primary text-primary-foreground">
               <Plus className="w-4 h-4 mr-2" /> Novo Curso
             </Button>
@@ -471,7 +489,7 @@ export default function Courses() {
                   </Button>
                 </div>
 
-                {isAdmin && (
+                {canManage(course) && (
                   <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/60">
                     <Button size="sm" variant="outline" onClick={() => openEdit(course)}>
                       <Pencil className="w-3 h-3 mr-1" /> Editar
@@ -501,7 +519,7 @@ export default function Courses() {
         <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg font-heading">Nenhum curso encontrado</p>
           <p className="text-sm mt-1">
-            {isAdmin ? "Clique em 'Novo Curso' para adicionar" : "Tente ajustar os filtros de busca"}
+            {canCreate ? "Clique em 'Novo Curso' para adicionar" : "Tente ajustar os filtros de busca"}
           </p>
         </div>
       )}
