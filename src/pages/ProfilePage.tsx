@@ -403,6 +403,36 @@ export default function ProfilePage() {
                   Usado para notificar quando seu certificado estiver disponível para retirada.
                 </p>
               </div>
+              {isProfessor && (
+                <>
+                  <div>
+                    <Label>Área de atuação</Label>
+                    <Input
+                      value={areaAtuacao}
+                      onChange={(e) => setAreaAtuacao(e.target.value)}
+                      placeholder="Ex.: Cooperativismo"
+                    />
+                  </div>
+                  <div>
+                    <Label>Especialidade</Label>
+                    <Input
+                      value={especialidade}
+                      onChange={(e) => setEspecialidade(e.target.value)}
+                      placeholder="Ex.: Gestão financeira"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label>Mini biografia</Label>
+                    <Textarea
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      rows={4}
+                      maxLength={600}
+                      placeholder="Fale um pouco sobre sua trajetória profissional"
+                    />
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex items-center justify-between flex-wrap gap-3">
