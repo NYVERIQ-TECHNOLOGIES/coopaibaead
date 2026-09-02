@@ -136,8 +136,8 @@ const App = () => (
               <Route path="/presenca/:id/editar" element={<ProtectedRoute allowedRoles={["admin"]}><PresencaNovo /></ProtectedRoute>} />
               <Route path="/presenca/relatorios" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaRelatorios /></ProtectedRoute>} />
               <Route path="/presenca/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><PresencaEvento /></ProtectedRoute>} />
-              <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin"]}><SupplementaryMaterials /></ProtectedRoute>} />
-              <Route path="/media" element={<ProtectedRoute allowedRoles={["admin"]}><MediaManager /></ProtectedRoute>} />
+              <Route path="/materials" element={<ProtectedRoute allowedRoles={["admin", "professor"]}><SupplementaryMaterials /></ProtectedRoute>} />
+              <Route path="/media" element={<ProtectedRoute allowedRoles={["admin", "professor"]}><MediaManager /></ProtectedRoute>} />
               <Route path="/administracao" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><AdministracaoHub /></ProtectedRoute>} />
               <Route path="/ensino" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><EnsinoHub /></ProtectedRoute>} />
               <Route path="/admins" element={<ProtectedRoute allowedRoles={["admin"]}><AdminManagement /></ProtectedRoute>} />
