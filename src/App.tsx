@@ -63,6 +63,9 @@ import AdminCampanhaDetalhe from "@/pages/admin/AdminCampanhaDetalhe";
 import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
 import AdministracaoHub from "@/pages/AdministracaoHub";
 import EnsinoHub from "@/pages/EnsinoHub";
+import LiveClasses from "@/pages/LiveClasses";
+import ProfessorDashboard from "@/pages/professor/ProfessorDashboard";
+import ProfessorRelatorios from "@/pages/professor/ProfessorRelatorios";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();

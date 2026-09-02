@@ -33,7 +33,12 @@ export default function ProtectedRoute({ children, allowedRoles }: Props) {
     }
     if (!allowedRoles.includes(role)) {
       // Redirecionar para a home apropriada do papel atual
-      const home = role === "admin" || role === "moderador" ? "/app" : "/student";
+      const home =
+        role === "admin" || role === "moderador"
+          ? "/app"
+          : role === "professor"
+            ? "/professor"
+            : "/student";
       return <Navigate to={home} replace />;
     }
   }
