@@ -106,13 +106,16 @@ const App = () => (
               
               <Route path="/app" element={<ProtectedRoute allowedRoles={["admin", "moderador"]}><Dashboard /></ProtectedRoute>} />
               <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
+              <Route path="/professor" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorDashboard /></ProtectedRoute>} />
+              <Route path="/professor/relatorios" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorRelatorios /></ProtectedRoute>} />
+              <Route path="/live-classes" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor"]}><LiveClasses /></ProtectedRoute>} />
 
-              {/* Acessível a alunos, cooperados e admins */}
-              <Route path="/courses" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Courses /></ProtectedRoute>} />
-              <Route path="/courses/:id" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><CourseDetail /></ProtectedRoute>} />
-              <Route path="/library" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><LibraryPage /></ProtectedRoute>} />
-              <Route path="/forum" element={<ProtectedRoute allowedRoles={["admin", "aluno", "cooperado"]}><Forum /></ProtectedRoute>} />
-              <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "moderador", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
+              {/* Acessível a alunos, cooperados, professores e admins */}
+              <Route path="/courses" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><Courses /></ProtectedRoute>} />
+              <Route path="/courses/:id" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><CourseDetail /></ProtectedRoute>} />
+              <Route path="/library" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><LibraryPage /></ProtectedRoute>} />
+              <Route path="/forum" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><Forum /></ProtectedRoute>} />
+              <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
 
               {/* Disponível a todos autenticados */}
               <Route path="/settings" element={<SettingsPage />} />
