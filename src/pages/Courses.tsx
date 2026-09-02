@@ -250,6 +250,8 @@ export default function Courses() {
     const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "all" || c.cooperado_only;
     const hideEventual = !isAdmin && (c as any).eventual;
+    // Professor visualiza apenas os cursos que ele mesmo criou
+    if (isProfessor && c.created_by !== user?.id) return false;
     return matchSearch && matchFilter && !hideEventual;
   });
 
