@@ -75,6 +75,10 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url || "");
   const [phone, setPhone] = useState("");
   const [nascimento, setNascimento] = useState("");
+  const [bio, setBio] = useState("");
+  const [areaAtuacao, setAreaAtuacao] = useState("");
+  const [especialidade, setEspecialidade] = useState("");
+  const isProfessor = role === "professor";
   const [row, setRow] = useState<ProfileRow | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
