@@ -127,6 +127,7 @@ export default function AppSidebar() {
   const isAdmin = role === "admin";
   const isModerator = role === "moderador";
   const isCooperado = role === "cooperado";
+  const isProfessor = role === "professor";
 
   useEffect(() => {
     localStorage.setItem(FAV_KEY, JSON.stringify(favorites));
@@ -136,6 +137,8 @@ export default function AppSidebar() {
   }, [openGroups]);
 
   const canSee = (item: NavItem) => {
+    if (isProfessor) return !!(item.professorOnly || item.professorAllowed);
+    if (item.professorOnly) return false;
     if (isModerator) return !!item.moderatorAllowed;
     if (isCooperado && item.cooperadoExcluded) return false;
     if (isCooperado && item.cooperadoAllowed) return true;
