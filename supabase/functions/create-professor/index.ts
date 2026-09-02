@@ -82,6 +82,39 @@ Deno.serve(async (req) => {
       return json({ success: true, user_id: newId });
     }
 
+    if (action === "promote") {
+      const { user_id, area_atuacao, especialidade } = body;
+      if (!user_id) return json({ error: "user_id é obrigatório" }, 400);
+
+      const { data: target } = await supabaseAdmin.auth.admin.getUserById(user_id);
+      if (!target?.user) return json({ error: "Usuário não encontrado" }, 404);
+
+      const { data: isAdminTarget } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user_id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (isAdminTarget) {
+        return json({ error: "Não é possível alterar o papel de um administrador" }, 400);
+      }
+
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", user_id);
+      const { error: roleErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id, role: "professor" });
+      if (roleErr) return json({ error: roleErr.message }, 400);
+
+      const patch: Record<string, unknown> = {};
+      if (area_atuacao !== undefined && area_atuacao !== null) patch.area_atuacao = area_atuacao;
+      if (especialidade !== undefined && especialidade !== null) patch.especialidade = especialidade;
+      if (Object.keys(patch).length > 0) {
+        await supabaseAdmin.from("profiles").update(patch).eq("user_id", user_id);
+      }
+
+      return json({ success: true, user_id });
+    }
+
     if (action === "update") {
       const { user_id, full_name, phone, avatar_url, area_atuacao, especialidade, is_active, bio } = body;
       if (!user_id) return json({ error: "user_id é obrigatório" }, 400);

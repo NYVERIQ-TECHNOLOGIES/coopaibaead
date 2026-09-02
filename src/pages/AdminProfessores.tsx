@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, KeyRound, Pencil, BarChart3, Search } from "lucide-react";
+import { Plus, KeyRound, Pencil, BarChart3, Search, UserPlus, GraduationCap } from "lucide-react";
 import { ProfessorStatsView, useProfessorStats, brl } from "./professor/ProfessorDashboard";
 
 interface ProfessorRow {
@@ -28,6 +28,15 @@ interface ProfessorRow {
   total_students: number;
   total_certificates: number;
   total_revenue: number;
+}
+
+interface CandidateRow {
+  user_id: string;
+  full_name: string;
+  enrollment_number: string | null;
+  cooperativa: string | null;
+  area_atuacao: string | null;
+  especialidade: string | null;
 }
 
 const emptyForm = {
@@ -58,6 +67,9 @@ export default function AdminProfessores() {
   const [passwordFor, setPasswordFor] = useState<ProfessorRow | null>(null);
   const [newPassword, setNewPassword] = useState("Coopaiba@2026");
   const [detailFor, setDetailFor] = useState<ProfessorRow | null>(null);
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [promoteSearch, setPromoteSearch] = useState("");
+  const [promoteSelected, setPromoteSelected] = useState<CandidateRow | null>(null);
 
   const { data: professors = [], isLoading } = useQuery({
     queryKey: ["professors"],
@@ -66,6 +78,46 @@ export default function AdminProfessores() {
       if (error) throw error;
       return (data ?? []) as ProfessorRow[];
     },
+  });
+
+  const { data: candidates = [], isLoading: loadingCandidates } = useQuery({
+    queryKey: ["professor-candidates"],
+    enabled: promoteOpen,
+    queryFn: async () => {
+      const { data: roles, error: rolesErr } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "professor"]);
+      if (rolesErr) throw rolesErr;
+      const excluded = new Set((roles ?? []).map((r) => r.user_id));
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, enrollment_number, cooperativa, area_atuacao, especialidade")
+        .order("full_name", { ascending: true })
+        .limit(2000);
+      if (error) throw error;
+      return ((data ?? []) as CandidateRow[]).filter((p) => !excluded.has(p.user_id));
+    },
+  });
+
+  const promoteMutation = useMutation({
+    mutationFn: async () =>
+      invoke({
+        action: "promote",
+        user_id: promoteSelected!.user_id,
+        area_atuacao: promoteSelected!.area_atuacao,
+        especialidade: promoteSelected!.especialidade,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["professors"] });
+      qc.invalidateQueries({ queryKey: ["professor-candidates"] });
+      setPromoteOpen(false);
+      setPromoteSelected(null);
+      setPromoteSearch("");
+      toast({ title: "Usuário promovido a professor" });
+    },
+    onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
 
   const invoke = async (body: Record<string, unknown>) => {
@@ -148,9 +200,14 @@ export default function AdminProfessores() {
             Crie e acompanhe as contas de professores da plataforma
           </p>
         </div>
-        <Button onClick={openNew} className="gradient-primary text-primary-foreground">
-          <Plus className="w-4 h-4 mr-2" /> Novo Professor
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setPromoteOpen(true)}>
+            <UserPlus className="w-4 h-4 mr-2" /> Tornar aluno professor
+          </Button>
+          <Button onClick={openNew} className="gradient-primary text-primary-foreground">
+            <Plus className="w-4 h-4 mr-2" /> Novo Professor
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-md">
@@ -300,6 +357,70 @@ export default function AdminProfessores() {
             <Button variant="outline" onClick={() => setPasswordFor(null)}>Cancelar</Button>
             <Button onClick={() => passwordMutation.mutate()} disabled={passwordMutation.isPending}>
               {passwordMutation.isPending ? "Salvando..." : "Redefinir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Promover usuário existente */}
+      <Dialog open={promoteOpen} onOpenChange={(o) => { setPromoteOpen(o); if (!o) setPromoteSelected(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Tornar aluno professor</DialogTitle>
+            <DialogDescription>
+              Escolha um usuário já cadastrado para receber o papel de Professor. O login e a senha atuais continuam os mesmos.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                className="pl-9"
+                placeholder="Buscar por nome ou matrícula..."
+                value={promoteSearch}
+                onChange={(e) => setPromoteSearch(e.target.value)}
+              />
+            </div>
+            <div className="max-h-[45vh] overflow-auto rounded-xl border border-border divide-y divide-border/60">
+              {loadingCandidates && <div className="p-4"><Skeleton className="h-6 w-full" /></div>}
+              {!loadingCandidates && candidates
+                .filter((c) => {
+                  const q = promoteSearch.trim().toLowerCase();
+                  if (!q) return true;
+                  return (c.full_name ?? "").toLowerCase().includes(q)
+                    || (c.enrollment_number ?? "").toLowerCase().includes(q);
+                })
+                .slice(0, 100)
+                .map((c) => (
+                  <button
+                    key={c.user_id}
+                    type="button"
+                    onClick={() => setPromoteSelected(c)}
+                    className={`w-full text-left p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors ${
+                      promoteSelected?.user_id === c.user_id ? "bg-primary/10" : ""
+                    }`}
+                  >
+                    <GraduationCap className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{c.full_name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {[c.enrollment_number, c.cooperativa].filter(Boolean).join(" · ") || "—"}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              {!loadingCandidates && candidates.length === 0 && (
+                <p className="p-6 text-center text-sm text-muted-foreground">Nenhum usuário disponível.</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPromoteOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => promoteMutation.mutate()}
+              disabled={!promoteSelected || promoteMutation.isPending}
+            >
+              {promoteMutation.isPending ? "Promovendo..." : "Tornar professor"}
             </Button>
           </DialogFooter>
         </DialogContent>
