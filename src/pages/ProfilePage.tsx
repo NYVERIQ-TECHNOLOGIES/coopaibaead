@@ -99,13 +99,16 @@ export default function ProfilePage() {
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
-      .select("enrollment_number, phone, cpf, data_nascimento, is_active, created_at")
+      .select("enrollment_number, phone, cpf, data_nascimento, is_active, created_at, bio, area_atuacao, especialidade")
       .eq("user_id", user.id)
       .maybeSingle();
     if (data) {
       setRow(data as ProfileRow);
       setPhone(data.phone || "");
       setNascimento(data.data_nascimento || "");
+      setBio((data as any).bio || "");
+      setAreaAtuacao((data as any).area_atuacao || "");
+      setEspecialidade((data as any).especialidade || "");
     }
   }, [user]);
 
