@@ -36,7 +36,8 @@ function fmtDate(iso: string) {
 export default function LiveClasses() {
   const { user, role } = useAuth();
   const qc = useQueryClient();
-  const isAdmin = role === "admin";
+  const isProfessor = role === "professor";
+  const isAdmin = role === "admin" || isProfessor;
   const { status: googleStatus, loading: googleLoading, refresh: refreshGoogle } = useGoogleStatus();
 
   const [filter, setFilter] = useState("todas");
@@ -92,6 +93,7 @@ export default function LiveClasses() {
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (classes as (LiveClassRow & { courses?: { title: string } })[]).filter((c) => {
+      if (isProfessor && (c as any).teacher_id !== user?.id) return false;
       if (filter === "agendadas" && c.status !== "agendada") return false;
       if (filter === "ao-vivo" && c.status !== "ao_vivo") return false;
       if (filter === "gravacoes" && !["encerrada", "processando", "pronta", "publicada"].includes(c.status)) return false;

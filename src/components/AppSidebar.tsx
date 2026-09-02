@@ -21,6 +21,8 @@ type NavItem = {
   moderatorAllowed?: boolean;
   cooperadoAllowed?: boolean;
   cooperadoExcluded?: boolean;
+  professorAllowed?: boolean;
+  professorOnly?: boolean;
 };
 
 type NavGroup = {
@@ -40,6 +42,7 @@ const groups: NavGroup[] = [
     items: [
       { label: "Dashboard", icon: LayoutDashboard, path: "/app", adminOnly: true, moderatorAllowed: true },
       { label: "Meu Painel", icon: LayoutDashboard, path: "/student", studentOnly: true },
+      { label: "Painel do Professor", icon: LayoutDashboard, path: "/professor", professorOnly: true },
     ],
   },
   {
@@ -49,7 +52,10 @@ const groups: NavGroup[] = [
     defaultOpen: true,
     items: [
       { label: "Ensino & Cooperados", icon: GraduationCap, path: "/ensino", moderatorAllowed: true, cooperadoAllowed: true },
-      { label: "Fórum", icon: MessageSquare, path: "/forum" },
+      { label: "Meus Cursos", icon: BookOpen, path: "/courses", professorOnly: true },
+      { label: "Aulas ao Vivo", icon: Activity, path: "/live-classes", professorOnly: true },
+      { label: "Certificados", icon: Award, path: "/certificates", professorOnly: true },
+      { label: "Fórum", icon: MessageSquare, path: "/forum", professorAllowed: true },
     ],
   },
   {
@@ -57,9 +63,9 @@ const groups: NavGroup[] = [
     label: "Conteúdo",
     icon: Library,
     items: [
-      { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true },
-      { label: "Biblioteca", icon: Library, path: "/library" },
-      { label: "Mídias", icon: Upload, path: "/media", adminOnly: true },
+      { label: "Materiais", icon: BookOpen, path: "/materials", adminOnly: true, professorAllowed: true },
+      { label: "Biblioteca", icon: Library, path: "/library", professorAllowed: true },
+      { label: "Mídias", icon: Upload, path: "/media", adminOnly: true, professorAllowed: true },
     ],
   },
   {
@@ -68,6 +74,7 @@ const groups: NavGroup[] = [
     icon: TrendingUp,
     items: [
       { label: "Relatórios", icon: BarChart3, path: "/reports", adminOnly: true },
+      { label: "Relatórios", icon: BarChart3, path: "/professor/relatorios", professorOnly: true },
     ],
   },
   {
