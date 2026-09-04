@@ -69,7 +69,7 @@ export default function LiveClassDialog({
   const [duration, setDuration] = useState(60);
   const [openBefore, setOpenBefore] = useState(15);
   const [recording, setRecording] = useState(true);
-  const [provider, setProvider] = useState<"google_meet" | "link_externo" | "sala_instantanea">("google_meet");
+  const [provider, setProvider] = useState<"nativo" | "google_meet" | "link_externo" | "sala_instantanea">("nativo");
   const [meetUrl, setMeetUrl] = useState("");
   const [startNow, setStartNow] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -104,9 +104,9 @@ export default function LiveClassDialog({
       setOpenBefore(editing.open_minutes_before);
       setRecording(editing.recording_enabled);
       setProvider(
-        editing.provider === "link_externo" || editing.provider === "sala_instantanea"
-          ? (editing.provider as "link_externo" | "sala_instantanea")
-          : "google_meet",
+        editing.provider === "link_externo" || editing.provider === "sala_instantanea" || editing.provider === "google_meet"
+          ? (editing.provider as "link_externo" | "sala_instantanea" | "google_meet")
+          : "nativo",
       );
       setMeetUrl(editing.meet_url ?? "");
       setStartNow(false);
@@ -119,8 +119,8 @@ export default function LiveClassDialog({
       setDuration(60);
       setOpenBefore(15);
       setRecording(true);
-      setProvider(googleConnected ? "google_meet" : "sala_instantanea");
-      setMeetUrl(googleConnected ? "" : gerarLinkSala(""));
+      setProvider("nativo");
+      setMeetUrl("");
       setStartNow(false);
     }
   }, [open, editing, googleConnected]);
@@ -128,7 +128,7 @@ export default function LiveClassDialog({
   async function save() {
     if (!courseId) return toast.error("Escolha o curso.");
     if (title.trim().length < 3) return toast.error("Informe um título para a aula.");
-    if (provider !== "google_meet" && !meetUrl.trim()) {
+    if (provider !== "google_meet" && provider !== "nativo" && !meetUrl.trim()) {
       return toast.error("Informe o link da reunião.");
     }
     setSaving(true);
@@ -145,7 +145,9 @@ export default function LiveClassDialog({
         open_minutes_before: openBefore,
         recording_enabled: recording,
         provider,
-        meet_url: provider !== "google_meet" ? meetUrl.trim() : (editing?.meet_url ?? null),
+        meet_url: provider === "nativo"
+          ? null
+          : provider !== "google_meet" ? meetUrl.trim() : (editing?.meet_url ?? null),
         status: startNow ? "ao_vivo" : (editing?.status ?? "agendada"),
         started_at: startNow ? new Date().toISOString() : undefined,
       };
@@ -280,6 +282,7 @@ export default function LiveClassDialog({
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
+                <SelectItem value="nativo">Transmitir pela plataforma (recomendado)</SelectItem>
                 <SelectItem value="google_meet" disabled={!googleConnected}>
                   Google Meet {googleConnected ? "" : "(conecte sua conta Google)"}
                 </SelectItem>
@@ -288,6 +291,13 @@ export default function LiveClassDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {provider === "nativo" && (
+            <p className="text-xs text-muted-foreground rounded-xl border border-border p-3">
+              A aula acontece dentro da própria plataforma: câmera, microfone, compartilhamento de tela,
+              chat e presença automática, sem instalar nada.
+            </p>
+          )}
 
           {provider === "sala_instantanea" && (
             <div className="space-y-1.5">

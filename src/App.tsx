@@ -64,6 +64,7 @@ import AdminCooperadosPendentes from "@/pages/AdminCooperadosPendentes";
 import AdministracaoHub from "@/pages/AdministracaoHub";
 import EnsinoHub from "@/pages/EnsinoHub";
 import LiveClasses from "@/pages/LiveClasses";
+import LiveRoom from "@/pages/LiveRoom";
 import ProfessorDashboard from "@/pages/professor/ProfessorDashboard";
 import ProfessorRelatorios from "@/pages/professor/ProfessorRelatorios";
 import NotFound from "@/pages/NotFound";
@@ -111,6 +112,7 @@ const App = () => (
               <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
               <Route path="/professor" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorDashboard /></ProtectedRoute>} />
               <Route path="/professor/relatorios" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorRelatorios /></ProtectedRoute>} />
+              <Route path="/live/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor", "aluno", "cooperado"]}><LiveRoom /></ProtectedRoute>} />
               <Route path="/live-classes" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor"]}><LiveClasses /></ProtectedRoute>} />
 
               {/* Acessível a alunos, cooperados, professores e admins */}

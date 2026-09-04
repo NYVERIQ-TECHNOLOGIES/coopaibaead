@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import LiveHistoryCard from "@/components/live/LiveHistoryCard";
 import { useToast } from "@/hooks/use-toast";
 
 type ProfileRow = {
@@ -582,6 +583,8 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              <LiveHistoryCard />
             </>
           )}
         </TabsContent>

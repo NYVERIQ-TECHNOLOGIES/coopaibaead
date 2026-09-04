@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import {
 import GoogleConnectCard, { useGoogleStatus } from "@/components/live/GoogleConnectCard";
 import LiveClassDialog, { LiveClassRow } from "@/components/live/LiveClassDialog";
 import PublishRecordingDialog, { RecordingRow } from "@/components/live/PublishRecordingDialog";
+import LiveAttendanceReport from "@/components/live/LiveAttendanceReport";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   agendada: { label: "Agendada", variant: "secondary" },
@@ -31,6 +33,48 @@ const STATUS_LABEL: Record<string, { label: string; variant: "default" | "second
 
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+}
+
+function AttendanceRuleCard() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["live-attendance-rule"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value")
+        .eq("key", "live_attendance_min_percent").maybeSingle();
+      return Number(data?.value ?? 75);
+    },
+  });
+  const [value, setValue] = useState<number | null>(null);
+  const current = value ?? data ?? 75;
+
+  async function save() {
+    const pct = Math.min(100, Math.max(1, Math.round(current)));
+    const { error } = await supabase.from("app_settings")
+      .upsert({ key: "live_attendance_min_percent", value: pct as unknown as never }, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    toast.success("Critério de presença atualizado.");
+    void qc.invalidateQueries({ queryKey: ["live-attendance-rule"] });
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div>
+          <p className="text-sm font-medium">Critério de presença nas aulas ao vivo</p>
+          <p className="text-xs text-muted-foreground">
+            Percentual mínimo da duração da aula para a presença ser considerada válida.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input type="number" min={1} max={100} className="w-24"
+            value={current} onChange={(e) => setValue(Number(e.target.value))} />
+          <span className="text-sm text-muted-foreground">%</span>
+          <Button size="sm" variant="outline" onClick={save}>Salvar</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function LiveClasses() {
@@ -67,22 +111,8 @@ export default function LiveClasses() {
     },
   });
 
-  const { data: attendance = [] } = useQuery({
-    queryKey: ["live-attendance", attendanceFor?.id],
-    enabled: !!attendanceFor,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("live_attendance")
-        .select("student_id, joined_at, duration_seconds")
-        .eq("live_class_id", attendanceFor!.id)
-        .order("joined_at");
-      const ids = (data ?? []).map((a) => a.student_id);
-      if (ids.length === 0) return [];
-      const { data: profiles } = await supabase.rpc("get_public_profiles", { _user_ids: ids });
-      const map = new Map((profiles ?? []).map((p: { user_id: string; full_name: string }) => [p.user_id, p.full_name]));
-      return (data ?? []).map((a) => ({ ...a, name: map.get(a.student_id) ?? "Participante" }));
-    },
-  });
+
+
 
   const recByClass = useMemo(() => {
     const m = new Map<string, RecordingRow>();
@@ -108,6 +138,14 @@ export default function LiveClasses() {
   }
 
   async function startNow(lc: LiveClassRow) {
+    if (lc.provider === "nativo") {
+      await supabase.from("live_classes").update({
+        status: "ao_vivo", started_at: new Date().toISOString(),
+      }).eq("id", lc.id);
+      refresh();
+      window.location.assign(`/live/${lc.id}`);
+      return;
+    }
     if (!lc.meet_url) {
       const { data, error } = await supabase.functions.invoke("live-class-create-meet", {
         body: { liveClassId: lc.id },
@@ -122,6 +160,13 @@ export default function LiveClasses() {
   }
 
   async function endClass(lc: LiveClassRow) {
+    if (lc.provider === "nativo") {
+      const { error } = await supabase.rpc("live_end_class", { _live_class_id: lc.id });
+      if (error) return toast.error(error.message);
+      toast.success("Aula encerrada e presença consolidada.");
+      refresh();
+      return;
+    }
     toast.info("Encerrando a aula e buscando a gravação…");
     await supabase.from("live_classes").update({
       status: "encerrada", ended_at: new Date().toISOString(),
@@ -169,13 +214,15 @@ export default function LiveClasses() {
             <Radio className="h-5 w-5 text-primary" /> Aulas ao Vivo
           </h2>
           <p className="text-sm text-muted-foreground">
-            Agende, transmita pelo Google Meet e transforme a gravação em aula do curso.
+            Transmita ao vivo dentro da plataforma, com chat, presença automática e gravação.
           </p>
         </div>
         <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-1" /> Nova aula ao vivo
         </Button>
       </div>
+
+      {role === "admin" && <AttendanceRuleCard />}
 
       <GoogleConnectCard status={googleStatus} loading={googleLoading} onChanged={refreshGoogle} />
 
@@ -225,6 +272,13 @@ export default function LiveClasses() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {lc.provider === "nativo" && (
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/live/${lc.id}`}>
+                          <Video className="h-4 w-4 mr-1" /> Sala da aula
+                        </Link>
+                      </Button>
+                    )}
                     {lc.meet_url && (
                       <>
                         <Button size="sm" variant="outline" asChild>
@@ -293,21 +347,14 @@ export default function LiveClasses() {
       />
 
       <Dialog open={!!attendanceFor} onOpenChange={(v) => !v && setAttendanceFor(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-3xl">
           <DialogHeader><DialogTitle>Presença — {attendanceFor?.title}</DialogTitle></DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto divide-y divide-border">
-            {attendance.length === 0 && (
-              <p className="text-sm text-muted-foreground py-6 text-center">Nenhum participante registrado.</p>
-            )}
-            {attendance.map((a: { student_id: string; name: string; joined_at: string }) => (
-              <div key={a.student_id} className="py-2 flex items-center justify-between gap-3">
-                <span className="text-sm truncate">{a.name}</span>
-                <span className="text-xs text-muted-foreground">{fmtDate(a.joined_at)}</span>
-              </div>
-            ))}
-          </div>
+          {attendanceFor && (
+            <LiveAttendanceReport liveClassId={attendanceFor.id} title={attendanceFor.title} />
+          )}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
