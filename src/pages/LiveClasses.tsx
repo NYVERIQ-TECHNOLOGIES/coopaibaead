@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ import {
 import GoogleConnectCard, { useGoogleStatus } from "@/components/live/GoogleConnectCard";
 import LiveClassDialog, { LiveClassRow } from "@/components/live/LiveClassDialog";
 import PublishRecordingDialog, { RecordingRow } from "@/components/live/PublishRecordingDialog";
+import LiveAttendanceReport from "@/components/live/LiveAttendanceReport";
 
 const STATUS_LABEL: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   agendada: { label: "Agendada", variant: "secondary" },
@@ -108,6 +110,14 @@ export default function LiveClasses() {
   }
 
   async function startNow(lc: LiveClassRow) {
+    if (lc.provider === "nativo") {
+      await supabase.from("live_classes").update({
+        status: "ao_vivo", started_at: new Date().toISOString(),
+      }).eq("id", lc.id);
+      refresh();
+      window.location.assign(`/live/${lc.id}`);
+      return;
+    }
     if (!lc.meet_url) {
       const { data, error } = await supabase.functions.invoke("live-class-create-meet", {
         body: { liveClassId: lc.id },
@@ -122,6 +132,13 @@ export default function LiveClasses() {
   }
 
   async function endClass(lc: LiveClassRow) {
+    if (lc.provider === "nativo") {
+      const { error } = await supabase.rpc("live_end_class", { _live_class_id: lc.id });
+      if (error) return toast.error(error.message);
+      toast.success("Aula encerrada e presença consolidada.");
+      refresh();
+      return;
+    }
     toast.info("Encerrando a aula e buscando a gravação…");
     await supabase.from("live_classes").update({
       status: "encerrada", ended_at: new Date().toISOString(),
@@ -225,6 +242,13 @@ export default function LiveClasses() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {lc.provider === "nativo" && (
+                      <Button size="sm" variant="outline" asChild>
+                        <Link to={`/live/${lc.id}`}>
+                          <Video className="h-4 w-4 mr-1" /> Sala da aula
+                        </Link>
+                      </Button>
+                    )}
                     {lc.meet_url && (
                       <>
                         <Button size="sm" variant="outline" asChild>
@@ -293,21 +317,14 @@ export default function LiveClasses() {
       />
 
       <Dialog open={!!attendanceFor} onOpenChange={(v) => !v && setAttendanceFor(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-3xl">
           <DialogHeader><DialogTitle>Presença — {attendanceFor?.title}</DialogTitle></DialogHeader>
-          <div className="max-h-[60vh] overflow-y-auto divide-y divide-border">
-            {attendance.length === 0 && (
-              <p className="text-sm text-muted-foreground py-6 text-center">Nenhum participante registrado.</p>
-            )}
-            {attendance.map((a: { student_id: string; name: string; joined_at: string }) => (
-              <div key={a.student_id} className="py-2 flex items-center justify-between gap-3">
-                <span className="text-sm truncate">{a.name}</span>
-                <span className="text-xs text-muted-foreground">{fmtDate(a.joined_at)}</span>
-              </div>
-            ))}
-          </div>
+          {attendanceFor && (
+            <LiveAttendanceReport liveClassId={attendanceFor.id} title={attendanceFor.title} />
+          )}
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
