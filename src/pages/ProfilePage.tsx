@@ -582,6 +582,8 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              <LiveHistoryCard />
             </>
           )}
         </TabsContent>
