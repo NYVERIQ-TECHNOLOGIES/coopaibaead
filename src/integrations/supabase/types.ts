@@ -1461,6 +1461,129 @@ export type Database = {
           },
         ]
       }
+      live_chat_messages: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          live_class_id: string
+          message: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          live_class_id: string
+          message: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          live_class_id?: string
+          message?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_messages_live_class_id_fkey"
+            columns: ["live_class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_chat_mutes: {
+        Row: {
+          created_at: string
+          id: string
+          live_class_id: string
+          muted_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          live_class_id: string
+          muted_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          live_class_id?: string
+          muted_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_chat_mutes_live_class_id_fkey"
+            columns: ["live_class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_class_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          joined_at: string
+          last_seen_at: string
+          left_at: string | null
+          live_class_id: string
+          role: string
+          status: string
+          total_seconds: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          last_seen_at?: string
+          left_at?: string | null
+          live_class_id: string
+          role?: string
+          status?: string
+          total_seconds?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          last_seen_at?: string
+          left_at?: string | null
+          live_class_id?: string
+          role?: string
+          status?: string
+          total_seconds?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_class_sessions_live_class_id_fkey"
+            columns: ["live_class_id"]
+            isOneToOne: false
+            referencedRelation: "live_classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_classes: {
         Row: {
           course_id: string
@@ -2566,6 +2689,56 @@ export type Database = {
           avatar_url: string
           full_name: string
           user_id: string
+        }[]
+      }
+      live_attendance_report: {
+        Args: { _live_class_id: string }
+        Returns: {
+          first_join: string
+          full_name: string
+          last_leave: string
+          online: boolean
+          percent: number
+          presenca: string
+          total_seconds: number
+          user_id: string
+        }[]
+      }
+      live_can_manage: {
+        Args: { _live_class_id: string; _user_id: string }
+        Returns: boolean
+      }
+      live_can_view: {
+        Args: { _live_class_id: string; _user_id: string }
+        Returns: boolean
+      }
+      live_class_participants: {
+        Args: { _live_class_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          joined_at: string
+          left_at: string
+          online: boolean
+          total_seconds: number
+          user_id: string
+        }[]
+      }
+      live_end_class: { Args: { _live_class_id: string }; Returns: Json }
+      live_heartbeat: { Args: { _session_id: string }; Returns: undefined }
+      live_join_session: { Args: { _live_class_id: string }; Returns: Json }
+      live_leave_session: { Args: { _session_id: string }; Returns: undefined }
+      live_my_attendance: { Args: { _live_class_id: string }; Returns: Json }
+      live_my_history: {
+        Args: never
+        Returns: {
+          course_title: string
+          live_class_id: string
+          percent: number
+          presenca: string
+          scheduled_at: string
+          title: string
+          total_seconds: number
         }[]
       }
       log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }
