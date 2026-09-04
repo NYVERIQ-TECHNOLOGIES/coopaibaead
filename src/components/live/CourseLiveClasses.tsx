@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { CalendarClock, Radio, Video } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   courseId: string;
@@ -32,8 +33,13 @@ function LiveCard({ lc }: { lc: any }) {
   const opensAt = new Date(lc.scheduled_at).getTime() - lc.open_minutes_before * 60000;
   const canJoin = isLive || Date.now() >= opensAt;
   const [busy, setBusy] = useState(false);
+  const navigate = useNavigate();
 
   async function join() {
+    if (lc.provider === "nativo") {
+      navigate(`/live/${lc.id}`);
+      return;
+    }
     setBusy(true);
     const { data, error } = await supabase.rpc("entrar_aula_ao_vivo", { _live_class_id: lc.id });
     setBusy(false);
@@ -76,7 +82,7 @@ export default function CourseLiveClasses({ courseId }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from("live_classes")
-        .select("id, title, description, scheduled_at, status, open_minutes_before, meet_url")
+        .select("id, title, description, scheduled_at, status, open_minutes_before, meet_url, provider")
         .eq("course_id", courseId)
         .in("status", ["agendada", "ao_vivo"])
         .gte("scheduled_at", new Date(Date.now() - 4 * 3600000).toISOString())
