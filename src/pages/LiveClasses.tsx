@@ -35,6 +35,48 @@ function fmtDate(iso: string) {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
+function AttendanceRuleCard() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["live-attendance-rule"],
+    queryFn: async () => {
+      const { data } = await supabase.from("app_settings").select("value")
+        .eq("key", "live_attendance_min_percent").maybeSingle();
+      return Number(data?.value ?? 75);
+    },
+  });
+  const [value, setValue] = useState<number | null>(null);
+  const current = value ?? data ?? 75;
+
+  async function save() {
+    const pct = Math.min(100, Math.max(1, Math.round(current)));
+    const { error } = await supabase.from("app_settings")
+      .upsert({ key: "live_attendance_min_percent", value: pct as unknown as never }, { onConflict: "key" });
+    if (error) return toast.error(error.message);
+    toast.success("Critério de presença atualizado.");
+    void qc.invalidateQueries({ queryKey: ["live-attendance-rule"] });
+  }
+
+  return (
+    <Card>
+      <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div>
+          <p className="text-sm font-medium">Critério de presença nas aulas ao vivo</p>
+          <p className="text-xs text-muted-foreground">
+            Percentual mínimo da duração da aula para a presença ser considerada válida.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input type="number" min={1} max={100} className="w-24"
+            value={current} onChange={(e) => setValue(Number(e.target.value))} />
+          <span className="text-sm text-muted-foreground">%</span>
+          <Button size="sm" variant="outline" onClick={save}>Salvar</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function LiveClasses() {
   const { user, role } = useAuth();
   const qc = useQueryClient();
@@ -172,13 +214,15 @@ export default function LiveClasses() {
             <Radio className="h-5 w-5 text-primary" /> Aulas ao Vivo
           </h2>
           <p className="text-sm text-muted-foreground">
-            Agende, transmita pelo Google Meet e transforme a gravação em aula do curso.
+            Transmita ao vivo dentro da plataforma, com chat, presença automática e gravação.
           </p>
         </div>
         <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
           <Plus className="h-4 w-4 mr-1" /> Nova aula ao vivo
         </Button>
       </div>
+
+      {role === "admin" && <AttendanceRuleCard />}
 
       <GoogleConnectCard status={googleStatus} loading={googleLoading} onChanged={refreshGoogle} />
 
