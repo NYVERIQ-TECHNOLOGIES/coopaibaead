@@ -69,22 +69,8 @@ export default function LiveClasses() {
     },
   });
 
-  const { data: attendance = [] } = useQuery({
-    queryKey: ["live-attendance", attendanceFor?.id],
-    enabled: !!attendanceFor,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("live_attendance")
-        .select("student_id, joined_at, duration_seconds")
-        .eq("live_class_id", attendanceFor!.id)
-        .order("joined_at");
-      const ids = (data ?? []).map((a) => a.student_id);
-      if (ids.length === 0) return [];
-      const { data: profiles } = await supabase.rpc("get_public_profiles", { _user_ids: ids });
-      const map = new Map((profiles ?? []).map((p: { user_id: string; full_name: string }) => [p.user_id, p.full_name]));
-      return (data ?? []).map((a) => ({ ...a, name: map.get(a.student_id) ?? "Participante" }));
-    },
-  });
+
+
 
   const recByClass = useMemo(() => {
     const m = new Map<string, RecordingRow>();
