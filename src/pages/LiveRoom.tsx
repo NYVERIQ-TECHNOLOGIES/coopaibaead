@@ -277,6 +277,7 @@ export default function LiveRoom() {
       rec.stop();
     });
     recorderRef.current = null;
+    recordingRef.current = false;
     setRecording(false);
     if (blob.size === 0) return;
 
@@ -433,14 +434,30 @@ export default function LiveRoom() {
             {(broadcasting || receiving) && (
               <div className="absolute top-3 left-3 flex items-center gap-2">
                 <Badge className="gap-1"><Radio className="h-3 w-3" /> {formatDuration(elapsed)}</Badge>
-                {recording && (
+                {(recording || remoteRecording) && (
                   <Badge variant="destructive" className="gap-1">
-                    <Circle className="h-2.5 w-2.5 fill-current" /> Gravando
+                    <Circle className="h-2.5 w-2.5 fill-current animate-pulse" /> Gravando
                   </Badge>
                 )}
               </div>
             )}
           </div>
+
+          {noticeOpen && (recording || remoteRecording) && (
+            <div role="status"
+              className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3">
+              <Circle className="h-3 w-3 mt-1 shrink-0 fill-destructive text-destructive animate-pulse" />
+              <p className="text-sm flex-1">
+                <span className="font-semibold">Esta aula está sendo gravada.</span>{" "}
+                A gravação (vídeo, áudio e tela compartilhada) ficará disponível para os alunos do curso após a publicação.
+              </p>
+              <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0"
+                onClick={() => setNoticeOpen(false)} aria-label="Fechar aviso">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
 
           {isHost ? (
             <div className="flex flex-wrap gap-2">
