@@ -605,33 +605,51 @@ export default function LiveRoom() {
               <TabsContent value="chat" className="flex-1 min-h-0 mt-3">
                 <LiveChat liveClassId={lc.id} canModerate={isHost} />
               </TabsContent>
-              {isHost && (
-                <TabsContent value="participantes" className="flex-1 min-h-0 mt-3">
-                  <ScrollArea className="h-full pr-2">
-                    <div className="divide-y divide-border">
-                      {participants.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-6">
-                          Nenhum participante entrou ainda.
-                        </p>
-                      )}
-                      {participants.map((p) => (
-                        <div key={p.user_id} className="py-2 flex items-center justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-sm truncate">{p.full_name}</p>
-                            <p className="text-[11px] text-muted-foreground">
-                              Entrou {p.joined_at ? new Date(p.joined_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"}
-                              {" · "}{formatDuration(p.total_seconds)}
-                            </p>
+              <TabsContent value="participantes" className="flex-1 min-h-0 mt-3">
+                <ScrollArea className="h-full pr-2">
+                  <div className="divide-y divide-border">
+                    {isHost ? (
+                      <>
+                        {participants.length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-6">
+                            Nenhum participante entrou ainda.
+                          </p>
+                        )}
+                        {participants.map((p) => (
+                          <div key={p.user_id} className="py-2 flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm truncate">{p.full_name}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                Entrou {p.joined_at ? new Date(p.joined_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "—"}
+                                {" · "}{formatDuration(p.total_seconds)}
+                              </p>
+                            </div>
+                            <Badge variant={p.online ? "default" : "secondary"}>
+                              {p.online ? "Online" : "Ausente"}
+                            </Badge>
                           </div>
-                          <Badge variant={p.online ? "default" : "secondary"}>
-                            {p.online ? "Online" : "Ausente"}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-              )}
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        {viewers.length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-6">
+                            Ninguém online no momento.
+                          </p>
+                        )}
+                        {viewers.map((v) => (
+                          <div key={v.user_id} className="py-2 flex items-center justify-between gap-2">
+                            <p className="text-sm truncate">{v.full_name}</p>
+                            <Badge variant={v.role === "apresentador" ? "default" : "secondary"}>
+                              {v.role === "apresentador" ? "Professor" : "Online"}
+                            </Badge>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
