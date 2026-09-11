@@ -640,8 +640,8 @@ export default function LiveRoom() {
                         {viewers.map((v) => (
                           <div key={v.user_id} className="py-2 flex items-center justify-between gap-2">
                             <p className="text-sm truncate">{v.full_name}</p>
-                            <Badge variant={v.role === "apresentador" ? "default" : "secondary"}>
-                              {v.role === "apresentador" ? "Professor" : "Online"}
+                            <Badge variant={v.role === "responsavel" ? "default" : "secondary"}>
+                              {v.role === "responsavel" ? "Professor" : "Online"}
                             </Badge>
                           </div>
                         ))}
