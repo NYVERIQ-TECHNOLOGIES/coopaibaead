@@ -196,7 +196,11 @@ export default function CertificateReports() {
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Relatórios de Certificados</h1>
           <p className="text-muted-foreground mt-1">Visualize, filtre e exporte certificados emitidos, retirados e pendentes</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={downloadAllZip} disabled={downloadingAll} className="gap-2">
+            {downloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloadingAll ? "Baixando..." : "Baixar todos (ZIP)"}
+          </Button>
           <Button variant="outline" onClick={exportExcel} className="gap-2">
             <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
           </Button>
