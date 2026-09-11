@@ -2724,6 +2724,19 @@ export type Database = {
           user_id: string
         }[]
       }
+      live_course_attendance_summary: {
+        Args: { _course_id: string }
+        Returns: {
+          live_class_id: string
+          media_percent: number
+          parciais: number
+          presentes: number
+          scheduled_at: string
+          status: string
+          title: string
+          total_alunos: number
+        }[]
+      }
       live_end_class: { Args: { _live_class_id: string }; Returns: Json }
       live_heartbeat: { Args: { _session_id: string }; Returns: undefined }
       live_join_session: { Args: { _live_class_id: string }; Returns: Json }
