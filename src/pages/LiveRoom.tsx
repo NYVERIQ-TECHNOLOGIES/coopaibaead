@@ -478,6 +478,11 @@ export default function LiveRoom() {
                   <Button variant={sharing ? "secondary" : "outline"} onClick={toggleShare}>
                     <MonitorUp className="h-4 w-4 mr-1" /> {sharing ? "Parar de compartilhar" : "Compartilhar tela"}
                   </Button>
+                  <Button variant={recording ? "destructive" : "outline"}
+                    onClick={() => (recording ? void stopRecording() : startRecording())}>
+                    <Circle className={`h-3.5 w-3.5 mr-1 ${recording ? "fill-current animate-pulse" : ""}`} />
+                    {recording ? "Parar gravação" : "Gravar aula"}
+                  </Button>
                   <Button variant="destructive" onClick={endClass} disabled={ending}>
                     <Square className="h-4 w-4 mr-1" /> Encerrar aula
                   </Button>
