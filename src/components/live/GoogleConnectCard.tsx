@@ -136,7 +136,8 @@ export default function GoogleConnectCard({
               <p className="text-xs text-muted-foreground truncate">{status.email ?? "conta conectada"}</p>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Conecte para criar reuniões do Google Meet automaticamente.
+                Opcional: conecte para criar reuniões do Google Meet automaticamente. As aulas ao vivo dentro
+                da plataforma funcionam normalmente sem essa conexão.
               </p>
             )}
           </div>
