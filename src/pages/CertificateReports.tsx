@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { FileSpreadsheet, FileText, ArrowLeft, Award, ClipboardCheck, Clock, XCircle } from "lucide-react";
+import { FileSpreadsheet, FileText, ArrowLeft, Award, ClipboardCheck, Clock, XCircle, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CERT_STATUS_LABEL } from "@/lib/certificates";
 import * as XLSX from "xlsx";
@@ -20,6 +20,7 @@ export default function CertificateReports() {
   const [filterCourse, setFilterCourse] = useState("todos");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   const { data: certificates = [], isLoading } = useQuery({
     queryKey: ["certificate-reports"],
@@ -118,6 +119,58 @@ export default function CertificateReports() {
     toast({ title: "PDF exportado" });
   };
 
+  const downloadAllZip = async () => {
+    const eligible = filtered.filter((c: any) => c.pdf_path && c.status !== "cancelado");
+    if (eligible.length === 0) {
+      toast({ title: "Nenhum certificado disponível para download", description: "Aplique os filtros desejados ou aguarde a emissão dos PDFs.", variant: "destructive" });
+      return;
+    }
+    setDownloadingAll(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      const { data: { session } } = await supabase.auth.getSession();
+      const base = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-certificate`;
+      let ok = 0, fail = 0, cursor = 0;
+      const runOne = async (cert: any) => {
+        try {
+          const res = await fetch(`${base}?code=${encodeURIComponent(cert.code)}&download=1`, {
+            headers: { Authorization: `Bearer ${session?.access_token}` },
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const blob = await res.blob();
+          const name = ((cert as any).profiles?.full_name || cert.student_name_snapshot || "aluno")
+            .replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_");
+          zip.file(`${name}-${cert.code}.pdf`, blob);
+          ok++;
+        } catch (e) {
+          console.error("download failed", cert.code, e);
+          fail++;
+        }
+      };
+      const workers = Array.from({ length: 3 }, async () => {
+        while (cursor < eligible.length) {
+          const i = cursor++;
+          await runOne(eligible[i]);
+        }
+      });
+      toast({ title: "Preparando ZIP", description: `Baixando ${eligible.length} certificados...` });
+      await Promise.all(workers);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `certificados-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      toast({ title: "Download concluído", description: `${ok}/${eligible.length} incluídos (${fail} falhas).` });
+    } catch (e: any) {
+      toast({ title: "Erro no download em lote", description: e.message, variant: "destructive" });
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
+
   // Aggregated report by course
   const porCurso = useMemo(() => {
     const map = new Map<string, { curso: string; total: number; retirados: number; pendentes: number; cancelados: number }>();
@@ -143,7 +196,11 @@ export default function CertificateReports() {
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">Relatórios de Certificados</h1>
           <p className="text-muted-foreground mt-1">Visualize, filtre e exporte certificados emitidos, retirados e pendentes</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={downloadAllZip} disabled={downloadingAll} className="gap-2">
+            {downloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloadingAll ? "Baixando..." : "Baixar todos (ZIP)"}
+          </Button>
           <Button variant="outline" onClick={exportExcel} className="gap-2">
             <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
           </Button>
