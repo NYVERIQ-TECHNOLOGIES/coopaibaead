@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Circle, Mic, MicOff, MonitorUp, Radio, Square, Users, Video, VideoOff,
+  ArrowLeft, Circle, Mic, MicOff, MonitorUp, Radio, Square, Users, Video, VideoOff, X,
 } from "lucide-react";
 import LiveChat from "@/components/live/LiveChat";
 import { formatDuration, useLiveSession } from "@/components/live/useLiveSession";
@@ -49,6 +49,8 @@ export default function LiveRoom() {
   const [micOn, setMicOn] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [remoteRecording, setRemoteRecording] = useState(false);
+  const [noticeOpen, setNoticeOpen] = useState(false);
   const [receiving, setReceiving] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [ending, setEnding] = useState(false);
