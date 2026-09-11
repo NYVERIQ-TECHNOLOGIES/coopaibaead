@@ -217,9 +217,21 @@ export default function LiveClasses() {
             Transmita ao vivo dentro da plataforma, com chat, presença automática e gravação.
           </p>
         </div>
-        <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
-          <Plus className="h-4 w-4 mr-1" /> Nova aula ao vivo
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <Link to="/live-classes/controle">
+              <Radio className="h-4 w-4 mr-1" /> Central de transmissões
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link to="/live-classes/presenca">
+              <Users className="h-4 w-4 mr-1" /> Presença por curso
+            </Link>
+          </Button>
+          <Button onClick={() => { setEditing(null); setDialogOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1" /> Nova aula ao vivo
+          </Button>
+        </div>
       </div>
 
       {role === "admin" && <AttendanceRuleCard />}
