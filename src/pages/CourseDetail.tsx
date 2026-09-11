@@ -28,6 +28,7 @@ import SignedImage from "@/components/SignedImage";
 import { getSignedUrl } from "@/lib/storage";
 import CourseChat from "@/components/CourseChat";
 import CourseLiveClasses from "@/components/live/CourseLiveClasses";
+import CourseRecordings from "@/components/live/CourseRecordings";
 
 import LessonNotes from "@/components/LessonNotes";
 import CoursePurchasePanel from "@/components/CoursePurchasePanel";
@@ -970,6 +971,9 @@ export default function CourseDetail() {
 
       {/* ========== AULAS AO VIVO ========== */}
       {courseId && <CourseLiveClasses courseId={courseId} />}
+
+      {/* ========== GRAVAÇÕES DAS AULAS AO VIVO ========== */}
+      {courseId && <CourseRecordings courseId={courseId} />}
 
       {/* ========== COURSE CHAT ========== */}
       {course && courseId && (
