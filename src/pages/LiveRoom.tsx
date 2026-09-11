@@ -139,14 +139,25 @@ export default function LiveRoom() {
       .on("broadcast", { event: "hello" }, ({ payload }) => {
         if (!isHost || !localStreamRef.current) return;
         void createHostPeer(payload.from as string);
+        sendSignal("rec-state", { recording: recordingRef.current });
       })
       .on("broadcast", { event: "host-online" }, () => {
         if (isHost) return;
         sendSignal("hello", { from: user.id });
       })
+      .on("broadcast", { event: "rec-state" }, ({ payload }) => {
+        if (isHost) return;
+        const on = !!payload.recording;
+        setRemoteRecording(on);
+        if (on) {
+          setNoticeOpen(true);
+          toast.info("Esta aula está sendo gravada.");
+        }
+      })
       .on("broadcast", { event: "host-stop" }, () => {
         if (isHost) return;
         setReceiving(false);
+        setRemoteRecording(false);
         peersRef.current.forEach((pc) => pc.close());
         peersRef.current.clear();
         if (videoRef.current) videoRef.current.srcObject = null;
