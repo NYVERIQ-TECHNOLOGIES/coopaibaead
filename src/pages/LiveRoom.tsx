@@ -415,7 +415,7 @@ export default function LiveRoom() {
     localStreamRef.current?.getTracks().forEach((t) => t.stop());
   }, []);
 
-  if (isLoading) return <Skeleton className="h-[70vh] rounded-2xl" />;
+  if (isLoading || accessLoading) return <Skeleton className="h-[70vh] rounded-2xl" />;
   if (!lc) {
     return (
       <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">
@@ -423,6 +423,61 @@ export default function LiveRoom() {
       </CardContent></Card>
     );
   }
+
+  if (!allowed) {
+    const price = Number(access?.promotional_price ?? access?.price ?? 0);
+    const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+        </Button>
+        {access?.reason === "payment_required" ? (
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <Lock className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h1 className="font-heading text-xl font-bold">{lc.title}</h1>
+                  <p className="text-sm text-muted-foreground">
+                    Esta aula ao vivo faz parte do curso pago <strong>{access?.course_title}</strong>.
+                    Conclua o pagamento para entrar na transmissão.
+                  </p>
+                  <p className="mt-2 text-2xl font-heading font-bold">{fmt(price)}</p>
+                </div>
+              </div>
+              {!isPaymentsConfigured() ? (
+                <p className="text-sm text-muted-foreground">
+                  O pagamento online ainda não está disponível. Fale com a secretaria.
+                </p>
+              ) : !showCheckout ? (
+                <Button onClick={() => setShowCheckout(true)}>
+                  <ShoppingCart className="h-4 w-4 mr-1" /> Pagar e entrar na aula
+                </Button>
+              ) : (
+                <div className="rounded-xl overflow-hidden">
+                  <StripeEmbeddedCheckout
+                    courseId={lc.course_id}
+                    returnUrl={`${window.location.origin}/live/${lc.id}?session_id={CHECKOUT_SESSION_ID}`}
+                  />
+                </div>
+              )}
+              <Button variant="ghost" size="sm" onClick={() => void refetchAccess()}>
+                Já paguei — verificar acesso
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card><CardContent className="p-10 text-center text-sm text-muted-foreground">
+            Você não tem acesso a esta aula ao vivo.
+          </CardContent></Card>
+        )}
+      </div>
+    );
+  }
+
 
   const isLiveNow = lc.status === "ao_vivo";
   const opensAt = new Date(lc.scheduled_at).getTime() - (lc.open_minutes_before ?? 15) * 60000;
