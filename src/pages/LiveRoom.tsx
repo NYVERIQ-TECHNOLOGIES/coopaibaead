@@ -119,7 +119,19 @@ export default function LiveRoom() {
     refetchInterval: 15000,
   });
 
-  const onlineCount = participants.filter((p) => p.online).length;
+  const { data: viewers = [] } = useQuery({
+    queryKey: ["live-viewers", id],
+    enabled: !!id && !isHost && allowed,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("live_viewer_participants", { _live_class_id: id! });
+      return (data ?? []) as { user_id: string; full_name: string; avatar_url: string | null; role: string; online: boolean }[];
+    },
+    refetchInterval: 15000,
+  });
+
+  const onlineCount = isHost
+    ? participants.filter((p) => p.online).length
+    : viewers.filter((v) => v.online).length;
 
   // Cronômetro da transmissão
   useEffect(() => {
