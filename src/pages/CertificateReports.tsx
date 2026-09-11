@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
-import { FileSpreadsheet, FileText, ArrowLeft, Award, ClipboardCheck, Clock, XCircle } from "lucide-react";
+import { FileSpreadsheet, FileText, ArrowLeft, Award, ClipboardCheck, Clock, XCircle, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CERT_STATUS_LABEL } from "@/lib/certificates";
 import * as XLSX from "xlsx";
@@ -20,6 +20,7 @@ export default function CertificateReports() {
   const [filterCourse, setFilterCourse] = useState("todos");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [downloadingAll, setDownloadingAll] = useState(false);
 
   const { data: certificates = [], isLoading } = useQuery({
     queryKey: ["certificate-reports"],
