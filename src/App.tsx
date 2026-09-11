@@ -67,6 +67,7 @@ import LiveClasses from "@/pages/LiveClasses";
 import LiveControlRoom from "@/pages/LiveControlRoom";
 import LiveCourseAttendance from "@/pages/LiveCourseAttendance";
 import LiveRoom from "@/pages/LiveRoom";
+import MyLiveClasses from "@/pages/MyLiveClasses";
 import ProfessorDashboard from "@/pages/professor/ProfessorDashboard";
 import ProfessorRelatorios from "@/pages/professor/ProfessorRelatorios";
 import NotFound from "@/pages/NotFound";
@@ -114,6 +115,7 @@ const App = () => (
               <Route path="/student" element={<ProtectedRoute allowedRoles={["aluno", "cooperado"]}><StudentDashboard /></ProtectedRoute>} />
               <Route path="/professor" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorDashboard /></ProtectedRoute>} />
               <Route path="/professor/relatorios" element={<ProtectedRoute allowedRoles={["professor"]}><ProfessorRelatorios /></ProtectedRoute>} />
+              <Route path="/minhas-aulas-ao-vivo" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor", "aluno", "cooperado"]}><MyLiveClasses /></ProtectedRoute>} />
               <Route path="/live/:id" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor", "aluno", "cooperado"]}><LiveRoom /></ProtectedRoute>} />
                <Route path="/live-classes" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor"]}><LiveClasses /></ProtectedRoute>} />
                <Route path="/live-classes/controle" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor"]}><LiveControlRoom /></ProtectedRoute>} />

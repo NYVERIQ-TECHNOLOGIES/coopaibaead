@@ -2712,6 +2712,7 @@ export type Database = {
         Args: { _live_class_id: string; _user_id: string }
         Returns: boolean
       }
+      live_class_access: { Args: { _live_class_id: string }; Returns: Json }
       live_class_participants: {
         Args: { _live_class_id: string }
         Returns: {
@@ -2742,6 +2743,26 @@ export type Database = {
       live_join_session: { Args: { _live_class_id: string }; Returns: Json }
       live_leave_session: { Args: { _session_id: string }; Returns: undefined }
       live_my_attendance: { Args: { _live_class_id: string }; Returns: Json }
+      live_my_classes: {
+        Args: never
+        Returns: {
+          course_id: string
+          course_title: string
+          description: string
+          duration_minutes: number
+          id: string
+          online_count: number
+          open_minutes_before: number
+          payment_required: boolean
+          price: number
+          promotional_price: number
+          provider: string
+          scheduled_at: string
+          status: string
+          teacher_name: string
+          title: string
+        }[]
+      }
       live_my_history: {
         Args: never
         Returns: {
@@ -2752,6 +2773,16 @@ export type Database = {
           scheduled_at: string
           title: string
           total_seconds: number
+        }[]
+      }
+      live_viewer_participants: {
+        Args: { _live_class_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          online: boolean
+          role: string
+          user_id: string
         }[]
       }
       log_admin_access: { Args: { _user_agent?: string }; Returns: undefined }

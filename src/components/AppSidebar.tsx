@@ -54,6 +54,7 @@ const groups: NavGroup[] = [
       { label: "Ensino & Cooperados", icon: GraduationCap, path: "/ensino", moderatorAllowed: true, cooperadoAllowed: true },
       { label: "Meus Cursos", icon: BookOpen, path: "/courses", professorOnly: true },
       { label: "Aulas ao Vivo", icon: Activity, path: "/live-classes", professorOnly: true },
+      { label: "Minhas Aulas ao Vivo", icon: Activity, path: "/minhas-aulas-ao-vivo", studentOnly: true, cooperadoAllowed: true },
       { label: "Certificados", icon: Award, path: "/certificates", professorOnly: true },
       { label: "Fórum", icon: MessageSquare, path: "/forum", professorAllowed: true },
     ],
