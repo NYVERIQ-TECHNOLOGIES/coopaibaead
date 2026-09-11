@@ -269,9 +269,11 @@ Deno.serve(async (req) => {
       isEventual = !!eventualOk;
     }
 
-    const requiresPickup = isCooperado || isEventual;
-    const deliveryMode = requiresPickup ? "retirada" : "download";
-    const finalStatus = requiresPickup ? "disponivel_retirada" : "emitido";
+    // Regra: todo certificado nasce como "retirada na cooperativa".
+    // Somente o administrador pode liberar o download (set_certificate_delivery_mode).
+    const requiresPickup = true;
+    const deliveryMode = "retirada";
+    const finalStatus = "disponivel_retirada";
 
     const { data: cert, error: certError } = await supabaseAdmin
       .from("certificates")
