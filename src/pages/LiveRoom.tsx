@@ -57,6 +57,7 @@ export default function LiveRoom() {
   const [receiving, setReceiving] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [ending, setEnding] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const { data: lc, isLoading, refetch } = useQuery({
     queryKey: ["live-room", id],
