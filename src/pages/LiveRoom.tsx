@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Circle, Mic, MicOff, MonitorUp, Radio, Square, Users, Video, VideoOff,
+  ArrowLeft, Circle, Mic, MicOff, MonitorUp, Radio, Square, Users, Video, VideoOff, X,
 } from "lucide-react";
 import LiveChat from "@/components/live/LiveChat";
 import { formatDuration, useLiveSession } from "@/components/live/useLiveSession";
@@ -43,12 +43,15 @@ export default function LiveRoom() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recordingRef = useRef(false);
 
   const [broadcasting, setBroadcasting] = useState(false);
   const [camOn, setCamOn] = useState(true);
   const [micOn, setMicOn] = useState(true);
   const [sharing, setSharing] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [remoteRecording, setRemoteRecording] = useState(false);
+  const [noticeOpen, setNoticeOpen] = useState(false);
   const [receiving, setReceiving] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [ending, setEnding] = useState(false);
@@ -137,14 +140,25 @@ export default function LiveRoom() {
       .on("broadcast", { event: "hello" }, ({ payload }) => {
         if (!isHost || !localStreamRef.current) return;
         void createHostPeer(payload.from as string);
+        sendSignal("rec-state", { recording: recordingRef.current });
       })
       .on("broadcast", { event: "host-online" }, () => {
         if (isHost) return;
         sendSignal("hello", { from: user.id });
       })
+      .on("broadcast", { event: "rec-state" }, ({ payload }) => {
+        if (isHost) return;
+        const on = !!payload.recording;
+        setRemoteRecording(on);
+        if (on) {
+          setNoticeOpen(true);
+          toast.info("Esta aula está sendo gravada.");
+        }
+      })
       .on("broadcast", { event: "host-stop" }, () => {
         if (isHost) return;
         setReceiving(false);
+        setRemoteRecording(false);
         peersRef.current.forEach((pc) => pc.close());
         peersRef.current.clear();
         if (videoRef.current) videoRef.current.srcObject = null;
@@ -218,27 +232,41 @@ export default function LiveRoom() {
       }).eq("id", id!);
       void refetch();
 
-      if (lc?.recording_enabled) startRecording(stream);
+      if (lc?.recording_enabled !== false) startRecording(stream);
       toast.success("Transmissão iniciada.");
     } catch {
       toast.error("Não foi possível acessar a câmera e o microfone.");
     }
   }
 
-  function startRecording(stream: MediaStream) {
+  function startRecording(stream?: MediaStream) {
+    const src = stream ?? localStreamRef.current;
+    if (!src) return toast.error("Inicie a transmissão antes de gravar.");
+    if (recorderRef.current) return;
     try {
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
         ? "video/webm;codecs=vp9,opus"
         : "video/webm";
-      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1_500_000 });
+      const rec = new MediaRecorder(src, { mimeType: mime, videoBitsPerSecond: 1_500_000 });
       chunksRef.current = [];
       rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       rec.start(5000);
       recorderRef.current = rec;
+      recordingRef.current = true;
       setRecording(true);
+      setNoticeOpen(true);
+      sendSignal("rec-state", { recording: true });
+      toast.info("A gravação da aula foi iniciada.");
     } catch {
       toast.warning("A gravação automática não é suportada neste navegador.");
     }
+  }
+
+  async function stopRecording() {
+    if (!recorderRef.current) return;
+    recordingRef.current = false;
+    sendSignal("rec-state", { recording: false });
+    await finishRecording();
   }
 
   async function finishRecording() {
@@ -249,6 +277,7 @@ export default function LiveRoom() {
       rec.stop();
     });
     recorderRef.current = null;
+    recordingRef.current = false;
     setRecording(false);
     if (blob.size === 0) return;
 
@@ -405,14 +434,30 @@ export default function LiveRoom() {
             {(broadcasting || receiving) && (
               <div className="absolute top-3 left-3 flex items-center gap-2">
                 <Badge className="gap-1"><Radio className="h-3 w-3" /> {formatDuration(elapsed)}</Badge>
-                {recording && (
+                {(recording || remoteRecording) && (
                   <Badge variant="destructive" className="gap-1">
-                    <Circle className="h-2.5 w-2.5 fill-current" /> Gravando
+                    <Circle className="h-2.5 w-2.5 fill-current animate-pulse" /> Gravando
                   </Badge>
                 )}
               </div>
             )}
           </div>
+
+          {noticeOpen && (recording || remoteRecording) && (
+            <div role="status"
+              className="flex items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3">
+              <Circle className="h-3 w-3 mt-1 shrink-0 fill-destructive text-destructive animate-pulse" />
+              <p className="text-sm flex-1">
+                <span className="font-semibold">Esta aula está sendo gravada.</span>{" "}
+                A gravação (vídeo, áudio e tela compartilhada) ficará disponível para os alunos do curso após a publicação.
+              </p>
+              <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0"
+                onClick={() => setNoticeOpen(false)} aria-label="Fechar aviso">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
 
           {isHost ? (
             <div className="flex flex-wrap gap-2">
@@ -432,6 +477,11 @@ export default function LiveRoom() {
                   </Button>
                   <Button variant={sharing ? "secondary" : "outline"} onClick={toggleShare}>
                     <MonitorUp className="h-4 w-4 mr-1" /> {sharing ? "Parar de compartilhar" : "Compartilhar tela"}
+                  </Button>
+                  <Button variant={recording ? "destructive" : "outline"}
+                    onClick={() => (recording ? void stopRecording() : startRecording())}>
+                    <Circle className={`h-3.5 w-3.5 mr-1 ${recording ? "fill-current animate-pulse" : ""}`} />
+                    {recording ? "Parar gravação" : "Gravar aula"}
                   </Button>
                   <Button variant="destructive" onClick={endClass} disabled={ending}>
                     <Square className="h-4 w-4 mr-1" /> Encerrar aula
