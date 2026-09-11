@@ -43,6 +43,7 @@ export default function LiveRoom() {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recordingRef = useRef(false);
 
   const [broadcasting, setBroadcasting] = useState(false);
   const [camOn, setCamOn] = useState(true);
@@ -231,27 +232,41 @@ export default function LiveRoom() {
       }).eq("id", id!);
       void refetch();
 
-      if (lc?.recording_enabled) startRecording(stream);
+      if (lc?.recording_enabled !== false) startRecording(stream);
       toast.success("Transmissão iniciada.");
     } catch {
       toast.error("Não foi possível acessar a câmera e o microfone.");
     }
   }
 
-  function startRecording(stream: MediaStream) {
+  function startRecording(stream?: MediaStream) {
+    const src = stream ?? localStreamRef.current;
+    if (!src) return toast.error("Inicie a transmissão antes de gravar.");
+    if (recorderRef.current) return;
     try {
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
         ? "video/webm;codecs=vp9,opus"
         : "video/webm";
-      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 1_500_000 });
+      const rec = new MediaRecorder(src, { mimeType: mime, videoBitsPerSecond: 1_500_000 });
       chunksRef.current = [];
       rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       rec.start(5000);
       recorderRef.current = rec;
+      recordingRef.current = true;
       setRecording(true);
+      setNoticeOpen(true);
+      sendSignal("rec-state", { recording: true });
+      toast.info("A gravação da aula foi iniciada.");
     } catch {
       toast.warning("A gravação automática não é suportada neste navegador.");
     }
+  }
+
+  async function stopRecording() {
+    if (!recorderRef.current) return;
+    recordingRef.current = false;
+    sendSignal("rec-state", { recording: false });
+    await finishRecording();
   }
 
   async function finishRecording() {
