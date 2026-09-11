@@ -598,11 +598,9 @@ export default function LiveRoom() {
             <Tabs defaultValue="chat" className="flex flex-col flex-1 min-h-0">
               <TabsList className="w-full">
                 <TabsTrigger value="chat" className="flex-1">Chat</TabsTrigger>
-                {isHost && (
-                  <TabsTrigger value="participantes" className="flex-1">
-                    <Users className="h-3.5 w-3.5 mr-1" /> {onlineCount}
-                  </TabsTrigger>
-                )}
+                <TabsTrigger value="participantes" className="flex-1">
+                  <Users className="h-3.5 w-3.5 mr-1" /> {onlineCount}
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="chat" className="flex-1 min-h-0 mt-3">
                 <LiveChat liveClassId={lc.id} canModerate={isHost} />
