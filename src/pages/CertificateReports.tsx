@@ -119,6 +119,58 @@ export default function CertificateReports() {
     toast({ title: "PDF exportado" });
   };
 
+  const downloadAllZip = async () => {
+    const eligible = filtered.filter((c: any) => c.pdf_path && c.status !== "cancelado");
+    if (eligible.length === 0) {
+      toast({ title: "Nenhum certificado disponível para download", description: "Aplique os filtros desejados ou aguarde a emissão dos PDFs.", variant: "destructive" });
+      return;
+    }
+    setDownloadingAll(true);
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      const { data: { session } } = await supabase.auth.getSession();
+      const base = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/download-certificate`;
+      let ok = 0, fail = 0, cursor = 0;
+      const runOne = async (cert: any) => {
+        try {
+          const res = await fetch(`${base}?code=${encodeURIComponent(cert.code)}&download=1`, {
+            headers: { Authorization: `Bearer ${session?.access_token}` },
+          });
+          if (!res.ok) throw new Error(await res.text());
+          const blob = await res.blob();
+          const name = ((cert as any).profiles?.full_name || cert.student_name_snapshot || "aluno")
+            .replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "_");
+          zip.file(`${name}-${cert.code}.pdf`, blob);
+          ok++;
+        } catch (e) {
+          console.error("download failed", cert.code, e);
+          fail++;
+        }
+      };
+      const workers = Array.from({ length: 3 }, async () => {
+        while (cursor < eligible.length) {
+          const i = cursor++;
+          await runOne(eligible[i]);
+        }
+      });
+      toast({ title: "Preparando ZIP", description: `Baixando ${eligible.length} certificados...` });
+      await Promise.all(workers);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `certificados-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      toast({ title: "Download concluído", description: `${ok}/${eligible.length} incluídos (${fail} falhas).` });
+    } catch (e: any) {
+      toast({ title: "Erro no download em lote", description: e.message, variant: "destructive" });
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
+
   // Aggregated report by course
   const porCurso = useMemo(() => {
     const map = new Map<string, { curso: string; total: number; retirados: number; pendentes: number; cancelados: number }>();
