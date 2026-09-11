@@ -11,10 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Circle, Mic, MicOff, MonitorUp, Radio, Square, Users, Video, VideoOff, X,
+  ArrowLeft, Circle, Lock, Mic, MicOff, MonitorUp, Radio, ShoppingCart, Square, Users, Video, VideoOff, X,
 } from "lucide-react";
 import LiveChat from "@/components/live/LiveChat";
 import { formatDuration, useLiveSession } from "@/components/live/useLiveSession";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { isPaymentsConfigured } from "@/lib/stripe";
 
 const ICE: RTCConfiguration = {
   iceServers: [
