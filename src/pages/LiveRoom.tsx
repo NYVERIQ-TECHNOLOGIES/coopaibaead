@@ -78,9 +78,26 @@ export default function LiveRoom() {
     [lc, user, role],
   );
 
+  // Acesso à sala (inclui cobrança automática de cursos pagos)
+  const { data: access, isLoading: accessLoading, refetch: refetchAccess } = useQuery({
+    queryKey: ["live-access", id],
+    enabled: !!id && !!user,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("live_class_access", { _live_class_id: id! });
+      if (error) throw error;
+      return data as unknown as {
+        allowed: boolean; reason?: string; is_host?: boolean;
+        course_id?: string; course_title?: string;
+        price?: number | null; promotional_price?: number | null;
+      };
+    },
+  });
+  const allowed = access?.allowed === true;
+
   // Presença: só participantes (não o professor) contam para o relatório,
   // mas todos mantêm sessão para o contador em tempo real.
-  const { sessionId } = useLiveSession(id, !!lc);
+  const { sessionId } = useLiveSession(id, !!lc && allowed);
 
   const { data: myAttendance } = useQuery({
     queryKey: ["live-my-attendance", id, sessionId],
