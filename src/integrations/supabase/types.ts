@@ -2395,30 +2395,6 @@ export type Database = {
           sort_order: number | null
           updated_at: string | null
         }
-        Insert: {
-          created_at?: string | null
-          evaluation_id?: string | null
-          id?: string | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
-          question_text?: string | null
-          sort_order?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          evaluation_id?: string | null
-          id?: string | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
-          question_text?: string | null
-          sort_order?: number | null
-          updated_at?: string | null
-        }
         Relationships: [
           {
             foreignKeyName: "evaluation_questions_evaluation_id_fkey"
