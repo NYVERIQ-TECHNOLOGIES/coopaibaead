@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
     const { data: course } = await supabaseAdmin
       .from("courses").select("title, duration").eq("id", course_id).single();
     const { data: enrollment } = await supabaseAdmin
-      .from("enrollments").select("created_at").eq("user_id", user_id!).eq("course_id", course_id).maybeSingle();
+      .from("enrollments").select("enrolled_at").eq("user_id", user_id!).eq("course_id", course_id).maybeSingle();
     const { data: template } = await supabaseAdmin
       .from("certificate_templates").select("file_url").eq("active", true).limit(1).maybeSingle();
 
@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
     const studentCpf = profile.cpf || null;
     const courseTitle = course.title;
     const courseDuration = course.duration || "—";
-    const courseStartedAt = enrollment?.created_at || null;
+    const courseStartedAt = enrollment?.enrolled_at || null;
     const nowIso = new Date().toISOString();
     const startStr = courseStartedAt
       ? new Date(courseStartedAt).toLocaleDateString("pt-BR")

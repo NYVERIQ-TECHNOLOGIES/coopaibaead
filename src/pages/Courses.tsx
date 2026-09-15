@@ -497,9 +497,11 @@ export default function Courses() {
                     <Button size="sm" variant="outline" onClick={() => setFieldDayCourse({ id: course.id, title: course.title })}>
                       <MapPin className="w-3 h-3 mr-1" /> Dia de Campo
                     </Button>
-                    <Button size="sm" variant="destructive" onClick={() => setDeleteId(course.id)}>
-                      <Trash2 className="w-3 h-3 mr-1" /> Remover
-                    </Button>
+                    {isAdmin && (
+                      <Button size="sm" variant="destructive" onClick={() => setDeleteId(course.id)}>
+                        <Trash2 className="w-3 h-3 mr-1" /> Remover
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
