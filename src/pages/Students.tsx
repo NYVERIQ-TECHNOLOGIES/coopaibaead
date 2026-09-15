@@ -327,6 +327,7 @@ export default function Students() {
         "Nome",
         "E-mail",
         "CPF",
+        "Data de Nascimento",
         "Tipo",
         "Cooperativa",
         "Status",
