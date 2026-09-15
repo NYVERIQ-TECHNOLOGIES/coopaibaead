@@ -249,12 +249,13 @@ export default function Students() {
   const exportCSV = async () => {
     try {
       const emails = { ...emailMap, ...(await fetchEmails(filtered.map((s) => s.user_id).filter((id) => !emailMap[id]))) };
-      const header = ["Matrícula", "Nome", "E-mail", "CPF", "Tipo", "Cooperativa", "Status", "Data de Cadastro"];
+      const header = ["Matrícula", "Nome", "E-mail", "CPF", "Data de Nascimento", "Tipo", "Cooperativa", "Status", "Data de Cadastro"];
       const rows = filtered.map((s) => [
         s.enrollment_number || "",
         (s.full_name || "").replace(/"/g, '""'),
         emails[s.user_id] || "",
         formatCpf((s as any).cpf),
+        formatBirthDate((s as any).data_nascimento),
         s.role,
         (s.cooperativa || "").replace(/"/g, '""'),
         s.is_active === false ? "Inativo" : "Ativo",
