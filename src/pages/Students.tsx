@@ -357,6 +357,7 @@ export default function Students() {
           (s.full_name || "").replace(/"/g, '""'),
           emailMap[s.user_id] || "",
           formatCpf((s as any).cpf),
+          formatBirthDate((s as any).data_nascimento),
           s.role,
           (s.cooperativa || "").replace(/"/g, '""'),
           s.is_active === false ? "Inativo" : "Ativo",
