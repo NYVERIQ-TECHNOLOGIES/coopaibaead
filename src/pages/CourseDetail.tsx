@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks, XCircle, RefreshCw
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { courseIdFromParam } from "@/lib/courseSlug";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
