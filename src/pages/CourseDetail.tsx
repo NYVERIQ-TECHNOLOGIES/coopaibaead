@@ -48,7 +48,8 @@ const evalStatusStyles: Record<string, string> = {
 const bookTypeIcons: Record<string, any> = { pdf: FileText, video: Video, audio: Headphones, link: BookOpen };
 
 export default function CourseDetail() {
-  const { id: courseId } = useParams<{ id: string }>();
+  const { id: courseParam } = useParams<{ id: string }>();
+  const courseId = courseIdFromParam(courseParam);
   const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
