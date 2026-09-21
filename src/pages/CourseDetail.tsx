@@ -771,6 +771,15 @@ export default function CourseDetail() {
             <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {totalLessons} aulas</span>
             {course.duration && <span className="flex items-center gap-1">⏱ {course.duration}</span>}
           </div>
+          <div className="mt-4">
+            <ShareCourseButton
+              courseId={course.id}
+              title={course.title}
+              description={course.description}
+              label="Compartilhar curso"
+              variant="secondary"
+            />
+          </div>
         </div>
       </motion.div>
 
