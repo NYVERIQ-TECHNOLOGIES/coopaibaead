@@ -10,6 +10,7 @@ import AppLayout from "@/components/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Courses from "@/pages/Courses";
 import CourseDetail from "@/pages/CourseDetail";
+import CourseShortLink from "@/pages/CourseShortLink";
 import Students from "@/pages/Students";
 import UnlistedUsers from "@/pages/UnlistedUsers";
 import LibraryPage from "@/pages/LibraryPage";
@@ -124,6 +125,7 @@ const App = () => (
               {/* Acessível a alunos, cooperados, professores e admins */}
               <Route path="/courses" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><Courses /></ProtectedRoute>} />
               <Route path="/courses/:id" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><CourseDetail /></ProtectedRoute>} />
+              <Route path="/c/:code" element={<CourseShortLink />} />
               <Route path="/library" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><LibraryPage /></ProtectedRoute>} />
               <Route path="/forum" element={<ProtectedRoute allowedRoles={["admin", "professor", "aluno", "cooperado"]}><Forum /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute allowedRoles={["admin", "moderador", "professor", "aluno", "cooperado"]}><Support /></ProtectedRoute>} />
