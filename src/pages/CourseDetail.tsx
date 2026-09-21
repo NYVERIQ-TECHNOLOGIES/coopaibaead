@@ -35,6 +35,7 @@ import CoursePurchasePanel from "@/components/CoursePurchasePanel";
 import IntroVideoModal from "@/components/IntroVideoModal";
 import CourseSurveySection from "@/components/CourseSurveySection";
 import LessonText from "@/components/LessonText";
+import ShareCourseButton from "@/components/ShareCourseButton";
 
 const typeIcons: Record<string, any> = { video: Play, pdf: FileText, audio: Headphones, quiz: Award, link: BookOpen, texto: FileText };
 const typeLabels: Record<string, string> = { video: "Vídeo", pdf: "PDF", audio: "Áudio", quiz: "Quiz", link: "Link", texto: "Leitura" };
