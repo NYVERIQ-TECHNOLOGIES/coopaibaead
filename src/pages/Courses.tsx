@@ -487,6 +487,7 @@ export default function Courses() {
                   <Button asChild size="sm" variant="outline" className="flex-1">
                     <Link to={`/courses/${course.id}`}>Detalhes</Link>
                   </Button>
+                  <ShareCourseButton courseId={course.id} title={course.title} description={course.description} size="icon" />
                 </div>
 
                 {canManage(course) && (
