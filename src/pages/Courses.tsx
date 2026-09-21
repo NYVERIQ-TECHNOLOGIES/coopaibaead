@@ -376,6 +376,7 @@ export default function Courses() {
                       {typeof featProgress === "number" ? (featProgress === 100 ? "Revisar" : "Continuar") : "Começar Agora"}
                     </Link>
                   </Button>
+                  <ShareCourseButton courseId={feat.id} title={feat.title} description={feat.description} label="Compartilhar" />
                 </div>
               </div>
             </motion.div>
