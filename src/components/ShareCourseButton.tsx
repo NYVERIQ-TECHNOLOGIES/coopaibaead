@@ -1,6 +1,7 @@
 import { Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { courseUrl } from "@/lib/courseSlug";
 
 interface ShareCourseButtonProps {
   courseId: string;
@@ -26,7 +27,7 @@ export default function ShareCourseButton({
   const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const url = `${window.location.origin}/courses/${courseId}`;
+    const url = `${window.location.origin}${courseUrl(courseId, title)}`;
     const shareData = {
       title,
       text: description ? `${title} — ${description}` : title,

@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, Library, BarChart3, Loader2, Eye, ExternalLink, Download, Upload, ListChecks, XCircle, RefreshCw
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { courseIdFromParam } from "@/lib/courseSlug";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -48,7 +49,8 @@ const evalStatusStyles: Record<string, string> = {
 const bookTypeIcons: Record<string, any> = { pdf: FileText, video: Video, audio: Headphones, link: BookOpen };
 
 export default function CourseDetail() {
-  const { id: courseId } = useParams<{ id: string }>();
+  const { id: courseParam } = useParams<{ id: string }>();
+  const courseId = courseIdFromParam(courseParam);
   const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
