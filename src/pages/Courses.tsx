@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import SignedImage from "@/components/SignedImage";
 import DiaDeCampoDialog from "@/components/DiaDeCampoDialog";
+import ShareCourseButton from "@/components/ShareCourseButton";
 
 interface Course {
   id: string;
