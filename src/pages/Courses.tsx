@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import SignedImage from "@/components/SignedImage";
 import DiaDeCampoDialog from "@/components/DiaDeCampoDialog";
+import ShareCourseButton from "@/components/ShareCourseButton";
 
 interface Course {
   id: string;
@@ -375,6 +376,7 @@ export default function Courses() {
                       {typeof featProgress === "number" ? (featProgress === 100 ? "Revisar" : "Continuar") : "Começar Agora"}
                     </Link>
                   </Button>
+                  <ShareCourseButton courseId={feat.id} title={feat.title} description={feat.description} label="Compartilhar" />
                 </div>
               </div>
             </motion.div>
@@ -487,6 +489,7 @@ export default function Courses() {
                   <Button asChild size="sm" variant="outline" className="flex-1">
                     <Link to={`/courses/${course.id}`}>Detalhes</Link>
                   </Button>
+                  <ShareCourseButton courseId={course.id} title={course.title} description={course.description} size="icon" />
                 </div>
 
                 {canManage(course) && (
