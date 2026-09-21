@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790019006135,
+      "tag": "0000_resolve_course_short_code",
+      "breakpoints": true
+    }
+  ]
+}
