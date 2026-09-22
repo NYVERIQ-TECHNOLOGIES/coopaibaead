@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import logoImg from "@/assets/somos-coop.png.asset.json";
+import logoImg from "@/assets/logo-coopaiba.png";
 import {
   LayoutDashboard, BookOpen, Users, ClipboardCheck,
   BarChart3, Library, Award, Settings,
@@ -220,11 +220,7 @@ export default function AppSidebar() {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className={`flex items-center gap-3 px-4 py-6 border-b border-sidebar-border/70 ${collapsed ? "justify-center" : ""}`}>
-        <img
-          src={logoImg.url}
-          alt="Somos Coop — Coopaiba EAD"
-          className="h-11 w-auto object-contain flex-shrink-0"
-        />
+        <img src={logoImg} alt="Coopaiba EAD" className="w-11 h-11 rounded-2xl object-contain flex-shrink-0 shadow-card bg-card p-1" />
         {!collapsed && (
           <div className="overflow-hidden">
             <h1 className="font-heading text-[17px] font-extrabold tracking-tight text-sidebar-foreground leading-tight">Coopaiba EAD</h1>
