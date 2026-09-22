@@ -1,8 +1,10 @@
 import { Outlet } from "react-router-dom";
+import { Link } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
+import somosCoopLogo from "@/assets/somos-coop.png.asset.json";
 
 export default function AppLayout() {
   return (
