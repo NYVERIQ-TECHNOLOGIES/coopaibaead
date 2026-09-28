@@ -1,0 +1,5 @@
+# Architecture decisions
+- Keep meetings in separate public tables from live classes because meetings have independent invitations and access rules.
+- Use database-validated RPCs for meeting lifecycle, admission and attendance because UI-only authorization is unsafe.
+- Use RLS-protected meeting_signals postgres changes for WebRTC negotiation instead of unrestricted realtime broadcast because private meeting links must not leak media signaling.
+- Record meeting media locally through MediaRecorder; browser downloads remain available without a storage provider and no recording bytes enter database rows.
