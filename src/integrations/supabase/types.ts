@@ -1887,6 +1887,35 @@ export type Database = {
           },
         ]
       }
+      meeting_bans: {
+        Row: {
+          banned_by: string
+          created_at: string
+          meeting_id: string
+          user_id: string
+        }
+        Insert: {
+          banned_by: string
+          created_at?: string
+          meeting_id: string
+          user_id: string
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          meeting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_bans_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_chat: {
         Row: {
           created_at: string
@@ -3161,6 +3190,10 @@ export type Database = {
       meeting_join: { Args: { _id: string }; Returns: string }
       meeting_leave: { Args: { _sid: string }; Returns: undefined }
       meeting_link_info: { Args: { _token: string }; Returns: Json }
+      meeting_remove_participant: {
+        Args: { _id: string; _target: string }
+        Returns: undefined
+      }
       meeting_request_entry: { Args: { _token: string }; Returns: undefined }
       meeting_set_state: {
         Args: { _action: string; _id: string }
