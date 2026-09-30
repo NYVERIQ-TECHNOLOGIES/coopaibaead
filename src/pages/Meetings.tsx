@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarDays, Copy, ExternalLink, Plus, Search, Video, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { callMeeting, loadPeople, meetingUrl, statusText, when, type Meeting, type Person } from "@/components/meetings/data";
+import { callMeeting, loadMeetingRoles, loadPeople, meetingUrl, statusText, when, type Meeting } from "@/components/meetings/data";
 
 const initial = { title: "", description: "", start: "", end: "", access_type: "restrito", scope: "convite", course_id: "", allow_responsible_add_students: false, allow_recording: true, allow_screen_share: true, h24: true, h1: true, startReminder: true };
 export default function Meetings() {
@@ -49,9 +49,7 @@ export default function Meetings() {
   const { data: allParticipants = [] } = useQuery({ queryKey: ["meeting-participants"], queryFn: async () => {
     const { data } = await supabase.from("meeting_participants").select("meeting_id,user_id,status"); return data ?? [];
   } });
-  const { data: roles = [] } = useQuery({ queryKey: ["meeting-roles"], enabled: admin, queryFn: async () => {
-    const { data } = await supabase.from("user_roles").select("user_id,role").limit(5000); return data ?? [];
-  } });
+  const { data: roles = [] } = useQuery({ queryKey: ["meeting-roles"], enabled: admin, queryFn: loadMeetingRoles });
   const { data: detailSessions = [] } = useQuery({ queryKey: ["meeting-sessions", detail?.id], enabled: !!detail, queryFn: async () => {
     const { data } = await supabase.from("meeting_sessions").select("*").eq("meeting_id", detail?.id ?? "").order("joined_at", { ascending: false }); return data ?? [];
   }, refetchInterval: 15000 });
@@ -63,7 +61,8 @@ export default function Meetings() {
   } });
   const names = useMemo(() => Object.fromEntries(people.map(p => [p.user_id, p.full_name])), [people]);
   const studentIds = useMemo(() => new Set(roles.filter(r => r.role === "aluno" || r.role === "cooperado").map(r => r.user_id)), [roles]);
-  const possibleResponsibles = useMemo(() => people.filter(p => !studentIds.has(p.user_id)), [people, studentIds]);
+  const managerIds = useMemo(() => new Set(roles.filter(r => r.role === "admin" || r.role === "moderador" || r.role === "professor").map(r => r.user_id)), [roles]);
+  const possibleResponsibles = useMemo(() => people.filter(p => managerIds.has(p.user_id)), [people, managerIds]);
   const filteredPeople = useMemo(() => people.filter(p => studentIds.has(p.user_id) && [p.full_name,p.cpf,p.enrollment_number,p.email].some(v => v?.toLowerCase().includes(search.toLowerCase()))), [people,studentIds,search]);
   const visible = meetings.filter(m => (filter === "todas" || m.status === filter) && (!dateFilter || m.start_at.slice(0,10) === dateFilter) && (!responsibleFilter || allResponsibles.some(r => r.meeting_id === m.id && r.user_id === responsibleFilter)) && (!participantFilter || allParticipants.some(p => p.meeting_id === m.id && p.user_id === participantFilter)));
   const refresh = () => { ["meetings","meeting-responsibles","meeting-participants","notifications"].forEach(key => void qc.invalidateQueries({ queryKey: [key] })); };
