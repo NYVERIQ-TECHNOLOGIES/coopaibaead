@@ -117,8 +117,8 @@ export default function MeetingRoom() {
         if (!managerRef.current && payload.action === "remove") { await leave(); toast.error("Você foi removido desta reunião."); }
         return;
       }
-      if (signal.kind === "bye") { closePeer(from); return; }
-      if (signal.kind === "hello") {
+       if (signal.kind === "ice" && payload.action === "bye") { closePeer(from); return; }
+       if (signal.kind === "ice" && payload.action === "hello") {
         if (!local.current || connections.current.has(from)) return;
         const pc = makePeer(from);
         const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
@@ -156,7 +156,7 @@ export default function MeetingRoom() {
       }).subscribe(status => {
         if (status === "SUBSCRIBED") {
           void supabase.from("meeting_sessions").select("user_id").eq("meeting_id", meeting.id).is("left_at", null).then(({ data }) => {
-            for (const row of data ?? []) if (row.user_id !== user.id) void send(row.user_id, "hello", {});
+             for (const row of data ?? []) if (row.user_id !== user.id) void send(row.user_id, "ice", { action: "hello" });
           });
         }
       });
@@ -165,7 +165,7 @@ export default function MeetingRoom() {
     }, 25000);
     return () => { window.clearInterval(heartbeat); void supabase.removeChannel(channel); };
   }, [meeting?.id, joined, user?.id, handleSignal, send, loadInfo]);
-  useEffect(() => { if (!joined || !meeting || !user) return; for (const s of sessions) if (s.user_id !== user.id && !connections.current.has(s.user_id)) void send(s.user_id, "hello", {}); for (const id of connections.current.keys()) if (!sessions.some(s => s.user_id === id)) closePeer(id); }, [sessions, joined, meeting?.id, user?.id, send, closePeer]);
+   useEffect(() => { if (!joined || !meeting || !user) return; for (const s of sessions) if (s.user_id !== user.id && !connections.current.has(s.user_id)) void send(s.user_id, "ice", { action: "hello" }); for (const id of connections.current.keys()) if (!sessions.some(s => s.user_id === id)) closePeer(id); }, [sessions, joined, meeting?.id, user?.id, send, closePeer]);
   useEffect(() => { if (joined && (meeting?.status !== "em_andamento" || !linkInfo?.allowed)) { void leave(); toast.info("A reunião foi encerrada ou seu acesso mudou."); } }, [meeting?.status, linkInfo?.allowed, joined]);
 
   async function join() {
@@ -184,7 +184,7 @@ export default function MeetingRoom() {
   async function leave() {
     joinedRef.current = false;
     if (recordingRef.current && recordingRef.current.state !== "inactive") recordingRef.current.stop();
-    if (meeting && user) for (const id of connections.current.keys()) void send(id, "bye", {});
+     if (meeting && user) for (const id of connections.current.keys()) void send(id, "ice", { action: "bye" });
     connections.current.forEach(pc => pc.close()); connections.current.clear(); pendingIce.current.clear(); setPeers([]);
     displayTrack.current?.stop(); displayTrack.current = null;
     local.current?.getTracks().forEach(track => track.stop()); local.current = null;

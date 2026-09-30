@@ -9,7 +9,7 @@ import {
   ChevronLeft, ChevronRight, LogOut, Shield, ShieldCheck, Menu, X, Upload,
   MessageSquare, Activity, Headphones, UserX, CreditCard, Sparkles,
   Search, Star, ChevronDown, GraduationCap, Leaf, UsersRound,
-  TrendingUp, Wrench, LifeBuoy, MoreHorizontal, Pin,
+   TrendingUp, Wrench, LifeBuoy, MoreHorizontal, Pin, Video,
 } from "lucide-react";
 
 type NavItem = {
@@ -55,6 +55,7 @@ const groups: NavGroup[] = [
       { label: "Meus Cursos", icon: BookOpen, path: "/courses", professorOnly: true },
       { label: "Aulas ao Vivo", icon: Activity, path: "/live-classes", professorOnly: true },
       { label: "Minhas Aulas ao Vivo", icon: Activity, path: "/minhas-aulas-ao-vivo", studentOnly: true, cooperadoAllowed: true },
+       { label: "Reuniões", icon: Video, path: "/reunioes", moderatorAllowed: true, professorAllowed: true, cooperadoAllowed: true },
       { label: "Certificados", icon: Award, path: "/certificates", professorOnly: true },
       { label: "Fórum", icon: MessageSquare, path: "/forum", professorAllowed: true },
     ],
