@@ -4,7 +4,7 @@ import AppSidebar from "./AppSidebar";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import UserMenu from "./UserMenu";
-import somosCoopLogo from "@/assets/somos-coop.png.asset.json";
+import somosCoopLogo from "@/assets/somos-coop-atualizado.png.asset.json";
 
 export default function AppLayout() {
   return (
@@ -12,11 +12,13 @@ export default function AppLayout() {
       <AppSidebar />
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-3 sm:px-4 md:px-6 lg:px-8 backdrop-blur">
-          <Link to="/app" className="flex items-center flex-shrink-0 pl-12 lg:pl-0" aria-label="Início">
+          <Link to="/app" className="flex min-w-0 items-center pl-12 lg:pl-0" aria-label="Início">
             <img
               src={somosCoopLogo.url}
               alt="Somos Coop"
-              className="h-9 w-auto max-w-[120px] object-contain"
+              width={658}
+              height={379}
+              className="block h-8 sm:h-9 w-auto max-w-full shrink-0 object-contain"
             />
           </Link>
           <div className="flex items-center gap-2">
