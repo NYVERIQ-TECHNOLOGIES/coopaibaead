@@ -5,8 +5,8 @@
 - [ ] Verificar fluxos e restrições em navegador e relatar limites reais.
 
 # Correções de cibersegurança
-- [ ] Desativar aprovação automática de cooperados.
-- [ ] Exigir troca de senha inicial com proteção no servidor.
-- [ ] Restringir notificações de aulas ao vivo a administradores autenticados.
-- [ ] Atualizar dependências vulneráveis e ocultar erros internos.
-- [ ] Validar os quatro itens solicitados.
+- [x] Desativar aprovação automática de cooperados.
+- [x] Exigir troca de senha inicial com proteção no servidor.
+- [x] Restringir notificações de aulas ao vivo a administradores autenticados.
+- [x] Atualizar dependências vulneráveis e ocultar erros internos.
+- [x] Validar os quatro itens solicitados.
