@@ -182,76 +182,13 @@ Deno.serve(async (req) => {
       .single();
 
     if (insErr) {
-      return new Response(JSON.stringify({ error: insErr.message }), {
+      return new Response(JSON.stringify({ error: "Não foi possível enviar a solicitação. Tente novamente." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Auto-approval: if app_settings.cooperado_auto_approve.enabled is true,
-    // immediately create the auth user and promote to cooperado.
-    const { data: settingRow } = await admin
-      .from("app_settings")
-      .select("value")
-      .eq("key", "cooperado_auto_approve")
-      .maybeSingle();
-    const autoApprove =
-      (settingRow?.value as { enabled?: boolean } | null)?.enabled === true;
-
-    if (autoApprove) {
-      try {
-        const syntheticEmail = `cpf${cleanCpf}@cooperado.coopaiba.com.br`;
-        const DEFAULT_PASSWORD = "Coopaiba@2026";
-
-        const { data: created, error: createErr } = await admin.auth.admin.createUser({
-          email: syntheticEmail,
-          password: DEFAULT_PASSWORD,
-          email_confirm: true,
-          user_metadata: {
-            full_name: name,
-            cpf: cleanCpf,
-            phone: cleanPhone,
-            cooperativa: cooperativa || null,
-            user_type: "cooperado",
-          },
-        });
-
-        if (!createErr && created?.user) {
-          const userId = created.user.id;
-          await admin.from("profiles").update({
-            full_name: name,
-            cpf: cleanCpf,
-            phone: cleanPhone,
-            cooperativa: cooperativa || null,
-          }).eq("user_id", userId);
-          await admin.from("user_roles").delete().eq("user_id", userId);
-          await admin.from("user_roles").insert({ user_id: userId, role: "cooperado" });
-          await admin.from("cooperado_pending_registrations").update({
-            status: "approved",
-            reviewed_at: new Date().toISOString(),
-          }).eq("id", pendingRow!.id);
-
-          return new Response(
-            JSON.stringify({
-              success: true,
-              pending: false,
-              auto_approved: true,
-              login_email: syntheticEmail,
-              default_password: DEFAULT_PASSWORD,
-              message:
-                "Cadastro aprovado automaticamente. Use a senha padrão Coopaiba@2026 para entrar.",
-            }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        } else {
-          console.error("auto-approve createUser failed:", createErr);
-        }
-
-      } catch (e) {
-        console.error("auto-approve error:", e);
-      }
-    }
-
+    // Approval is deliberately manual, regardless of legacy settings.
     return new Response(
       JSON.stringify({
         success: true,

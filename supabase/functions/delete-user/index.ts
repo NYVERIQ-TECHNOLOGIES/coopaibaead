@@ -1,3 +1,4 @@
+import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -9,7 +10,7 @@ const corsHeaders = {
 // - SOFT DELETE (default): marks profile inactive, preserves historical data
 // - REACTIVATE: { reactivate: true }
 // - HARD DELETE: { hard_delete: true } — removes auth user + profile + role permanently
-Deno.serve(async (req) => {
+Deno.serve(withPasswordRotation(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -101,7 +102,7 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from("profiles").delete().eq("user_id", user_id);
       const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(user_id);
       if (delErr) {
-        return new Response(JSON.stringify({ error: delErr.message }), {
+        return new Response(JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -121,7 +122,7 @@ Deno.serve(async (req) => {
       })
       .eq("user_id", user_id);
     if (profErr) {
-      return new Response(JSON.stringify({ error: profErr.message }), {
+      return new Response(JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -146,4 +147,4 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

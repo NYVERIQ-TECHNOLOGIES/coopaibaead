@@ -35,6 +35,11 @@ export default function Login() {
       navigate("/login");
       return;
     }
+    const { data: mustChange, error: securityError } = await supabase.rpc("needs_password_change");
+    if (securityError || mustChange) {
+      navigate("/reset-password?initial=1", { replace: true });
+      return;
+    }
 
     // Block deactivated users
     const { data: profile } = await supabase.from("profiles").select("is_active").eq("user_id", user.id).maybeSingle();

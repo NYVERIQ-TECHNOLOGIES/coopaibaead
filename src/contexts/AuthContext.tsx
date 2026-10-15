@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -11,6 +11,7 @@ interface AuthContextType {
   profile: { full_name: string; avatar_url: string | null; cooperativa: string | null } | null;
   role: AppRole | null;
   loading: boolean;
+  passwordChangeRequired: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -22,12 +23,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<AuthContextType["profile"]>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [passwordChangeRequired, setPasswordChangeRequired] = useState(false);
+  const activeUser = useRef<string | null>(null);
 
   const fetchUserData = async (userId: string) => {
+    const { data: required, error: securityError } = await supabase.rpc("needs_password_change");
+    if (activeUser.current !== userId) return;
+    setPasswordChangeRequired(securityError ? true : required === true);
+    if (securityError || required) {
+      setProfile(null);
+      setRole(null);
+      setLoading(false);
+      return;
+    }
     const [profileRes, roleRes] = await Promise.all([
       supabase.from("profiles").select("full_name, avatar_url, cooperativa").eq("user_id", userId).single(),
       supabase.from("user_roles").select("role").eq("user_id", userId).single(),
     ]);
+    if (activeUser.current !== userId) return;
     if (profileRes.data) setProfile(profileRes.data);
     if (roleRes.data) {
       setRole(roleRes.data.role);
@@ -36,26 +49,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         supabase.rpc("log_admin_access", { _user_agent: navigator.userAgent }).then(() => {});
       }
     }
+    setLoading(false);
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      activeUser.current = session?.user.id ?? null;
+      setLoading(Boolean(session?.user));
       if (session?.user) {
         setTimeout(() => fetchUserData(session.user.id), 0);
       } else {
         setProfile(null);
         setRole(null);
+        setPasswordChangeRequired(false);
       }
-      setLoading(false);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      activeUser.current = session?.user.id ?? null;
       if (session?.user) fetchUserData(session.user.id);
-      setLoading(false);
+      else setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -97,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, role, loading, passwordChangeRequired, signOut }}>
       {children}
     </AuthContext.Provider>
   );

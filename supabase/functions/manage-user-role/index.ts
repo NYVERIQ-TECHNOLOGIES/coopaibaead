@@ -1,3 +1,4 @@
+import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -12,7 +13,7 @@ const ALL_ROLES: AppRole[] = ["admin", "aluno", "cooperado", "moderador"];
 // Roles that require master admin privileges to assign or remove
 const PRIVILEGED_ROLES: AppRole[] = ["admin", "moderador"];
 
-Deno.serve(async (req) => {
+Deno.serve(withPasswordRotation(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -130,7 +131,7 @@ Deno.serve(async (req) => {
       .eq("user_id", user_id);
     if (delErr) {
       return new Response(
-        JSON.stringify({ error: delErr.message }),
+        JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -140,7 +141,7 @@ Deno.serve(async (req) => {
       .insert({ user_id, role: new_role });
     if (insErr) {
       return new Response(
-        JSON.stringify({ error: insErr.message }),
+        JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -156,4 +157,4 @@ Deno.serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-});
+}));

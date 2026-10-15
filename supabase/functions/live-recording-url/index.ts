@@ -1,3 +1,4 @@
+import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient } from "../_shared/appUserConnections.ts";
@@ -15,7 +16,7 @@ function json(payload: unknown, status = 200) {
  * Devolve uma URL assinada e temporária para o vídeo da gravação.
  * O arquivo nunca é exposto publicamente.
  */
-Deno.serve(async (req) => {
+Deno.serve(withPasswordRotation(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -79,12 +80,12 @@ Deno.serve(async (req) => {
 
     const { data: signed, error } = await admin.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
     if (error || !signed?.signedUrl) {
-      return json({ error: error?.message ?? "Falha ao gerar o link do vídeo" }, 500);
+      return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 500);
     }
 
     return json({ url: signed.signedUrl, expiresIn: 3600 });
   } catch (e) {
     console.error("live-recording-url", e);
-    return json({ error: String((e as Error).message ?? e) }, 500);
+    return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 500);
   }
-});
+}));

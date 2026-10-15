@@ -1,3 +1,4 @@
+import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { callAsAppUser } from "../_shared/appUserConnector.ts";
@@ -13,7 +14,7 @@ function json(payload: unknown, status = 200) {
   });
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withPasswordRotation(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -74,9 +75,9 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       console.error("create meet failed", res.status, text);
       await admin.from("live_classes").update({
-        error_message: `Google (${res.status}): ${text.slice(0, 400)}`,
+        error_message: "Não foi possível criar a reunião no Google.",
       }).eq("id", lc.id);
-      return json({ error: "Falha ao criar a reunião no Google", status: res.status, details: text }, res.status);
+      return json({ error: "Falha ao criar a reunião no Google", status: res.status, details: "Serviço indisponível" }, res.status);
     }
 
     const event = JSON.parse(text);
@@ -115,6 +116,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("live-class-create-meet", e);
-    return json({ error: String((e as Error).message ?? e) }, 500);
+    return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 500);
   }
-});
+}));

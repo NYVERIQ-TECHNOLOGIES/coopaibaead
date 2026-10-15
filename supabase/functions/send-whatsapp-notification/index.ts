@@ -1,3 +1,4 @@
+import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 // Z-API WhatsApp informational notification (no attachments — just informs).
 // Triggered by other edge functions (e.g. generate-certificate) using SERVICE ROLE.
 // Also callable by admin/moderador users for manual resends.
@@ -24,7 +25,7 @@ function normalizePhone(input: string): string | null {
   return null;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withPasswordRotation(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -104,7 +105,7 @@ Deno.serve(async (req) => {
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       console.error("Z-API error:", resp.status, data);
-      return new Response(JSON.stringify({ error: "Falha ao enviar WhatsApp", details: data }), {
+      return new Response(JSON.stringify({ error: "Falha ao enviar WhatsApp", details: "Serviço indisponível" }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -118,4 +119,4 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));
