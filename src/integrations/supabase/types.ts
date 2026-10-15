@@ -3170,6 +3170,7 @@ export type Database = {
         Returns: undefined
       }
       matricular_via_link: { Args: { _course_id: string }; Returns: Json }
+      media_storage_path: { Args: { _reference: string }; Returns: string }
       meeting_can_enter: {
         Args: { _id: string; _uid: string }
         Returns: boolean
