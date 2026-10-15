@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QRCodeCanvas } from "qrcode.react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import * as XLSX from "xlsx";
+import { exportSpreadsheet } from "@/lib/spreadsheet";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -113,7 +113,7 @@ export default function PresencaEvento() {
     a.click();
   };
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
     if (!evento) return;
     const rows = assinaturas.map((a: any) => ({
       Nome: a.nome,
@@ -122,10 +122,7 @@ export default function PresencaEvento() {
       "Tipo Assinatura": a.assinatura_tipo,
       Horário: new Date(a.horario).toLocaleString("pt-BR"),
     }));
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Presenças");
-    XLSX.writeFile(wb, `presencas-${evento.codigo}.xlsx`);
+    await exportSpreadsheet(rows, "Presenças", `presencas-${evento.codigo}.xlsx`);
   };
 
   const exportPDF = () => {

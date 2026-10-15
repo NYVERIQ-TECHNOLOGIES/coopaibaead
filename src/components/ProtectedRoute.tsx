@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: Props) {
-  const { session, role, loading } = useAuth();
+  const { session, role, loading, passwordChangeRequired } = useAuth();
 
   if (loading) {
     return (
@@ -21,6 +21,7 @@ export default function ProtectedRoute({ children, allowedRoles }: Props) {
   }
 
   if (!session) return <Navigate to="/login" replace />;
+  if (passwordChangeRequired) return <Navigate to="/reset-password?initial=1" replace />;
 
   // Esperar a role ser carregada antes de avaliar permissões
   if (allowedRoles) {

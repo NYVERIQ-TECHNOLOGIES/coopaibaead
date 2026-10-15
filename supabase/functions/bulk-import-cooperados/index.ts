@@ -1,3 +1,4 @@
+import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -10,7 +11,7 @@ interface Row { full_name: string; cpf: string; }
 
 const MAX_ROWS = 500;
 
-Deno.serve(async (req) => {
+Deno.serve(withPasswordRotation(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const admin = createClient(
@@ -83,7 +84,7 @@ Deno.serve(async (req) => {
         user_metadata: { full_name: name, cpf, user_type: "cooperado" },
       });
       if (createErr || !created?.user) {
-        results.push({ cpf, status: "error", error: createErr?.message });
+        results.push({ cpf, status: "error", error: "Não foi possível criar a conta." });
         continue;
       }
       await admin.from("profiles").update({ full_name: name, cpf, cooperativa: "COOPAIBA" }).eq("user_id", created.user.id);
@@ -123,4 +124,4 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}));

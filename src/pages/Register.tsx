@@ -250,7 +250,7 @@ export default function Register() {
         toast({
           title: "Solicitação enviada para análise",
           description:
-            "Seu cadastro de cooperado será revisado pela administração. Você receberá acesso após a aprovação.",
+            "Seu cadastro será revisado pela administração. Após a aprovação, a equipe fornecerá uma senha temporária individual para você trocar no primeiro acesso.",
         });
         navigate("/login");
         setLoading(false);

@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import { FileSpreadsheet, FileText, ArrowLeft, Award, ClipboardCheck, Clock, XCircle, Download, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CERT_STATUS_LABEL } from "@/lib/certificates";
-import * as XLSX from "xlsx";
+import { exportSpreadsheet } from "@/lib/spreadsheet";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -79,16 +79,13 @@ export default function CertificateReports() {
     "Motivo cancelamento": c.cancellation_reason || "-",
   }));
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
     const rows = buildRows();
     if (rows.length === 0) {
       toast({ title: "Nenhum dado para exportar", variant: "destructive" });
       return;
     }
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Certificados");
-    XLSX.writeFile(wb, `relatorio-certificados-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    await exportSpreadsheet(rows, "Certificados", `relatorio-certificados-${new Date().toISOString().slice(0, 10)}.xlsx`);
     toast({ title: "Excel exportado", description: `${rows.length} registro(s)` });
   };
 

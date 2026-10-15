@@ -2269,6 +2269,24 @@ export type Database = {
         }
         Relationships: []
       }
+      password_security_baselines: {
+        Row: {
+          baseline_digest: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          baseline_digest: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          baseline_digest?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       presenca_assinaturas: {
         Row: {
           assinatura_tipo: string
@@ -2911,6 +2929,7 @@ export type Database = {
         Args: { _id: string; _motivo: string }
         Returns: undefined
       }
+      capture_password_reset: { Args: { _user_id: string }; Returns: undefined }
       complete_profile_info: {
         Args: { _cpf?: string; _data_nascimento?: string; _phone?: string }
         Returns: undefined
@@ -2920,6 +2939,7 @@ export type Database = {
         Returns: Json
       }
       encerrar_eventos_vencidos: { Args: never; Returns: number }
+      enforce_password_rotation: { Args: never; Returns: undefined }
       entrar_aula_ao_vivo: { Args: { _live_class_id: string }; Returns: Json }
       get_admin_reports: { Args: never; Returns: Json }
       get_duplicate_enrollments: {
@@ -3200,12 +3220,17 @@ export type Database = {
         Args: { _action: string; _id: string }
         Returns: undefined
       }
+      needs_password_change: { Args: never; Returns: boolean }
       owns_course: {
         Args: { _course_id: string; _user_id: string }
         Returns: boolean
       }
       owns_module: {
         Args: { _module_id: string; _user_id: string }
+        Returns: boolean
+      }
+      password_change_required_for: {
+        Args: { _user_id: string }
         Returns: boolean
       }
       publicar_gravacao_como_aula: {
