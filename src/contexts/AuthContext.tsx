@@ -15,7 +15,15 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Keep the provider and consumers on the same context during hot updates.
+// Otherwise an already-mounted provider can retain the previous context instance.
+const AuthContext =
+  (import.meta.hot?.data.authContext as ReturnType<typeof createContext<AuthContextType | undefined>> | undefined)
+  ?? createContext<AuthContextType | undefined>(undefined);
+
+if (import.meta.hot) {
+  import.meta.hot.data.authContext = AuthContext;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);

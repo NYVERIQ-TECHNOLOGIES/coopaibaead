@@ -7,3 +7,4 @@
 - Enforce initial-password rotation using service-only password digests, restrictive RLS, a Data API pre-request guard and authenticated function guards; user-editable flags cannot unlock accounts.
 - Keep cooperative registration approvals manual and issue individual temporary passwords because shared credentials plus CPF identification allow impersonation.
 - Export spreadsheets through the shared write-excel-file helper because the retired spreadsheet packages have unpatched security advisories.
+- Preserve the auth context identity through Vite hot updates so mounted providers and refreshed consumers cannot diverge.
