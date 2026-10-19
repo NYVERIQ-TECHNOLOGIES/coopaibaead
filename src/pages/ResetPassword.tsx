@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
-import { Button } from "@/components/ui/button";
 
 type Strength = { score: number; label: string; color: string };
 
@@ -30,8 +29,6 @@ function evaluateStrength(pwd: string): Strength {
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const initialChange = new URLSearchParams(window.location.search).get("initial") === "1";
   const [confirm, setConfirm] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -96,26 +93,11 @@ export default function ResetPassword() {
     }
 
     setLoading(true);
-    if (initialChange) {
-      const { data: identity } = await supabase.auth.getUser();
-      if (!identity.user?.email) { setLoading(false); return; }
-      const { error: verifyError } = await supabase.auth.signInWithPassword({ email: identity.user.email, password: currentPassword });
-      if (verifyError) {
-        toast({ title: "Senha atual incorreta", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-      if (password === currentPassword) {
-        toast({ title: "Escolha uma senha diferente da inicial", variant: "destructive" });
-        setLoading(false);
-        return;
-      }
-    }
     const { error } = await supabase.auth.updateUser({ password });
     if (error) {
       toast({
         title: "Não foi possível redefinir",
-        description: "Verifique os requisitos da senha e tente novamente.",
+        description: error.message ?? "Tente solicitar um novo link.",
         variant: "destructive",
       });
       setLoading(false);
@@ -183,14 +165,10 @@ export default function ResetPassword() {
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-heading font-bold text-foreground">{initialChange ? "Troque sua senha inicial" : "Redefinir senha"}</h2>
-              <p className="text-muted-foreground mt-1 mb-8">Defina uma senha pessoal para acessar sua conta.</p>
+              <h2 className="text-2xl font-heading font-bold text-foreground">Redefinir senha</h2>
+              <p className="text-muted-foreground mt-1 mb-8">Defina uma nova senha para acessar sua conta.</p>
 
               <form className="space-y-4" onSubmit={handleSubmit}>
-                {initialChange && <div>
-                  <label htmlFor="current-password" className="text-sm font-medium mb-1.5 block">Senha atual</label>
-                  <input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} required className="w-full p-2.5 bg-card border border-border rounded-lg" />
-                </div>}
                 <div>
                   <label htmlFor="new-password" className="text-sm font-medium text-foreground mb-1.5 block">Nova senha</label>
                   <div className="relative">
@@ -204,7 +182,7 @@ export default function ResetPassword() {
                       required
                       className="w-full pl-10 pr-10 py-2.5 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
-                    <Button
+                    <button
                       type="button"
                       onClick={() => setShowPw((s) => !s)}
                       aria-label={showPw ? "Ocultar senha" : "Mostrar senha"}
@@ -212,7 +190,7 @@ export default function ResetPassword() {
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
                       {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
+                    </button>
                   </div>
 
                   {password.length > 0 && (
@@ -256,13 +234,13 @@ export default function ResetPassword() {
                   </li>
                 </ul>
 
-                <Button
+                <button
                   type="submit"
                   disabled={loading || !sessionReady}
                   className="w-full gradient-primary text-primary-foreground py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {loading ? "Salvando..." : "Redefinir senha"} {!loading && <ArrowRight className="w-4 h-4" />}
-                </Button>
+                </button>
 
                 {!sessionReady && !linkExpired && (
                   <p className="text-xs text-muted-foreground text-center">Validando link de recuperação...</p>

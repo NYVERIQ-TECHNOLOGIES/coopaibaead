@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -36,6 +37,8 @@ const formatCpf = (cpf: string) =>
 export default function AdminCooperadosPendentes() {
   const [items, setItems] = useState<Pending[]>([]);
   const [loading, setLoading] = useState(true);
+  const [autoApprove, setAutoApprove] = useState(false);
+  const [savingSetting, setSavingSetting] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
@@ -44,12 +47,17 @@ export default function AdminCooperadosPendentes() {
 
   const load = async () => {
     setLoading(true);
-    const listRes = await supabase
+    const [listRes, settingRes] = await Promise.all([
+      supabase
         .from("cooperado_pending_registrations")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }),
+      supabase.from("app_settings").select("value").eq("key", "cooperado_auto_approve").maybeSingle(),
+    ]);
     if (listRes.error) toast.error(listRes.error.message);
     else setItems((listRes.data ?? []) as Pending[]);
+    const v = settingRes.data?.value as { enabled?: boolean } | null;
+    setAutoApprove(v?.enabled === true);
     setLoading(false);
   };
 
@@ -68,6 +76,23 @@ export default function AdminCooperadosPendentes() {
     };
   }, []);
 
+  const toggleAutoApprove = async (next: boolean) => {
+    setSavingSetting(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .upsert(
+        { key: "cooperado_auto_approve", value: { enabled: next } as never },
+        { onConflict: "key" }
+      );
+    setSavingSetting(false);
+    if (error) {
+      toast.error("Falha ao salvar: " + error.message);
+      return;
+    }
+    setAutoApprove(next);
+    toast.success(next ? "Aprovação automática ativada" : "Aprovação automática desativada");
+  };
+
   const approve = async (item: Pending) => {
     setActionId(item.id);
     const { data, error } = await supabase.functions.invoke("approve-cooperado-registration", {
@@ -77,12 +102,12 @@ export default function AdminCooperadosPendentes() {
     if (error) return toast.error(error.message);
     if ((data as { error?: string })?.error) return toast.error((data as { error: string }).error);
     const loginEmail = (data as { login_email?: string })?.login_email;
-    const defaultPassword = (data as { temporary_password?: string })?.temporary_password;
+    const defaultPassword = (data as { default_password?: string })?.default_password ?? "Coopaiba@2026";
     toast.success("Cooperado aprovado", {
       description: loginEmail
-        ? `Login: ${loginEmail} • Senha temporária: ${defaultPassword ?? "Consulte a equipe"}`
-        : "Conta aprovada",
-      action: loginEmail && defaultPassword
+        ? `Login: ${loginEmail} • Senha padrão: ${defaultPassword}`
+        : `Senha padrão: ${defaultPassword}`,
+      action: loginEmail
         ? {
             label: "Copiar login",
             onClick: () => {
@@ -149,11 +174,16 @@ export default function AdminCooperadosPendentes() {
             <ShieldCheck className="w-5 h-5 text-primary mt-0.5" />
             <div className="flex-1">
               <div className="flex items-center justify-between gap-3">
-                <p className="font-medium text-sm">Aprovação manual</p>
-                <Badge variant="secondary">Obrigatória</Badge>
+                <p className="font-medium text-sm">Aprovação automática</p>
+                <Switch
+                  checked={autoApprove}
+                  onCheckedChange={toggleAutoApprove}
+                  disabled={savingSetting}
+                />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Novas solicitações aguardam a revisão da equipe administrativa.
+                Quando ativada, novas solicitações são aprovadas e o acesso é liberado imediatamente,
+                sem revisão manual.
               </p>
             </div>
           </div>

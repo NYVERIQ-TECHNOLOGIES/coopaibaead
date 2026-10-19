@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -6,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const { email, userId, newEmail, password, token } = await req.json();
@@ -93,10 +92,6 @@ Deno.serve(withPasswordRotation(async (req) => {
     if (newEmail) { updates.email = newEmail; updates.email_confirm = true; }
     const { error } = await admin.auth.admin.updateUserById(targetId, updates);
     if (error) throw error;
-    if (password) {
-      const { error: rotationError } = await admin.rpc("capture_password_reset", { _user_id: targetId });
-      if (rotationError) throw rotationError;
-    }
 
     // Audit log: only for password resets performed by a real admin (skip bulk-token flow)
     if (password && !bulkToken && adminUserId) {
@@ -112,6 +107,6 @@ Deno.serve(withPasswordRotation(async (req) => {
 
     return new Response(JSON.stringify({ ok: true, user_id: targetId }), { headers: { ...corsHeaders, "content-type": "application/json" } });
   } catch (e) {
-    return new Response(JSON.stringify({ error: "Não foi possível redefinir o acesso." }), { status: 500, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
   }
-}));
+});

@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { type StripeEnv, createStripeClient } from "../_shared/stripe.ts";
 
@@ -7,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405, headers: corsHeaders });
@@ -80,9 +79,9 @@ Deno.serve(withPasswordRotation(async (req) => {
     });
   } catch (e) {
     console.error("create-portal-session error:", e);
-    return new Response(JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }), {
+    return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}));
+});

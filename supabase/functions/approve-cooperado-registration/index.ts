@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -16,7 +15,7 @@ function randomPassword(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/[^A-Za-z0-9]/g, "") + "Aa1!";
 }
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -92,7 +91,7 @@ Deno.serve(withPasswordRotation(async (req) => {
     // Approve: create the account with the standard default password
     const cpf = pending.cpf as string;
     const syntheticEmail = `cpf${cpf}@cooperado.coopaiba.com.br`;
-    const temporaryPassword = randomPassword();
+    const DEFAULT_PASSWORD = "Coopaiba@2026";
 
     const userMeta = {
       full_name: pending.full_name,
@@ -104,7 +103,7 @@ Deno.serve(withPasswordRotation(async (req) => {
     let userId: string | null = null;
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email: syntheticEmail,
-      password: temporaryPassword,
+      password: DEFAULT_PASSWORD,
       email_confirm: true,
       user_metadata: userMeta,
     });
@@ -120,34 +119,31 @@ Deno.serve(withPasswordRotation(async (req) => {
       });
       if (listErr) {
         return new Response(
-          JSON.stringify({ error: "Não foi possível criar a conta." }),
+          JSON.stringify({ error: `Falha ao criar conta: ${msg || listErr.message}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       const existing = list.users.find((u) => u.email?.toLowerCase() === syntheticEmail.toLowerCase());
       if (!existing) {
         return new Response(
-          JSON.stringify({ error: "Não foi possível criar a conta." }),
+          JSON.stringify({ error: `Falha ao criar conta: ${msg || "erro desconhecido"}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       const { error: updErr } = await admin.auth.admin.updateUserById(existing.id, {
-        password: temporaryPassword,
+        password: DEFAULT_PASSWORD,
         email_confirm: true,
         user_metadata: userMeta,
       });
       if (updErr) {
         return new Response(
-          JSON.stringify({ error: "Não foi possível redefinir o acesso." }),
+          JSON.stringify({ error: `Conta já existe, falha ao redefinir: ${updErr.message}` }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
       userId = existing.id;
     }
 
-    if (!userId) throw new Error("Account creation failed");
-    const { error: rotationError } = await admin.rpc("capture_password_reset", { _user_id: userId });
-    if (rotationError) throw rotationError;
     await admin.from("profiles").update({
       full_name: pending.full_name,
       cpf,
@@ -171,8 +167,8 @@ Deno.serve(withPasswordRotation(async (req) => {
         status: "approved",
         user_id: userId,
         login_email: syntheticEmail,
-        temporary_password: temporaryPassword,
-        note: "Compartilhe individualmente; a troca de senha é obrigatória no primeiro acesso.",
+        default_password: DEFAULT_PASSWORD,
+        note: "Compartilhe o login e a senha padrão com o cooperado.",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
@@ -183,4 +179,4 @@ Deno.serve(withPasswordRotation(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}));
+});

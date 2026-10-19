@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { adminClient } from "../_shared/appUserConnections.ts";
 
@@ -22,20 +21,11 @@ const WINDOWS: { type: string; minutes: number; label: string }[] = [
  * A arquitetura já separa o "evento" do "canal" — e-mail, WhatsApp e push
  * podem ser plugados aqui depois.
  */
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Método não permitido" }, 405);
 
   try {
     const admin = adminClient();
-    const token = req.headers.get("Authorization")?.match(/^Bearer (.+)$/)?.[1];
-    if (!token) return json({ error: "Não autorizado" }, 401);
-    const { data: identity, error: identityError } = await admin.auth.getUser(token);
-    if (identityError || !identity.user) return json({ error: "Não autorizado" }, 401);
-    const { data: allowed, error: roleError } = await admin.rpc("has_role", {
-      _user_id: identity.user.id, _role: "admin",
-    });
-    if (roleError || allowed !== true) return json({ error: "Apenas administradores" }, 403);
     const now = Date.now();
 
     const { data: classes, error } = await admin
@@ -53,7 +43,7 @@ Deno.serve(withPasswordRotation(async (req) => {
 
       for (const w of WINDOWS) {
         const inWindow = w.minutes === 0
-          ? lc.status === "ao_vivo" && diffMin <= 0 && diffMin > -30
+          ? diffMin <= 0 && diffMin > -30
           : diffMin <= w.minutes && diffMin > w.minutes - 10;
         if (!inWindow) continue;
 
@@ -89,12 +79,18 @@ Deno.serve(withPasswordRotation(async (req) => {
           else created += rows.length;
         }
 
+        if (w.minutes === 0 && lc.status !== "ao_vivo") {
+          await admin.from("live_classes").update({
+            status: "ao_vivo",
+            started_at: new Date().toISOString(),
+          }).eq("id", lc.id);
+        }
       }
     }
 
     return json({ ok: true, notifications: created });
   } catch (e) {
     console.error("live-classes-notify", e);
-    return json({ error: "Não foi possível enviar os avisos." }, 500);
+    return json({ error: String((e as Error).message ?? e) }, 500);
   }
-}));
+});

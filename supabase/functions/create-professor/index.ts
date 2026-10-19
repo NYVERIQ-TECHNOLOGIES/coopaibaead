@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -14,7 +13,7 @@ function json(body: unknown, status = 200) {
   });
 }
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -57,7 +56,7 @@ Deno.serve(withPasswordRotation(async (req) => {
         email_confirm: true,
         user_metadata: { full_name, role: "professor" },
       });
-      if (createError) return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 400);
+      if (createError) return json({ error: createError.message }, 400);
 
       const newId = created.user.id;
 
@@ -65,7 +64,7 @@ Deno.serve(withPasswordRotation(async (req) => {
       const { error: roleErr } = await supabaseAdmin
         .from("user_roles")
         .insert({ user_id: newId, role: "professor" });
-      if (roleErr) return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 400);
+      if (roleErr) return json({ error: roleErr.message }, 400);
 
       const { error: profErr } = await supabaseAdmin
         .from("profiles")
@@ -78,7 +77,7 @@ Deno.serve(withPasswordRotation(async (req) => {
           especialidade: especialidade ?? null,
           is_active: is_active ?? true,
         }, { onConflict: "user_id" });
-      if (profErr) return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 400);
+      if (profErr) return json({ error: profErr.message }, 400);
 
       return json({ success: true, user_id: newId });
     }
@@ -104,7 +103,7 @@ Deno.serve(withPasswordRotation(async (req) => {
       const { error: roleErr } = await supabaseAdmin
         .from("user_roles")
         .insert({ user_id, role: "professor" });
-      if (roleErr) return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 400);
+      if (roleErr) return json({ error: roleErr.message }, 400);
 
       const patch: Record<string, unknown> = {};
       if (area_atuacao !== undefined && area_atuacao !== null) patch.area_atuacao = area_atuacao;
@@ -131,7 +130,7 @@ Deno.serve(withPasswordRotation(async (req) => {
         patch.deactivated_at = is_active ? null : new Date().toISOString();
       }
       const { error } = await supabaseAdmin.from("profiles").update(patch).eq("user_id", user_id);
-      if (error) return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 400);
+      if (error) return json({ error: error.message }, 400);
 
       if (is_active === false) {
         await supabaseAdmin.auth.admin.updateUserById(user_id, { ban_duration: "876000h" });
@@ -148,9 +147,7 @@ Deno.serve(withPasswordRotation(async (req) => {
         return json({ error: "A senha deve ter ao menos 8 caracteres" }, 400);
       }
       const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, { password });
-      if (error) return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 400);
-      const { error: rotationError } = await supabaseAdmin.rpc("capture_password_reset", { _user_id: user_id });
-      if (rotationError) throw rotationError;
+      if (error) return json({ error: error.message }, 400);
       await supabaseAdmin.from("password_reset_logs").insert({
         admin_user_id: user.id,
         target_user_id: user_id,
@@ -164,4 +161,4 @@ Deno.serve(withPasswordRotation(async (req) => {
     console.error("create-professor error:", err);
     return json({ error: "Ocorreu um erro interno. Tente novamente." }, 500);
   }
-}));
+});

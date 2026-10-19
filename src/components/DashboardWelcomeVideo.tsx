@@ -17,7 +17,7 @@ export default function DashboardWelcomeVideo({ forceOpen, onClose }: Props) {
         .select("value")
         .eq("key", "dashboard_welcome_video")
         .maybeSingle();
-      return (data?.value ?? null) as { url?: string } | null;
+      return data?.value as { url?: string } | null;
     },
   });
 

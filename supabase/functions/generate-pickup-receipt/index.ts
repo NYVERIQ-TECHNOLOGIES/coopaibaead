@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
@@ -17,7 +16,7 @@ const BRAND = {
   muted: { r: 0.45, g: 0.45, b: 0.45 },
 };
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -143,7 +142,7 @@ Deno.serve(withPasswordRotation(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}));
+});
 
 interface ReceiptData {
   code: string;

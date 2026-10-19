@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { callAsAppUser } from "../_shared/appUserConnector.ts";
@@ -28,7 +27,7 @@ function meetingCodeFromUrl(url: string | null): string | null {
  * a gravação fica marcada como "aguardando_upload" com uma mensagem clara,
  * e o professor pode enviar o arquivo manualmente.
  */
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -94,7 +93,7 @@ Deno.serve(withPasswordRotation(async (req) => {
         });
         const listText = await listRes.text();
         if (!listRes.ok) {
-          failure = "Não foi possível consultar a gravação no Google.";
+          failure = `Google Meet API (${listRes.status}): ${listText.slice(0, 300)}`;
         } else {
           const parsed = JSON.parse(listText);
           const conference = parsed?.conferenceRecords?.[0];
@@ -109,7 +108,7 @@ Deno.serve(withPasswordRotation(async (req) => {
             });
             const recText = await recRes.text();
             if (!recRes.ok) {
-              failure = "Não foi possível consultar a gravação no Google.";
+              failure = `Google Meet API (${recRes.status}): ${recText.slice(0, 300)}`;
             } else {
               const recordings = JSON.parse(recText)?.recordings ?? [];
               const ready = recordings.find((r: { state?: string }) => r.state === "FILE_GENERATED");
@@ -132,7 +131,7 @@ Deno.serve(withPasswordRotation(async (req) => {
                     .from(BUCKET)
                     .upload(path, bytes, { contentType: "video/mp4", upsert: true });
                   if (upErr) {
-                    failure = "Falha ao armazenar a gravação.";
+                    failure = `Falha ao armazenar a gravação: ${upErr.message}`;
                   } else {
                     await admin.from("live_recordings").update({
                       storage_path: path,
@@ -161,7 +160,7 @@ Deno.serve(withPasswordRotation(async (req) => {
           }
         }
       } catch (e) {
-        failure = "Erro ao consultar a gravação.";
+        failure = `Erro ao consultar a gravação: ${String((e as Error).message ?? e)}`;
         console.error("recording lookup", e);
       }
     } else if (!connectionAPIKey) {
@@ -182,6 +181,6 @@ Deno.serve(withPasswordRotation(async (req) => {
     return json({ status: "aguardando_upload", message: failure, recordingId: rec.id });
   } catch (e) {
     console.error("live-class-recording", e);
-    return json({ error: "Não foi possível concluir a operação. Tente novamente." }, 500);
+    return json({ error: String((e as Error).message ?? e) }, 500);
   }
-}));
+});

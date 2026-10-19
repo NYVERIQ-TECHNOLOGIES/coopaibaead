@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { authorizeAppUserOAuth } from "../_shared/appUserConnector.ts";
@@ -14,7 +13,7 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
 ];
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -66,9 +65,9 @@ Deno.serve(withPasswordRotation(async (req) => {
     });
   } catch (e) {
     console.error("google-connect-start", e);
-    return new Response(JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }), {
+    return new Response(JSON.stringify({ error: String((e as Error).message ?? e) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}));
+});

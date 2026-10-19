@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -7,7 +6,7 @@ const corsHeaders = {
 };
 
 // Allows the authenticated user to permanently delete their own account.
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -59,7 +58,7 @@ Deno.serve(withPasswordRotation(async (req) => {
     await supabaseAdmin.from("profiles").delete().eq("user_id", userId);
     const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (delErr) {
-      return new Response(JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }), {
+      return new Response(JSON.stringify({ error: delErr.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -75,4 +74,4 @@ Deno.serve(withPasswordRotation(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}));
+});

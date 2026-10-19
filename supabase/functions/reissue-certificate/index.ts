@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 // Reissue an existing certificate: rebuilds the PDF preserving the original code,
 // issued_at and QR Code. Increments reissue_count via SECURITY DEFINER RPC and logs audit.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
@@ -19,7 +18,7 @@ const BRAND = {
   muted: { r: 0.45, g: 0.45, b: 0.45 },
 };
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -65,13 +64,13 @@ Deno.serve(withPasswordRotation(async (req) => {
     } catch (e: any) {
       const msg = e?.message || "Erro";
       const status = msg.includes("não encontrado") ? 404 : msg.includes("cancelado") ? 409 : 500;
-      return json({ error: "Não foi possível reemitir o certificado." }, status);
+      return json({ error: msg }, status);
     }
   } catch (err: any) {
     console.error("reissue-certificate error:", err);
     return json({ error: "Erro interno ao reemitir o certificado." }, 500);
   }
-}));
+});
 
 async function reissueOne(admin: any, asUser: any, certificate_id: string) {
     const { data: cert, error: certErr } = await admin

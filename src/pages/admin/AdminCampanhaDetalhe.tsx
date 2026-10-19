@@ -19,7 +19,7 @@ import { maskCPF } from "@/lib/cpf";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { exportSpreadsheet } from "@/lib/spreadsheet";
+import * as XLSX from "xlsx";
 
 export default function AdminCampanhaDetalhe() {
   const { id } = useParams();
@@ -205,13 +205,14 @@ export default function AdminCampanhaDetalhe() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = `inscritos-${camp?.nome || id}.csv`; a.click();
   };
-  const exportXLSX = async () => {
-    const rows = filtered.map(i => ({
+  const exportXLSX = () => {
+    const ws = XLSX.utils.json_to_sheet(filtered.map(i => ({
       Protocolo: i.protocolo, Nome: i.nome_completo, CPF: maskCPF(i.cpf), RG: i.rg, Email: i.email,
       Telefone: i.telefone, Cidade: i.cidade, Estado: i.estado, Status: i.status,
       "Data Inscrição": new Date(i.data_inscricao).toLocaleString("pt-BR"),
-    }));
-    await exportSpreadsheet(rows, "Inscritos", `inscritos-${camp?.nome || id}.xlsx`);
+    })));
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Inscritos");
+    XLSX.writeFile(wb, `inscritos-${camp?.nome || id}.xlsx`);
   };
   const exportPDF = () => {
     const doc = new jsPDF();

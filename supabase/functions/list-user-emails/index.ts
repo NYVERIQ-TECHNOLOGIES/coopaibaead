@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -8,7 +7,7 @@ const corsHeaders = {
 
 // Returns a map of { user_id: email } for the requested user_ids.
 // Restricted to admins.
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -83,4 +82,4 @@ Deno.serve(withPasswordRotation(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}));
+});

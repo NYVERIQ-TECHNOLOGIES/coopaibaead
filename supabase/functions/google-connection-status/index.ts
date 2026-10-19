@@ -1,4 +1,3 @@
-import { withPasswordRotation } from "../_shared/passwordRotation.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { disconnectAppUser } from "../_shared/appUserConnector.ts";
@@ -11,7 +10,7 @@ import {
 const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
 const CONNECTOR_ID = "google_calendar";
 
-Deno.serve(withPasswordRotation(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -63,9 +62,9 @@ Deno.serve(withPasswordRotation(async (req) => {
     );
   } catch (e) {
     console.error("google-connection-status", e);
-    return new Response(JSON.stringify({ error: "Não foi possível concluir a operação. Tente novamente." }), {
+    return new Response(JSON.stringify({ error: String((e as Error).message ?? e) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-}));
+});

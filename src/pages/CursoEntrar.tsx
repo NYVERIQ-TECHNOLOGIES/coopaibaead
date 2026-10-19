@@ -8,7 +8,7 @@ import { Loader2, AlertCircle } from "lucide-react";
 export default function CursoEntrar() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { session, loading, passwordChangeRequired } = useAuth();
+  const { session, loading } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const ran = useRef(false);
 
@@ -21,10 +21,6 @@ export default function CursoEntrar() {
     }
 
     ran.current = true;
-    if (passwordChangeRequired) {
-      navigate("/reset-password?initial=1", { replace: true });
-      return;
-    }
     (async () => {
       const { error } = await supabase.rpc("matricular_via_link" as any, { _course_id: id });
       if (error) {
@@ -33,7 +29,7 @@ export default function CursoEntrar() {
       }
       navigate(`/courses/${id}`, { replace: true });
     })();
-  }, [id, session, loading, passwordChangeRequired, navigate]);
+  }, [id, session, loading, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
