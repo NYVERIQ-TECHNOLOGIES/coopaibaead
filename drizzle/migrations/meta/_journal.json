@@ -29,6 +29,13 @@
       "when": 1792072403214,
       "tag": "0003_scope_media_downloads_to_content_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792512000000,
+      "tag": "0004_meetings_google_meet",
+      "breakpoints": true
     }
   ]
 }

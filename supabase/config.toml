@@ -36,6 +36,9 @@ verify_jwt = false
 [functions.live-class-create-meet]
 verify_jwt = false
 
+[functions.meeting-create-meet]
+verify_jwt = false
+
 [functions.live-class-recording]
 verify_jwt = false
 

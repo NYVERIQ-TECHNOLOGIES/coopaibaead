@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { isPaymentsConfigured } from "@/lib/stripe";
 import LiveChat from "@/components/live/LiveChat";
+import { toast } from "sonner";
 import { CalendarClock, Lock, MessageSquare, Radio, ShoppingCart, Users, Video } from "lucide-react";
 
 type LiveItem = {
@@ -66,8 +67,17 @@ export default function MyLiveClasses() {
     [data],
   );
 
-  function enter(item: LiveItem) {
+  async function enter(item: LiveItem) {
     if (item.payment_required) return setBuying(item);
+    if (item.provider !== "nativo") {
+      // Aula com reunião externa (ex.: Google Meet): valida matrícula e presença
+      // pela RPC e abre o link oficial em nova aba.
+      const { data, error } = await supabase.rpc("entrar_aula_ao_vivo", { _live_class_id: item.id });
+      if (error) return toast.error(error.message);
+      const url = (data as { meet_url?: string })?.meet_url;
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
     navigate(`/live/${item.id}`);
   }
 

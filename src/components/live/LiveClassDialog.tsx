@@ -119,7 +119,7 @@ export default function LiveClassDialog({
       setDuration(60);
       setOpenBefore(15);
       setRecording(true);
-      setProvider("nativo");
+      setProvider(googleConnected ? "google_meet" : "nativo");
       setMeetUrl("");
       setStartNow(false);
     }
@@ -282,10 +282,10 @@ export default function LiveClassDialog({
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="nativo">Transmitir pela plataforma (recomendado)</SelectItem>
                 <SelectItem value="google_meet" disabled={!googleConnected}>
-                  Google Meet {googleConnected ? "" : "(conecte sua conta Google)"}
+                  Google Meet {googleConnected ? "(recomendado)" : "(conecte sua conta Google)"}
                 </SelectItem>
+                <SelectItem value="nativo">Transmitir pela plataforma</SelectItem>
                 <SelectItem value="sala_instantanea">Criar link da sala automaticamente</SelectItem>
                 <SelectItem value="link_externo">Colar link de reunião existente</SelectItem>
               </SelectContent>
