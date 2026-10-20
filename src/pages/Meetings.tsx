@@ -41,7 +41,7 @@ export default function Meetings() {
 
   const { data: meetings = [], isLoading } = useQuery({ queryKey: ["meetings"], queryFn: async () => {
     const { data, error } = await supabase.from("meetings").select("*").order("start_at", { ascending: false }).limit(500);
-    if (error) throw error; return data;
+    if (error) throw error; return (data ?? []) as Meeting[];
   }, refetchInterval: 15000 });
   const { data: googleLinks = {} } = useQuery({ queryKey: ["meeting-google-links"], queryFn: async () => {
     // RLS devolve somente as reuniões em que o usuário pode entrar (meeting_can_enter).
