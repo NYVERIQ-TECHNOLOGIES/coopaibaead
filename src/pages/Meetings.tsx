@@ -107,7 +107,7 @@ export default function Meetings() {
     try {
       const body = { title: form.title.trim(), description: form.description.trim(), start_at: new Date(form.start).toISOString(), end_at: form.end ? new Date(form.end).toISOString() : new Date(new Date(form.start).getTime() + 60*60000).toISOString(), access_type: form.access_type, scope: form.scope, course_id: form.scope === "curso" ? form.course_id || null : null, provider: form.provider === "google_meet" ? "google_meet" : "nativo", allow_responsible_add_students: form.allow_responsible_add_students, allow_recording: form.allow_recording, allow_screen_share: form.allow_screen_share, reminders: { h24:form.h24, h1:form.h1, start:form.startReminder }, updated_at: new Date().toISOString() };
       if (form.scope === "curso" && !form.course_id) throw new Error("Selecione o curso.");
-      const res = editing ? await supabase.from("meetings").update(body).eq("id", editing.id).select("id").single() : await supabase.from("meetings").insert({ ...body, created_by: user.id }).select("id").single();
+      const res = editing ? await db.from("meetings").update(body).eq("id", editing.id).select("id").single() : await db.from("meetings").insert({ ...body, created_by: user.id }).select("id").single();
       if (res.error || !res.data) throw res.error ?? new Error("Não foi possível salvar.");
       const mid = res.data.id;
       const previousR = allResponsibles.filter(r => r.meeting_id === mid).map(r => r.user_id);
