@@ -44,31 +44,67 @@ Deno.serve(async (req) => {
       ?? await getConnectionKeyForUser(user.id, CONNECTOR_ID);
     if (!connectionAPIKey) return json({ error: "Conecte uma conta Google antes de criar a reunião." }, 400);
 
+    // Idempotente: se a aula já tem link válido, reutiliza; se já tem evento no
+    // Google Agenda, atualiza o mesmo evento em vez de criar outro (evita links duplicados).
+    if (lc.provider === "google_meet" && lc.meet_url?.startsWith("https://meet.google.com/")) {
+      return json({ meetUrl: lc.meet_url, eventId: lc.meet_event_id ?? null, reused: true });
+    }
+
     const start = new Date(lc.scheduled_at);
     const end = new Date(start.getTime() + (lc.duration_minutes ?? 60) * 60000);
 
-    const res = await callAsAppUser({
-      gatewayBaseUrl: GATEWAY_BASE_URL,
-      connectionAPIKey,
-      connectorId: CONNECTOR_ID,
-      path: "/calendar/v3/calendars/primary/events?conferenceDataVersion=1",
-      init: {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          summary: lc.title,
-          description: lc.description ?? "",
-          start: { dateTime: start.toISOString(), timeZone: "America/Sao_Paulo" },
-          end: { dateTime: end.toISOString(), timeZone: "America/Sao_Paulo" },
-          conferenceData: {
-            createRequest: {
-              requestId: `live-${lc.id}`,
-              conferenceSolutionKey: { type: "hangoutsMeet" },
-            },
-          },
-        }),
+    const eventBody = {
+      summary: lc.title,
+      description: lc.description ?? "",
+      start: { dateTime: start.toISOString(), timeZone: "America/Sao_Paulo" },
+      end: { dateTime: end.toISOString(), timeZone: "America/Sao_Paulo" },
+    };
+
+    const conferenceData = {
+      createRequest: {
+        requestId: `live-${lc.id}`,
+        conferenceSolutionKey: { type: "hangoutsMeet" },
       },
-    });
+    };
+
+    let res = lc.meet_event_id
+      ? await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE_URL,
+        connectionAPIKey,
+        connectorId: CONNECTOR_ID,
+        path: `/calendar/v3/calendars/primary/events/${lc.meet_event_id}?conferenceDataVersion=1`,
+        init: {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...eventBody, conferenceData }),
+        },
+      })
+      : await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE_URL,
+        connectionAPIKey,
+        connectorId: CONNECTOR_ID,
+        path: "/calendar/v3/calendars/primary/events?conferenceDataVersion=1",
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...eventBody, conferenceData }),
+        },
+      });
+
+    // Se o evento reaproveitado não existe mais, cria um novo no lugar.
+    if (!res.ok && lc.meet_event_id && res.status === 404) {
+      res = await callAsAppUser({
+        gatewayBaseUrl: GATEWAY_BASE_URL,
+        connectionAPIKey,
+        connectorId: CONNECTOR_ID,
+        path: "/calendar/v3/calendars/primary/events?conferenceDataVersion=1",
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...eventBody, conferenceData }),
+        },
+      });
+    }
 
     const text = await res.text();
     if (!res.ok) {

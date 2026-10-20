@@ -137,6 +137,18 @@ export default function LiveClasses() {
     void qc.invalidateQueries({ queryKey: ["live-recordings-admin"] });
   }
 
+  async function createMeet(lc: LiveClassRow): Promise<string | null> {
+    const { data, error } = await supabase.functions.invoke("live-class-create-meet", {
+      body: { liveClassId: lc.id },
+    });
+    if (error || data?.error) {
+      toast.error("Não foi possível criar a sala do Google Meet. Conecte a conta Google e tente novamente.");
+      return null;
+    }
+    const { data: row } = await supabase.from("live_classes").select("meet_url").eq("id", lc.id).maybeSingle();
+    return row?.meet_url ?? null;
+  }
+
   async function startNow(lc: LiveClassRow) {
     if (lc.provider === "nativo") {
       await supabase.from("live_classes").update({
@@ -146,15 +158,25 @@ export default function LiveClasses() {
       window.location.assign(`/live/${lc.id}`);
       return;
     }
-    if (!lc.meet_url) {
-      const { data, error } = await supabase.functions.invoke("live-class-create-meet", {
-        body: { liveClassId: lc.id },
-      });
-      if (error || data?.error) return toast.error("Crie ou informe o link da sala antes de iniciar.");
+    if (lc.provider === "google_meet") {
+      // Google Meet é o método obrigatório do fluxo principal: sem link
+      // válido a aula não é iniciada e nenhum outro método é usado no lugar.
+      const url = lc.meet_url ?? await createMeet(lc);
+      if (!url) return;
+      const { error } = await supabase.from("live_classes").update({
+        status: "ao_vivo", started_at: new Date().toISOString(),
+      }).eq("id", lc.id);
+      if (error) return toast.error(error.message);
+      toast.success("Aula iniciada no Google Meet.");
+      refresh();
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
     }
-    await supabase.from("live_classes").update({
+    if (!lc.meet_url) return toast.error("Informe o link da sala antes de iniciar esta aula.");
+    const { error } = await supabase.from("live_classes").update({
       status: "ao_vivo", started_at: new Date().toISOString(),
     }).eq("id", lc.id);
+    if (error) return toast.error(error.message);
     toast.success("Aula iniciada.");
     refresh();
   }
@@ -274,6 +296,7 @@ export default function LiveClasses() {
                       <h3 className="font-semibold truncate">{lc.title}</h3>
                       <Badge variant={st.variant}>{st.label}</Badge>
                       {rec?.status === "publicada" && <Badge variant="outline">Aula publicada</Badge>}
+                      <Badge variant="outline">{lc.provider === "google_meet" ? "Google Meet" : lc.provider === "nativo" ? "Sala da plataforma" : "Sem Google Meet"}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 truncate">
                       {(lc as LiveClassRow & { courses?: { title: string } }).courses?.title}
@@ -305,6 +328,11 @@ export default function LiveClasses() {
                           <Copy className="h-4 w-4" />
                         </Button>
                       </>
+                    )}
+                    {lc.provider === "google_meet" && !lc.meet_url && canManage && (
+                      <Button size="sm" variant="outline" onClick={() => { void createMeet(lc).then((url) => { if (url) refresh(); }); }}>
+                        <Video className="h-4 w-4 mr-1" /> Criar sala Google Meet
+                      </Button>
                     )}
                     {canManage && lc.status === "agendada" && (
                       <Button size="sm" onClick={() => startNow(lc)}>

@@ -23,6 +23,7 @@ interface ClassRow {
   started_at: string | null;
   duration_minutes: number;
   provider: string;
+  meet_url: string | null;
   courses?: { title: string } | null;
 }
 
@@ -58,7 +59,7 @@ export default function LiveControlRoom() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("live_classes")
-        .select("id, title, status, teacher_id, scheduled_at, started_at, duration_minutes, provider, courses(title)")
+        .select("id, title, status, teacher_id, scheduled_at, started_at, duration_minutes, provider, meet_url, courses(title)")
         .eq("status", "ao_vivo")
         .order("started_at", { ascending: false });
       if (error) throw error;
@@ -96,6 +97,12 @@ export default function LiveControlRoom() {
     if (!confirm(`Encerrar a transmissão "${lc.title}"?`)) return;
     const { error } = await supabase.rpc("live_end_class", { _live_class_id: lc.id });
     if (error) return toast.error(error.message);
+    if (lc.provider === "google_meet") {
+      const { data } = await supabase.functions.invoke("live-class-recording", {
+        body: { liveClassId: lc.id },
+      });
+      if (data?.status === "pronta") toast.success("Gravação disponível para revisão.");
+    }
     toast.success("Aula encerrada e presença consolidada.");
     void qc.invalidateQueries({ queryKey: ["live-control-active"] });
   }
@@ -141,9 +148,20 @@ export default function LiveControlRoom() {
                     No ar há <Elapsed startedAt={lc.started_at} /> · {lc.duration_minutes} min previstos
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    <Button size="sm" variant="outline" asChild onClick={(e) => e.stopPropagation()}>
-                      <Link to={`/live/${lc.id}`}><Video className="h-4 w-4 mr-1" /> Abrir sala</Link>
-                    </Button>
+                    {lc.provider === "nativo" ? (
+                      <Button size="sm" variant="outline" asChild onClick={(e) => e.stopPropagation()}>
+                        <Link to={`/live/${lc.id}`}><Video className="h-4 w-4 mr-1" /> Abrir sala</Link>
+                      </Button>
+                    ) : lc.meet_url ? (
+                      <Button size="sm" variant="outline" asChild onClick={(e) => e.stopPropagation()}>
+                        <a href={lc.meet_url} target="_blank" rel="noopener noreferrer">
+                          <Video className="h-4 w-4 mr-1" />
+                          {lc.provider === "google_meet" ? "Entrar no Google Meet" : "Abrir sala"}
+                        </a>
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sala do Google Meet ainda não criada</span>
+                    )}
                     <Button size="sm" variant="destructive"
                       onClick={(e) => { e.stopPropagation(); void endClass(lc); }}>
                       <Square className="h-4 w-4 mr-1" /> Encerrar

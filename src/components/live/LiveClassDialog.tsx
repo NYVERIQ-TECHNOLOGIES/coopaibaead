@@ -69,7 +69,7 @@ export default function LiveClassDialog({
   const [duration, setDuration] = useState(60);
   const [openBefore, setOpenBefore] = useState(15);
   const [recording, setRecording] = useState(true);
-  const [provider, setProvider] = useState<"nativo" | "google_meet" | "link_externo" | "sala_instantanea">("nativo");
+  const [provider, setProvider] = useState<"nativo" | "google_meet" | "link_externo" | "sala_instantanea">("google_meet");
   const [meetUrl, setMeetUrl] = useState("");
   const [startNow, setStartNow] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -119,7 +119,7 @@ export default function LiveClassDialog({
       setDuration(60);
       setOpenBefore(15);
       setRecording(true);
-      setProvider(googleConnected ? "google_meet" : "nativo");
+      setProvider("google_meet");
       setMeetUrl("");
       setStartNow(false);
     }
@@ -147,7 +147,8 @@ export default function LiveClassDialog({
         provider,
         meet_url: provider === "nativo"
           ? null
-          : provider !== "google_meet" ? meetUrl.trim() : (editing?.meet_url ?? null),
+          : provider !== "google_meet" ? meetUrl.trim()
+            : (editing?.meet_url ?? "").startsWith("https://meet.google.com/") ? editing!.meet_url : null,
         status: startNow ? "ao_vivo" : (editing?.status ?? "agendada"),
         started_at: startNow ? new Date().toISOString() : undefined,
       };
@@ -168,7 +169,7 @@ export default function LiveClassDialog({
         });
         if (error || data?.error) {
           toast.warning(
-            "A aula foi salva, mas não foi possível criar a sala do Google Meet automaticamente. Você pode tentar novamente ou colar um link manualmente.",
+            "A aula foi salva, mas não foi possível criar a sala do Google Meet automaticamente. Conecte a conta Google e use o botão \"Criar sala Google Meet\" na lista da aula para tentar novamente. A aula não será iniciada por outro método automaticamente.",
           );
         } else {
           toast.success("Aula salva e sala do Google Meet criada.");
@@ -270,26 +271,58 @@ export default function LiveClassDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Transmissão</Label>
+            <Label>Método de realização</Label>
             <Select
-              value={provider}
+              value={provider === "google_meet" ? "google_meet" : "outra"}
               onValueChange={(v) => {
-                const next = v as typeof provider;
-                setProvider(next);
-                if (next === "sala_instantanea") setMeetUrl(gerarLinkSala(title));
-                if (next === "link_externo" && meetUrl.includes("meet.jit.si")) setMeetUrl("");
+                if (v === "google_meet") setProvider("google_meet");
+                else setProvider((prev) => (prev === "google_meet" ? "nativo" : prev));
               }}
             >
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger aria-label="Método de realização"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="google_meet" disabled={!googleConnected}>
-                  Google Meet {googleConnected ? "(recomendado)" : "(conecte sua conta Google)"}
-                </SelectItem>
-                <SelectItem value="nativo">Transmitir pela plataforma</SelectItem>
-                <SelectItem value="sala_instantanea">Criar link da sala automaticamente</SelectItem>
-                <SelectItem value="link_externo">Colar link de reunião existente</SelectItem>
+                <SelectItem value="google_meet">Google Meet (padrão)</SelectItem>
+                <SelectItem value="outra">Outra forma de realização — sem Google Meet (opcional)</SelectItem>
               </SelectContent>
             </Select>
+
+            {provider === "google_meet" ? (
+              <div className="space-y-1 rounded-xl border border-border bg-muted/40 p-3">
+                <p className="text-xs font-medium flex items-center gap-1">
+                  <Video className="h-3.5 w-3.5 text-primary" /> Google Meet — método principal
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {googleConnected
+                    ? "Conta Google conectada. A sala do Google Meet será criada automaticamente ao salvar."
+                    : "Conecte sua conta Google (card na página) para que a sala possa ser criada. Sem essa conexão não será possível iniciar a aula pelo Google Meet."}
+                </p>
+                {editing?.meet_url?.startsWith("https://meet.google.com/") && (
+                  <p className="text-xs font-mono break-all text-muted-foreground">{editing.meet_url}</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <Select
+                  value={provider}
+                  onValueChange={(v) => {
+                    const next = v as typeof provider;
+                    setProvider(next);
+                    if (next === "sala_instantanea") setMeetUrl(gerarLinkSala(title));
+                    if (next === "link_externo" && meetUrl.includes("meet.jit.si")) setMeetUrl("");
+                  }}
+                >
+                  <SelectTrigger aria-label="Alternativa sem Google Meet"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nativo">Transmitir pela plataforma</SelectItem>
+                    <SelectItem value="sala_instantanea">Criar link da sala automaticamente</SelectItem>
+                    <SelectItem value="link_externo">Colar link de reunião existente</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  A aula será realizada sem Google Meet: nenhum link do Meet será exigido ou criado.
+                </p>
+              </>
+            )}
           </div>
 
           {provider === "nativo" && (
