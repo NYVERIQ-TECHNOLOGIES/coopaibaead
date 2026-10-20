@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +45,7 @@ export default function Meetings() {
   }, refetchInterval: 15000 });
   const { data: googleLinks = {} } = useQuery({ queryKey: ["meeting-google-links"], queryFn: async () => {
     // RLS devolve somente as reuniões em que o usuário pode entrar (meeting_can_enter).
-    const { data, error } = await supabase.from("meeting_google_links").select("meeting_id,meet_url");
+    const { data, error } = await db.from("meeting_google_links").select("meeting_id,meet_url");
     if (error) throw error;
     return Object.fromEntries((data ?? []).map(r => [r.meeting_id, r.meet_url])) as Record<string, string>;
   }, refetchInterval: 15000 });
@@ -88,7 +90,7 @@ export default function Meetings() {
   async function enterGoogleMeeting(m: Meeting) {
     const url = meetUrlOf(m);
     if (url) return window.open(url, "_blank", "noopener,noreferrer");
-    const { data } = await supabase.from("meeting_google_links").select("meet_url").eq("meeting_id", m.id).maybeSingle();
+    const { data } = await db.from("meeting_google_links").select("meet_url").eq("meeting_id", m.id).maybeSingle();
     if (data?.meet_url) return window.open(data.meet_url, "_blank", "noopener,noreferrer");
     toast.warning("A sala do Google Meet desta reunião ainda não foi criada pelo responsável.");
   }

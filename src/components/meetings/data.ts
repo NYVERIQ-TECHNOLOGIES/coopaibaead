@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
-export type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
+export type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & { provider?: string | null };
 export type Person = { user_id: string; full_name: string; cpf?: string | null; enrollment_number?: string | null; email?: string | null };
 export const meetingUrl = (token: string) => `${window.location.origin}/reuniao/${token}`;
 export const when = (date: string) => new Date(date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });

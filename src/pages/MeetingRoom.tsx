@@ -11,7 +11,9 @@ import MeetingChat from "@/components/meetings/MeetingChat";
 import { callMeeting, meetingUrl, when } from "@/components/meetings/data";
 import type { Database } from "@/integrations/supabase/types";
 
-type Meeting = Database["public"]["Tables"]["meetings"]["Row"];
+type Meeting = Database["public"]["Tables"]["meetings"]["Row"] & { provider?: string | null };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
 type Signal = Database["public"]["Tables"]["meeting_signals"]["Row"];
 type Session = Database["public"]["Tables"]["meeting_sessions"]["Row"];
 type Request = Database["public"]["Tables"]["meeting_access_requests"]["Row"];
@@ -61,10 +63,10 @@ export default function MeetingRoom() {
       if (info?.id && info.allowed) {
         const { data, error: fetchError } = await supabase.from("meetings").select("*").eq("id", info.id).single();
         if (fetchError) throw fetchError;
-        setMeeting(data);
-        if (data?.provider === "google_meet") {
+        setMeeting(data as Meeting);
+        if ((data as Meeting)?.provider === "google_meet") {
           // RLS devolve o link somente para quem pode entrar (meeting_can_enter).
-          const { data: gl } = await supabase.from("meeting_google_links").select("meet_url").eq("meeting_id", info.id).maybeSingle();
+          const { data: gl } = await db.from("meeting_google_links").select("meet_url").eq("meeting_id", info.id).maybeSingle();
           setGoogleLink(gl ?? null);
         } else setGoogleLink(null);
       } else { setMeeting(null); setGoogleLink(null); }
