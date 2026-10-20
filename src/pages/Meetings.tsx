@@ -82,7 +82,7 @@ export default function Meetings() {
   async function createMeetFor(m: Meeting) {
     try {
       const { data, error } = await supabase.functions.invoke("meeting-create-meet", { body: { meetingId: m.id } });
-      if (error || data?.error) throw new Error(error?.message ?? data?.error ?? "Falha ao criar a sala.");
+      if (error || data?.error) throw new Error(/401|autorizado/i.test(String(error?.message ?? data?.error)) ? "Sua sessão expirou ou a conta Google não está conectada. Entre novamente e tente outra vez." : (data?.error ?? "Falha ao criar a sala."));
       toast.success("Sala do Google Meet criada.");
       refresh();
     } catch (err) { toast.error((err as Error).message || "Não foi possível criar a sala do Google Meet. Conecte a conta Google e tente novamente."); }
