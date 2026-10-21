@@ -1,7 +1,7 @@
 // Gera pauta e descrição de reunião com Lovable AI Gateway (modelo no servidor, chave nunca no navegador).
 import { createClient } from "npm:@supabase/supabase-js@^2.101.0";
 import { createOpenAI } from "npm:@ai-sdk/openai@^2";
-import { Output, streamText } from "npm:ai@^5";
+import { streamText } from "npm:ai@^5";
 import { z } from "npm:zod@^3.25.76";
 import {
   createLovableAiGatewayRunIdFetch,
@@ -23,9 +23,19 @@ function json(body: unknown, status = 200) {
 }
 
 const agendaSchema = z.object({
-  descricao: z.string().describe("Descrição da reunião pronta para o convite, 2 a 4 frases, em português."),
-  pauta: z.array(z.string()).describe("Itens da pauta em ordem, cada um com o tempo sugerido entre parênteses."),
+  descricao: z.string().min(1),
+  pauta: z.array(z.string().min(1)).min(1),
 });
+
+function parseAgenda(text: string) {
+  const cleaned = text.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("A IA não retornou um resultado válido.");
+  const parsed = agendaSchema.safeParse(JSON.parse(cleaned.slice(start, end + 1)));
+  if (!parsed.success) throw new Error("A IA retornou um resultado incompleto. Tente novamente.");
+  return parsed.data;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -76,8 +86,9 @@ Deno.serve(async (req) => {
       instructions:
         "Você cria pautas e descrições de reuniões para a plataforma de ensino da COOPAIBA (cooperativa). " +
         "Escreva em português do Brasil, em tom profissional e acolhedor, pronto para copiar e compartilhar no convite. " +
-        "A descrição apresenta a reunião em 2 a 4 frases. " +
-        "A pauta lista os itens em ordem, cada item com o tempo sugerido entre parênteses, somando a duração informada.",
+        "Responda SOMENTE com um objeto json neste formato exato, sem texto antes ou depois: " +
+        '{"descricao": "texto de 2 a 4 frases apresentando a reunião", "pauta": ["item 1 (tempo sugerido)", "item 2 (tempo sugerido)"]}. ' +
+        "Os tempos da pauta devem somar a duração informada.",
       messages: [
         {
           role: "user",
@@ -85,10 +96,9 @@ Deno.serve(async (req) => {
             `Tema da reunião: ${tema}\n` +
             `Público: ${publico || "não informado"}\n` +
             `Duração prevista: ${duracao || "não informada"}\n\n` +
-            "Gere a descrição e a pauta.",
+            "Gere a descrição e a pauta em json.",
         },
       ],
-      experimental_output: Output.object({ schema: agendaSchema }),
       abortSignal: req.signal,
       providerOptions: {
         openai: {
@@ -100,7 +110,7 @@ Deno.serve(async (req) => {
         },
       },
     });
-    const output = await result.experimental_output;
+    const output = parseAgenda(await result.text);
     return withLovableAiGatewayRunIdHeader(
       json({ descricao: output.descricao, pauta: output.pauta }),
       runIdFetch,
