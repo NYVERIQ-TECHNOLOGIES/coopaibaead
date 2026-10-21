@@ -24,7 +24,7 @@ function json(body: unknown, status = 200) {
 
 const agendaSchema = z.object({
   descricao: z.string().min(1),
-  pauta: z.array(z.union([z.string().min(1), z.record(z.string())])).min(1),
+  pauta: z.array(z.union([z.string().min(1), z.record(z.unknown())])).min(1),
 });
 
 function parseAgenda(text: string) {
