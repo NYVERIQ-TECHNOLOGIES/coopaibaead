@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,7 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { CalendarDays, Copy, ExternalLink, Plus, Search, Video, Trash2, RotateCcw } from "lucide-react";
+import { CalendarDays, Copy, ExternalLink, Plus, Search, Video, Trash2, RotateCcw, Radio } from "lucide-react";
+import { recordingMeetingId, startMeetRecording, stopMeetRecording, subscribeRecording } from "@/components/meetings/meetRecorder";
 import { toast } from "sonner";
 import GoogleConnectCard, { useGoogleStatus } from "@/components/live/GoogleConnectCard";
 import { callMeeting, loadMeetingRoles, loadPeople, meetingUrl, statusText, when, type Meeting } from "@/components/meetings/data";
