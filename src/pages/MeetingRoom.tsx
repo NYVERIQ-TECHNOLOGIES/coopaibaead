@@ -234,25 +234,56 @@ export default function MeetingRoom() {
       toast.success(command === "remove" ? "Participante removido." : "Controle enviado.");
     } catch (err) { toast.error((err as Error).message); }
   }
+  const captureCleanup = useRef<(() => void) | null>(null);
   async function record() {
-    if (!meeting || !linkInfo?.manager || !meeting.allow_recording || !local.current) return;
-    if (recordingRef.current?.state === "recording") { recordingRef.current.stop(); await action("parar_gravacao"); return; }
+    if (!meeting || !linkInfo?.manager || !meeting.allow_recording) return;
+    if (recordingRef.current?.state === "recording") { recordingRef.current.stop(); void callMeeting("meeting_set_state", { _id: meeting.id, _action: "parar_gravacao" }).catch(() => undefined); await loadInfo(); return; }
+    const isMeet = meeting.provider === "google_meet";
+    if (!isMeet && !local.current) return;
+    if (!navigator.mediaDevices?.getDisplayMedia || typeof MediaRecorder === "undefined") { toast.error("Este navegador não permite gravar. Use o Google Chrome ou o Microsoft Edge no computador."); return; }
+    let display: MediaStream;
     try {
-      await callMeeting("meeting_set_state", { _id: meeting.id, _action: "gravar" });
-      const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus") ? "video/webm;codecs=vp8,opus" : "video/webm";
-      const recorder = new MediaRecorder(local.current, { mimeType }); chunksRef.current = [];
+      // Captura a aba (Google Meet ou a própria sala) com o som da aba: grava todos os participantes.
+      display = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true, ...(isMeet ? { selfBrowserSurface: "exclude" } : { preferCurrentTab: true }), systemAudio: "include" } as DisplayMediaStreamOptions);
+    } catch { toast.error(isMeet ? "Gravação cancelada. Escolha a aba do Google Meet e marque “Compartilhar áudio da aba”." : "Gravação cancelada."); return; }
+    let ownMic: MediaStream | null = null;
+    if (isMeet) ownMic = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
+    const micStream = isMeet ? ownMic : local.current;
+    const ctx = new AudioContext(); const dest = ctx.createMediaStreamDestination();
+    for (const s of [display, micStream]) { const tracks = s?.getAudioTracks() ?? []; if (tracks.length) ctx.createMediaStreamSource(new MediaStream(tracks)).connect(dest); }
+    if (!display.getAudioTracks().length) toast.warning(isMeet ? "Sem o som da aba: marque “Compartilhar áudio da aba” para gravar as vozes dos participantes." : "O som da aba não foi incluído; só o seu microfone será gravado.");
+    const output = new MediaStream([...display.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+    captureCleanup.current = () => { display.getTracks().forEach(t => t.stop()); ownMic?.getTracks().forEach(t => t.stop()); void ctx.close().catch(() => undefined); };
+    try {
+      await callMeeting("meeting_set_state", { _id: meeting.id, _action: "gravar" }).catch(() => undefined);
+      const mimeType = ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"].find(t => MediaRecorder.isTypeSupported(t)) ?? "";
+      const recorder = new MediaRecorder(output, mimeType ? { mimeType } : undefined); chunksRef.current = [];
       recorder.ondataavailable = e => { if (e.data.size) chunksRef.current.push(e.data); };
+      const started = Date.now();
       recorder.onstop = async () => {
+        captureCleanup.current?.(); captureCleanup.current = null;
         const blob = new Blob(chunksRef.current, { type: "video/webm" }); setRecording(false); recordingRef.current = null;
         if (blob.size) {
           const name = `reuniao-${meeting.id}-${new Date().toISOString().replace(/[:.]/g, "-")}.webm`;
           const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 60000);
           const { error: logError } = await supabase.from("meeting_recordings").insert({ meeting_id: meeting.id, file_name: name, file_size: blob.size, duration_seconds: Math.round((Date.now() - started) / 1000), created_by: user?.id ?? "", storage_type: "local" });
-          if (logError) toast.warning("Arquivo baixado, mas não foi possível registrar a gravação."); else toast.success("Gravação baixada neste dispositivo.");
-        }
+          if (logError) toast.warning("Arquivo baixado, mas não foi possível registrar a gravação."); else toast.success("Gravação salva na pasta Downloads deste computador.");
+        } else toast.error("Nada foi gravado. Tente novamente escolhendo a aba da reunião.");
       };
-      const started = Date.now(); recorder.start(1000); recordingRef.current = recorder; setRecording(true); await loadInfo();
-    } catch (err) { toast.error((err as Error).message); await action("parar_gravacao"); }
+      // Se a pessoa clicar em "Parar compartilhamento" no navegador, a gravação termina e é salva.
+      display.getVideoTracks()[0]?.addEventListener("ended", () => { if (recorder.state === "recording") { recorder.stop(); void callMeeting("meeting_set_state", { _id: meeting.id, _action: "parar_gravacao" }).catch(() => undefined); void loadInfo(); } });
+      recorder.start(1000); recordingRef.current = recorder; setRecording(true);
+      toast.success(isMeet ? "Gravando a aba do Google Meet. Volte aqui e clique em “Parar gravação” para salvar." : "Gravação iniciada.");
+      await loadInfo();
+    } catch (err) { captureCleanup.current?.(); captureCleanup.current = null; toast.error((err as Error).message); }
+  }
+  async function usePlatformRoom() {
+    if (!meeting || !linkInfo?.manager) return;
+    if (!confirm("Fazer esta reunião dentro da própria plataforma (sem abrir o Google Meet)? Os participantes entram por esta mesma página.")) return;
+    const { error: upErr } = await db.from("meetings").update({ provider: "nativo" }).eq("id", meeting.id);
+    if (upErr) { toast.error("Não foi possível trocar a sala: " + upErr.message); return; }
+    toast.success("Pronto! A reunião agora acontece aqui na plataforma.");
+    await loadInfo();
   }
   const activeIds = [...new Set(sessions.map(s => s.user_id))];
   return <div className="mx-auto max-w-7xl space-y-5 pb-8">
