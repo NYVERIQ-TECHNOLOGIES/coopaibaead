@@ -40,8 +40,12 @@ function parseAgenda(text: string) {
       typeof item === "string"
         ? item
         : Object.entries(item)
-            .filter(([k, v]) => v != null && v !== "" && !["ordem", "numero", "número", "n"].includes(k.toLowerCase()))
-            .map(([, v]) => (typeof v === "number" ? `${v} min` : String(v)))
+            .filter(([k, v]) => v != null && v !== "")
+            .map(([k, v]) => {
+              if (typeof v !== "number") return String(v);
+              return /tempo|dura|min/i.test(k) ? `${v} min` : null;
+            })
+            .filter(Boolean)
             .join(" — ")
     ),
   };
