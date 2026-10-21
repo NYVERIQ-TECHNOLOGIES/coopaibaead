@@ -39,6 +39,20 @@ export default function Meetings() {
   const [participantFilter, setParticipantFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [detail, setDetail] = useState<Meeting | null>(null);
+  const [aiForm, setAiForm] = useState({ tema: "", publico: "", duracao: "60 minutos" });
+  const [aiBusy, setAiBusy] = useState(false);
+  async function generateAgenda() {
+    const tema = aiForm.tema.trim() || form.title.trim();
+    if (!tema) return toast.error("Informe o tema da reunião (ou preencha o título).");
+    setAiBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("meeting-agenda-ai", { body: { tema, publico: aiForm.publico.trim(), duracao: aiForm.duracao.trim() } });
+      if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha ao gerar a pauta.");
+      const pauta = (data.pauta as string[]).map((p, i) => `${i + 1}. ${p}`).join("\n");
+      setForm(f => ({ ...f, description: `${data.descricao}\n\nPauta:\n${pauta}` }));
+      toast.success("Pauta e descrição geradas no campo Descrição. Revise antes de salvar.");
+    } catch (err) { toast.error((err as Error).message); } finally { setAiBusy(false); }
+  }
 
   const { data: meetings = [], isLoading } = useQuery({ queryKey: ["meetings"], queryFn: async () => {
     const { data, error } = await supabase.from("meetings").select("*").order("start_at", { ascending: false }).limit(500);

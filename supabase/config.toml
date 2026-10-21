@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.live-classes-notify]
 verify_jwt = false
+
+[functions.meeting-agenda-ai]
+verify_jwt = false
