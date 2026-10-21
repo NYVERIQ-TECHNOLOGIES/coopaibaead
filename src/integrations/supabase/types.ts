@@ -2487,6 +2487,7 @@ export type Database = {
           area_atuacao: string | null
           avatar_url: string | null
           bio: string | null
+          cnpj: string | null
           cooperativa: string | null
           cpf: string | null
           created_at: string
@@ -2498,6 +2499,7 @@ export type Database = {
           id: string
           is_active: boolean
           is_test_user: boolean
+          nire: string | null
           phone: string | null
           updated_at: string
           user_id: string
@@ -2506,6 +2508,7 @@ export type Database = {
           area_atuacao?: string | null
           avatar_url?: string | null
           bio?: string | null
+          cnpj?: string | null
           cooperativa?: string | null
           cpf?: string | null
           created_at?: string
@@ -2517,6 +2520,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_test_user?: boolean
+          nire?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
@@ -2525,6 +2529,7 @@ export type Database = {
           area_atuacao?: string | null
           avatar_url?: string | null
           bio?: string | null
+          cnpj?: string | null
           cooperativa?: string | null
           cpf?: string | null
           created_at?: string
@@ -2536,6 +2541,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_test_user?: boolean
+          nire?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string

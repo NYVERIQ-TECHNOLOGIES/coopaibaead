@@ -21,6 +21,8 @@ type ProfileRow = {
   enrollment_number: string | null;
   phone: string | null;
   cpf: string | null;
+  cnpj: string | null;
+  nire: string | null;
   data_nascimento: string | null;
   is_active: boolean | null;
   created_at: string | null;
@@ -101,7 +103,7 @@ export default function ProfilePage() {
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
-      .select("enrollment_number, phone, cpf, data_nascimento, is_active, created_at, bio, area_atuacao, especialidade")
+      .select("enrollment_number, phone, cpf, cnpj, nire, data_nascimento, is_active, created_at, bio, area_atuacao, especialidade")
       .eq("user_id", user.id)
       .maybeSingle();
     if (data) {
@@ -232,7 +234,7 @@ export default function ProfilePage() {
       payload.area_atuacao = areaAtuacao.trim() || null;
       payload.especialidade = especialidade.trim() || null;
     }
-    if (!row?.data_nascimento && nascimento) payload.data_nascimento = nascimento;
+    if (!row?.cnpj && !row?.data_nascimento && nascimento) payload.data_nascimento = nascimento;
     const { error } = await supabase.from("profiles").update(payload as any).eq("user_id", user.id);
     setSaving(false);
     if (error) {
@@ -348,7 +350,7 @@ export default function ProfilePage() {
 
       <Tabs defaultValue="dados">
         <TabsList className="flex flex-wrap h-auto">
-          <TabsTrigger value="dados" className="gap-2"><User className="w-4 h-4" /> Dados pessoais</TabsTrigger>
+          <TabsTrigger value="dados" className="gap-2"><User className="w-4 h-4" /> {row?.cnpj ? "Dados da cooperativa" : "Dados pessoais"}</TabsTrigger>
           <TabsTrigger value="seguranca" className="gap-2"><Shield className="w-4 h-4" /> Segurança</TabsTrigger>
           <TabsTrigger value="progresso" className="gap-2"><GraduationCap className="w-4 h-4" /> Meu progresso</TabsTrigger>
         </TabsList>
@@ -362,7 +364,7 @@ export default function ProfilePage() {
                 <Input value={row?.enrollment_number || "—"} disabled className="opacity-60 font-mono" />
               </div>
               <div>
-                <Label>Nome completo</Label>
+                <Label>{row?.cnpj ? "Razão social" : "Nome completo"}</Label>
                 <Input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={120} />
               </div>
               <div>
@@ -370,19 +372,21 @@ export default function ProfilePage() {
                 <Input value={user?.email || ""} disabled className="opacity-60" />
               </div>
               <div>
-                <Label>CPF</Label>
-                <Input value={maskCpf(row?.cpf)} disabled className="opacity-60 font-mono" />
+                <Label>{row?.cnpj ? "CNPJ" : "CPF"}</Label>
+                <Input value={row?.cnpj ? row.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5") : maskCpf(row?.cpf)} disabled className="opacity-60 font-mono" />
                 <p className="text-xs text-muted-foreground mt-1">
-                  O CPF não pode ser alterado. Fale com a secretaria em caso de erro.
+                  O {row?.cnpj ? "CNPJ" : "CPF"} não pode ser alterado. Fale com a secretaria em caso de erro.
                 </p>
               </div>
               <div>
+                {row?.cnpj ? <><Label>NIRE</Label><Input value={row.nire || "—"} disabled className="opacity-60 font-mono" /></> : <>
                 <Label className="flex items-center gap-2"><CalendarDays className="w-4 h-4" /> Data de nascimento</Label>
                 {row?.data_nascimento ? (
                   <Input value={fmtDate(row.data_nascimento)} disabled className="opacity-60" />
                 ) : (
                   <Input type="date" value={nascimento} onChange={(e) => setNascimento(e.target.value)} />
                 )}
+                </>}
               </div>
               <div>
                 <Label className="flex items-center gap-2"><Building2 className="w-4 h-4" /> Cooperativa</Label>

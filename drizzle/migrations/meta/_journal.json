@@ -50,6 +50,13 @@
       "when": 1792542233229,
       "tag": "0006_video_play_events",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792591448046,
+      "tag": "0007_institutional_profile_identity",
+      "breakpoints": true
     }
   ]
 }
