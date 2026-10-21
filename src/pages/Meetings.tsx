@@ -16,10 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarDays, Copy, ExternalLink, Plus, Search, Video, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import GoogleConnectCard, { useGoogleStatus } from "@/components/live/GoogleConnectCard";
 import { callMeeting, loadMeetingRoles, loadPeople, meetingUrl, statusText, when, type Meeting } from "@/components/meetings/data";
 
-const initial = { title: "", description: "", start: "", end: "", access_type: "restrito", scope: "convite", course_id: "", provider: "google_meet", allow_responsible_add_students: false, allow_recording: true, allow_screen_share: true, h24: true, h1: true, startReminder: true };
+const initial = { title: "", description: "", start: "", end: "", access_type: "restrito", scope: "convite", course_id: "", provider: "nativo", allow_responsible_add_students: false, allow_recording: true, allow_screen_share: true, h24: true, h1: true, startReminder: true };
 export default function Meetings() {
   const { user, role } = useAuth();
   const admin = role === "admin";
