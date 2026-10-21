@@ -166,7 +166,19 @@ Deno.serve(async (req) => {
     const text = await res.text();
     if (!res.ok) {
       console.error("create meet failed", res.status, text);
-      return json({ error: "Falha ao criar a reunião no Google", status: res.status, details: text }, res.status);
+      if (res.status === 403 && /SERVICE_DISABLED|accessNotConfigured/.test(text)) {
+        return json({
+          error: "A API do Google Agenda está desativada no seu projeto do Google Cloud. Ative a \"Google Calendar API\" em APIs e serviços → Biblioteca, aguarde alguns minutos e tente novamente.",
+          code: "google_calendar_api_disabled",
+        });
+      }
+      if (res.status === 401 || res.status === 403) {
+        return json({
+          error: "O Google recusou o acesso à sua agenda. Desconecte e conecte sua conta Google novamente, aceitando o acesso ao Google Agenda.",
+          code: "google_permission_denied",
+        });
+      }
+      return json({ error: `Falha ao criar a reunião no Google (${res.status}).`, code: "google_error" });
     }
 
     const event = JSON.parse(text);
