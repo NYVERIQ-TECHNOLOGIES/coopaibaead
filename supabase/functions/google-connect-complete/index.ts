@@ -59,6 +59,31 @@ Deno.serve(async (req) => {
       console.error("primary calendar lookup error", e);
     }
 
+    // Fallback: the calendar list marks one entry as primary; its id is the account email.
+    if (!email || !email.includes("@")) {
+      try {
+        const res = await callAsAppUser({
+          gatewayBaseUrl: GATEWAY_BASE_URL,
+          connectionAPIKey,
+          connectorId: CONNECTOR_ID,
+          path: "/calendar/v3/users/me/calendarList",
+        });
+        if (res.ok) {
+          const list = await res.json();
+          const items = Array.isArray(list?.items) ? list.items : [];
+          const primary = items.find((c: { primary?: boolean }) => c?.primary) ?? items[0];
+          const candidate = primary?.id ?? null;
+          if (candidate && String(candidate).includes("@")) email = String(candidate);
+        } else {
+          console.error("calendar list lookup failed", res.status, await res.text());
+        }
+      } catch (e) {
+        console.error("calendar list lookup error", e);
+      }
+    }
+
+    if (email && !email.includes("@")) email = null;
+
     await saveConnectionKeyForUser(user.id, connectorId, connectionAPIKey, email);
 
     return new Response(JSON.stringify({ ok: true, email }), {

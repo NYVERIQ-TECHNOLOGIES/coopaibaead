@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { CheckCircle2, LinkIcon, LogOut } from "lucide-react";
@@ -112,6 +111,38 @@ export default function GoogleConnectCard({
 
   if (loading) return <Skeleton className="h-24 w-full rounded-2xl" />;
 
+  // Já conectado: esconde o convite de conexão e confirma a conta da pessoa.
+  if (status?.connected) {
+    return (
+      <Card className="border-primary/30 bg-primary/5">
+        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-medium text-sm">Conectado com a sua conta Google</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {status.email
+                  ? status.email
+                  : "Suas salas do Google Meet serão criadas automaticamente."}
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={disconnect}
+            disabled={busy}
+            className="shrink-0 self-start sm:self-auto"
+          >
+            <LogOut className="h-4 w-4 mr-1" /> {busy ? "Desconectando…" : "Desconectar"}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (status && !status.configured) {
     return (
       <Card className="border-dashed">
@@ -132,31 +163,16 @@ export default function GoogleConnectCard({
           </div>
           <div className="min-w-0">
             <p className="font-medium text-sm">Conta Google</p>
-            {status?.connected ? (
-              <p className="text-xs text-muted-foreground truncate">{status.email ?? "conta conectada"}</p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Opcional: conecte para criar reuniões do Google Meet automaticamente. As aulas ao vivo dentro
-                da plataforma funcionam normalmente sem essa conexão.
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Opcional: conecte para criar reuniões do Google Meet automaticamente. As aulas ao vivo dentro
+              da plataforma funcionam normalmente sem essa conexão.
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {status?.connected && (
-            <Badge variant="secondary" className="gap-1">
-              <CheckCircle2 className="h-3 w-3" /> Conectada
-            </Badge>
-          )}
-          {status?.connected ? (
-            <Button size="sm" variant="outline" onClick={disconnect} disabled={busy}>
-              <LogOut className="h-4 w-4 mr-1" /> Desconectar
-            </Button>
-          ) : (
-            <Button size="sm" onClick={connect} disabled={busy}>
-              {busy ? "Conectando…" : "Conectar Google"}
-            </Button>
-          )}
+          <Button size="sm" onClick={connect} disabled={busy}>
+            {busy ? "Conectando…" : "Conectar Google"}
+          </Button>
         </div>
       </CardContent>
     </Card>
