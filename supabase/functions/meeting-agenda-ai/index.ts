@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
         "Escreva em português do Brasil, em tom profissional e acolhedor, pronto para copiar e compartilhar no convite. " +
         "Responda SOMENTE com um objeto json neste formato exato, sem texto antes ou depois: " +
         '{"descricao": "texto de 2 a 4 frases apresentando a reunião", "pauta": ["item 1 (tempo sugerido)", "item 2 (tempo sugerido)"]}. ' +
-        "Os tempos da pauta devem somar a duração informada.",
+        "Cada item da pauta deve ser uma string de texto simples (nunca um objeto). Os tempos da pauta devem somar a duração informada.",
       messages: [
         {
           role: "user",
