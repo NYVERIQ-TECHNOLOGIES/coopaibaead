@@ -6,6 +6,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import SEO from "@/components/SEO";
+import { loginIdentifier } from "@/lib/accountIdentity";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -65,10 +66,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    // Detecta se é CPF (apenas dígitos, 11 caracteres após limpeza) ou e-mail
-    const digits = email.replace(/\D/g, "");
-    const isCpf = !email.includes("@") && digits.length === 11;
-    const loginEmail = isCpf ? `cpf${digits}@cooperado.coopaiba.com.br` : email;
+    const loginEmail = loginIdentifier(email);
 
     const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
 
@@ -237,7 +235,7 @@ export default function Login() {
               <form className="space-y-4" onSubmit={handleLogin}>
                 <div>
                   <label htmlFor="login-identifier" className="text-sm font-medium text-foreground mb-1.5 block">
-                    E-mail ou CPF
+                    E-mail, CPF ou CNPJ
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -246,7 +244,7 @@ export default function Login() {
                       type="text"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="seu@email.com ou 000.000.000-00"
+                      placeholder="Informe seu e-mail, CPF ou CNPJ"
                       required
                       className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground shadow-[0_1px_2px_hsl(160_20%_15%/0.03)] transition-colors focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-ring/40"
                     />

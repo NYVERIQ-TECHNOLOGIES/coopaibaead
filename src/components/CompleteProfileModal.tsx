@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, UserRoundCog } from "lucide-react";
+import { missingProfileFields } from "@/lib/accountIdentity";
 
 // Routes that should never trigger the modal
 const EXCLUDED_PREFIXES = ["/login", "/register", "/forgot-password", "/reset-password", "/p/", "/certificados/validar"];
@@ -74,7 +75,7 @@ export function CompleteProfileModal() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("cpf, data_nascimento, phone, is_test_user")
+        .select("cpf, cnpj, data_nascimento, phone, is_test_user")
         .eq("user_id", user.id)
         .maybeSingle();
       if (cancelled || !data) return;
@@ -84,11 +85,7 @@ export function CompleteProfileModal() {
         setOpen(false);
         return;
       }
-      const m: Missing = {
-        cpf: !data.cpf || data.cpf.trim().length === 0,
-        data_nascimento: !data.data_nascimento,
-        phone: !data.phone || data.phone.trim().length === 0,
-      };
+      const m: Missing = missingProfileFields(data);
       if (m.cpf || m.data_nascimento || m.phone) {
         setMissing(m);
         setOpen(true);
