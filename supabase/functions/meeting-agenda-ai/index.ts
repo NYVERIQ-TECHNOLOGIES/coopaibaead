@@ -37,7 +37,7 @@ function parseAgenda(text: string) {
   return {
     descricao: parsed.data.descricao,
     pauta: parsed.data.pauta.map((item) =>
-      typeof item === "string" ? item : Object.values(item).filter(Boolean).join(" — ")
+      typeof item === "string" ? item : Object.values(item).filter((v) => v != null && v !== "").map(String).join(" — ")
     ),
   };
 }
