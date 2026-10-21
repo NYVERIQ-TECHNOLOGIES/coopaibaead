@@ -83,7 +83,9 @@ Deno.serve(async (req) => {
     const connectionAPIKey = await getConnectionKeyForUser(meeting.created_by, CONNECTOR_ID)
       ?? await getConnectionKeyForUser(user.id, CONNECTOR_ID);
     if (!connectionAPIKey) {
-      return json({ error: "Conecte uma conta Google antes de usar o Google Meet nesta reunião." }, 400);
+      // Estado esperado e recuperável pelo usuário: responder 200 com `error` no corpo
+      // evita que o cliente trate como falha de rede/crash; a tela exibe o aviso.
+      return json({ error: "Conecte uma conta Google antes de usar o Google Meet nesta reunião.", code: "google_not_connected" });
     }
 
     if (action === "update") {
