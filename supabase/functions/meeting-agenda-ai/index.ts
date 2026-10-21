@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
     return json({ error: "Apenas organizadores (admin, moderador ou professor) podem gerar pautas." }, 403);
   }
 
-  let body: { tema?: unknown; publico?: unknown; duracao?: unknown };
+  let body: { tema?: unknown; publico?: unknown; duracao?: unknown; edital?: { name?: unknown; type?: unknown; data?: unknown } };
   try {
     body = await req.json();
   } catch {
@@ -81,7 +81,23 @@ Deno.serve(async (req) => {
   const tema = String(body.tema ?? "").trim().slice(0, 300);
   const publico = String(body.publico ?? "").trim().slice(0, 300);
   const duracao = String(body.duracao ?? "").trim().slice(0, 60);
-  if (!tema) return json({ error: "Informe o tema da reunião." }, 400);
+  let editalPart: any = null;
+  let editalText = "";
+  if (body.edital && typeof body.edital.data === "string") {
+    const type = String(body.edital.type ?? "");
+    const name = String(body.edital.name ?? "edital").slice(0, 120);
+    const b64 = body.edital.data.replace(/^data:[^,]*,/, "");
+    if (b64.length > 14_000_000) return json({ error: "O edital é muito grande (máx. 10 MB)." }, 400);
+    if (type === "application/pdf") {
+      editalPart = { type: "file", data: b64, mediaType: "application/pdf", filename: name };
+    } else if (type.startsWith("text/")) {
+      editalText = new TextDecoder().decode(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))).slice(0, 60000);
+    } else {
+      return json({ error: "Envie o edital em PDF ou TXT." }, 400);
+    }
+  }
+  const hasEdital = !!editalPart || !!editalText;
+  if (!tema && !hasEdital) return json({ error: "Informe o tema da reunião ou anexe o edital." }, 400);
 
   const apiKey = Deno.env.get("LOVABLE_API_KEY");
   if (!apiKey) return json({ error: "IA não configurada no servidor." }, 500);
@@ -106,11 +122,19 @@ Deno.serve(async (req) => {
       messages: [
         {
           role: "user",
-          content:
-            `Tema da reunião: ${tema}\n` +
-            `Público: ${publico || "não informado"}\n` +
-            `Duração prevista: ${duracao || "não informada"}\n\n` +
-            "Gere a descrição e a pauta em json.",
+          content: [
+            ...(editalPart ? [editalPart] : []),
+            {
+              type: "text",
+              text:
+                `Tema da reunião: ${tema || "baseie-se no edital"}\n` +
+                `Público: ${publico || "não informado"}\n` +
+                `Duração prevista: ${duracao || "não informada"}\n` +
+                (editalText ? `\nTexto do edital:\n${editalText}\n` : "") +
+                (hasEdital ? "\nUse o edital anexado como base principal: siga os itens, prazos e exigências que ele estabelece para montar a pauta e a descrição.\n" : "") +
+                "\nGere a descrição e a pauta em json.",
+            },
+          ],
         },
       ],
       abortSignal: req.signal,

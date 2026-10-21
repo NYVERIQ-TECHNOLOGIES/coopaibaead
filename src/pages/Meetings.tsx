@@ -41,12 +41,18 @@ export default function Meetings() {
   const [detail, setDetail] = useState<Meeting | null>(null);
   const [aiForm, setAiForm] = useState({ tema: "", publico: "", duracao: "60 minutos" });
   const [aiBusy, setAiBusy] = useState(false);
+  const [edital, setEdital] = useState<File | null>(null);
   async function generateAgenda() {
     const tema = aiForm.tema.trim() || form.title.trim();
-    if (!tema) return toast.error("Informe o tema da reunião (ou preencha o título).");
+    if (!tema && !edital) return toast.error("Informe o tema da reunião, preencha o título ou anexe o edital.");
     setAiBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("meeting-agenda-ai", { body: { tema, publico: aiForm.publico.trim(), duracao: aiForm.duracao.trim() } });
+      let editalBody: { name: string; type: string; data: string } | undefined;
+      if (edital) {
+        const data = await new Promise<string>((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error("Não foi possível ler o edital.")); r.readAsDataURL(edital); });
+        editalBody = { name: edital.name, type: edital.type || (edital.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "text/plain"), data };
+      }
+      const { data, error } = await supabase.functions.invoke("meeting-agenda-ai", { body: { tema, publico: aiForm.publico.trim(), duracao: aiForm.duracao.trim(), edital: editalBody } });
       if (error || data?.error) throw new Error(data?.error ?? error?.message ?? "Falha ao gerar a pauta.");
       const pauta = (data.pauta as string[]).map((p, i) => `${i + 1}. ${p}`).join("\n");
       setForm(f => ({ ...f, description: `${data.descricao}\n\nPauta:\n${pauta}` }));
@@ -186,6 +192,10 @@ export default function Meetings() {
         <div className="space-y-1"><Label htmlFor="aitema" className="text-xs">Tema</Label><Input id="aitema" placeholder="Usa o título se vazio" value={aiForm.tema} onChange={e => setAiForm({...aiForm,tema:e.target.value})}/></div>
         <div className="space-y-1"><Label htmlFor="aipublico" className="text-xs">Público</Label><Input id="aipublico" placeholder="Ex.: cooperados, alunos" value={aiForm.publico} onChange={e => setAiForm({...aiForm,publico:e.target.value})}/></div>
         <div className="space-y-1"><Label htmlFor="aiduracao" className="text-xs">Duração</Label><Input id="aiduracao" placeholder="Ex.: 60 minutos" value={aiForm.duracao} onChange={e => setAiForm({...aiForm,duracao:e.target.value})}/></div>
+      </div>
+      <div className="space-y-1"><Label htmlFor="aiedital" className="text-xs">Edital (opcional, PDF ou TXT até 10 MB)</Label>
+        <div className="flex flex-wrap items-center gap-2"><Input id="aiedital" type="file" accept="application/pdf,.pdf,text/plain,.txt" className="max-w-sm" onChange={e => { const f = e.target.files?.[0] ?? null; if (f && f.size > 10 * 1024 * 1024) { toast.error("O edital é muito grande (máx. 10 MB)."); e.target.value = ""; return; } setEdital(f); }}/>{edital && <Button type="button" size="sm" variant="ghost" onClick={() => { setEdital(null); const el = document.getElementById("aiedital") as HTMLInputElement | null; if (el) el.value = ""; }}>Remover</Button>}</div>
+        {edital && <p className="text-xs text-muted-foreground">A pauta será criada com base em: {edital.name}</p>}
       </div>
       <p className="text-xs text-muted-foreground">O resultado preenche o campo Descrição acima, pronto para compartilhar. Você pode editar antes de salvar.</p>
     </div>
