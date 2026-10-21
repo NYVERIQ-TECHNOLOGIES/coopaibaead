@@ -51,11 +51,11 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } },
     );
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return json({ error: "Sign in required" }, 401);
+    if (!user) return json({ error: "Sua sessão expirou. Entre novamente.", code: "unauthorized" });
 
     const body = await req.json().catch(() => ({}));
     const meetingId = typeof body?.meetingId === "string" ? body.meetingId : null;
-    if (!meetingId) return json({ error: "meetingId obrigatório" }, 400);
+    if (!meetingId) return json({ error: "meetingId obrigatório" });
     const action: Action = body?.action === "update" || body?.action === "cancel" ? body.action : "create";
 
     const admin = adminClient();
@@ -64,14 +64,14 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("id", meetingId)
       .maybeSingle();
-    if (!m) return json({ error: "Reunião não encontrada" }, 404);
+    if (!m) return json({ error: "Reunião não encontrada" });
     const meeting = m as MeetingRow;
 
     const { data: isManager } = await admin.rpc("meeting_is_manager", {
       _id: meeting.id,
       _uid: user.id,
     });
-    if (!isManager) return json({ error: "Não autorizado" }, 403);
+    if (!isManager) return json({ error: "Não autorizado" });
 
     const { data: linkRow } = await admin
       .from("meeting_google_links")
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     if (action === "update") {
-      if (!eventId) return json({ error: "Esta reunião ainda não possui um evento no Google Agenda." }, 404);
+      if (!eventId) return json({ error: "Esta reunião ainda não possui um evento no Google Agenda." });
       const res = await callAsAppUser({
         gatewayBaseUrl: GATEWAY_BASE_URL,
         connectionAPIKey,
@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
       if (!res.ok) {
         const text = await res.text();
         console.error("update meet event failed", res.status, text);
-        return json({ error: `Falha ao atualizar o evento no Google (${res.status})`, details: text }, res.status);
+        return json({ error: `Falha ao atualizar o evento no Google (${res.status})` });
       }
       return json({ updated: true });
     }
@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
       ?? null;
 
     if (!meetUrl) {
-      return json({ error: "O Google não retornou um link do Meet para este evento." }, 502);
+      return json({ error: "O Google não retornou um link do Meet para este evento." });
     }
 
     const { data: conn } = await admin
@@ -225,6 +225,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("meeting-create-meet", e);
-    return json({ error: String((e as Error).message ?? e) }, 500);
+    return json({ error: String((e as Error).message ?? e) });
   }
 });
