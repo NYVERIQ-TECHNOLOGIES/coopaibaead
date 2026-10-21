@@ -24,7 +24,7 @@ function json(body: unknown, status = 200) {
 
 const agendaSchema = z.object({
   descricao: z.string().min(1),
-  pauta: z.array(z.string().min(1)).min(1),
+  pauta: z.array(z.union([z.string().min(1), z.record(z.string())])).min(1),
 });
 
 function parseAgenda(text: string) {
@@ -33,8 +33,13 @@ function parseAgenda(text: string) {
   const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("A IA não retornou um resultado válido.");
   const parsed = agendaSchema.safeParse(JSON.parse(cleaned.slice(start, end + 1)));
-  if (!parsed.success) throw new Error(`A IA retornou um resultado incompleto. Problemas: ${JSON.stringify(parsed.error.issues).slice(0, 300)}. Trecho: ${cleaned.slice(0, 300)}`);
-  return parsed.data;
+  if (!parsed.success) throw new Error("A IA retornou um resultado incompleto. Tente novamente.");
+  return {
+    descricao: parsed.data.descricao,
+    pauta: parsed.data.pauta.map((item) =>
+      typeof item === "string" ? item : Object.values(item).filter(Boolean).join(" — ")
+    ),
+  };
 }
 
 Deno.serve(async (req) => {
