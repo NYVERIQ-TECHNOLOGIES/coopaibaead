@@ -1544,6 +1544,14 @@ export default function CourseDetail() {
                     playsInline
                     controlsList="nodownload"
                     className="w-full rounded-lg max-h-[60vh] sm:max-h-[70vh] bg-black"
+                    onPlay={() => {
+                      if (!user || !contentLessonId || !courseId) return;
+                      void supabase.from("video_play_events").insert({
+                        user_id: user.id,
+                        lesson_id: contentLessonId,
+                        course_id: courseId,
+                      }).then(({ error }) => { if (error) console.warn("video_play_events:", error.message); });
+                    }}
                     onError={() => setContentError("Não foi possível reproduzir o vídeo. Verifique o formato ou tente novamente.")}
                     onEnded={() => {
                       if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
