@@ -1948,6 +1948,41 @@ export type Database = {
           },
         ]
       }
+      meeting_google_links: {
+        Row: {
+          google_account_email: string | null
+          meet_conference_id: string | null
+          meet_event_id: string | null
+          meet_url: string
+          meeting_id: string
+          updated_at: string
+        }
+        Insert: {
+          google_account_email?: string | null
+          meet_conference_id?: string | null
+          meet_event_id?: string | null
+          meet_url: string
+          meeting_id: string
+          updated_at?: string
+        }
+        Update: {
+          google_account_email?: string | null
+          meet_conference_id?: string | null
+          meet_event_id?: string | null
+          meet_url?: string
+          meeting_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_google_links_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: true
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meeting_participants: {
         Row: {
           created_at: string
@@ -2142,6 +2177,7 @@ export type Database = {
           end_at: string
           id: string
           meeting_token: string
+          provider: string
           recording_active: boolean
           recording_started_at: string | null
           recording_started_by: string | null
@@ -2165,6 +2201,7 @@ export type Database = {
           end_at: string
           id?: string
           meeting_token?: string
+          provider?: string
           recording_active?: boolean
           recording_started_at?: string | null
           recording_started_by?: string | null
@@ -2188,6 +2225,7 @@ export type Database = {
           end_at?: string
           id?: string
           meeting_token?: string
+          provider?: string
           recording_active?: boolean
           recording_started_at?: string | null
           recording_started_by?: string | null
@@ -2789,6 +2827,48 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_play_events: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          lesson_id: string
+          played_at: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          played_at?: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          played_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_play_events_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_play_events_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "course_lessons"
             referencedColumns: ["id"]
           },
         ]
