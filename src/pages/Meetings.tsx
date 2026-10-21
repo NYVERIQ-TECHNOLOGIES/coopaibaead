@@ -86,7 +86,7 @@ export default function Meetings() {
   }
   useEffect(() => { if (admin && params.get("nova") === "1") { startCreate(); setParams({}, { replace: true }); } }, [admin, params, setParams]);
   const startEdit = (m: Meeting) => {
-    setEditing(m); setForm({ title:m.title, description:m.description ?? "", start:toLocal(m.start_at), end:toLocal(m.end_at), access_type:m.access_type, scope:m.scope, course_id:m.course_id ?? "", provider: m.provider === "google_meet" ? "google_meet" : "nativo", allow_responsible_add_students:m.allow_responsible_add_students, allow_recording:m.allow_recording, allow_screen_share:m.allow_screen_share, h24: !!(m.reminders as Record<string,boolean>)?.h24, h1: !!(m.reminders as Record<string,boolean>)?.h1, startReminder: !!(m.reminders as Record<string,boolean>)?.start });
+    setEditing(m); setForm({ title:m.title, description:m.description ?? "", start:toLocal(m.start_at), end:toLocal(m.end_at), access_type:m.access_type, scope:m.scope, course_id:m.course_id ?? "", provider: "nativo", allow_responsible_add_students:m.allow_responsible_add_students, allow_recording:m.allow_recording, allow_screen_share:m.allow_screen_share, h24: !!(m.reminders as Record<string,boolean>)?.h24, h1: !!(m.reminders as Record<string,boolean>)?.h1, startReminder: !!(m.reminders as Record<string,boolean>)?.start });
     setSelected(allParticipants.filter(p => p.meeting_id === m.id && p.status !== "removido").map(p => p.user_id));
     setResponsibles(allResponsibles.filter(r => r.meeting_id === m.id).map(r => r.user_id)); setOpen(true);
   };
@@ -95,7 +95,7 @@ export default function Meetings() {
     if (!responsibles.length) return toast.error("Escolha ao menos um responsável.");
     setBusy(true);
     try {
-      const body = { title: form.title.trim(), description: form.description.trim(), start_at: new Date(form.start).toISOString(), end_at: form.end ? new Date(form.end).toISOString() : new Date(new Date(form.start).getTime() + 60*60000).toISOString(), access_type: form.access_type, scope: form.scope, course_id: form.scope === "curso" ? form.course_id || null : null, provider: form.provider === "google_meet" ? "google_meet" : "nativo", allow_responsible_add_students: form.allow_responsible_add_students, allow_recording: form.allow_recording, allow_screen_share: form.allow_screen_share, reminders: { h24:form.h24, h1:form.h1, start:form.startReminder }, updated_at: new Date().toISOString() };
+      const body = { title: form.title.trim(), description: form.description.trim(), start_at: new Date(form.start).toISOString(), end_at: form.end ? new Date(form.end).toISOString() : new Date(new Date(form.start).getTime() + 60*60000).toISOString(), access_type: form.access_type, scope: form.scope, course_id: form.scope === "curso" ? form.course_id || null : null, provider: "nativo", allow_responsible_add_students: form.allow_responsible_add_students, allow_recording: form.allow_recording, allow_screen_share: form.allow_screen_share, reminders: { h24:form.h24, h1:form.h1, start:form.startReminder }, updated_at: new Date().toISOString() };
       if (form.scope === "curso" && !form.course_id) throw new Error("Selecione o curso.");
       const res = editing ? await db.from("meetings").update(body).eq("id", editing.id).select("id").single() : await db.from("meetings").insert({ ...body, created_by: user.id }).select("id").single();
       if (res.error || !res.data) throw res.error ?? new Error("Não foi possível salvar.");
