@@ -124,7 +124,7 @@ export default function Meetings() {
       if (restore.length) { const { error } = await supabase.from("meeting_participants").update({ status:"convidado" }).eq("meeting_id",mid).in("user_id",restore); if (error) throw error; }
       if (form.provider === "google_meet" && !googleLinks[mid]) {
         const { data: g, error: gerr } = await supabase.functions.invoke("meeting-create-meet", { body: { meetingId: mid } });
-        if (gerr || g?.error) toast.warning("A reunião foi salva, mas não foi possível criar a sala do Google Meet. Conecte a conta Google e use o botão \"Criar sala no Google Meet\" no cartão da reunião para tentar novamente.");
+        if (gerr || g?.error) toast.warning(g?.code === "google_calendar_api_disabled" || g?.code === "google_permission_denied" ? `A reunião foi salva, mas a sala do Google Meet não foi criada. ${g.error}` : "A reunião foi salva, mas não foi possível criar a sala do Google Meet. Conecte a conta Google e use o botão \"Criar sala no Google Meet\" no cartão da reunião para tentar novamente.", { duration: 12000 });
         else toast.success("Sala do Google Meet criada.");
       } else if (form.provider === "google_meet" && editing) {
         const { data: g } = await supabase.functions.invoke("meeting-create-meet", { body: { meetingId: mid, action: "update" } });
