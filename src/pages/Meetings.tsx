@@ -22,7 +22,6 @@ const initial = { title: "", description: "", start: "", end: "", access_type: "
 export default function Meetings() {
   const { user, role } = useAuth();
   const admin = role === "admin";
-  const { status: googleStatus, loading: googleLoading, refresh: refreshGoogle } = useGoogleStatus();
   const qc = useQueryClient();
   const [params, setParams] = useSearchParams();
   const [form, setForm] = useState(initial);
@@ -76,16 +75,8 @@ export default function Meetings() {
   const visible = meetings.filter(m => (filter === "todas" || m.status === filter) && (!dateFilter || m.start_at.slice(0,10) === dateFilter) && (!responsibleFilter || allResponsibles.some(r => r.meeting_id === m.id && r.user_id === responsibleFilter)) && (!participantFilter || allParticipants.some(p => p.meeting_id === m.id && p.user_id === participantFilter)));
   const meetUrlOf = (m: Meeting) => (m.provider === "google_meet" ? googleLinks[m.id] ?? null : null);
   const refresh = () => { ["meetings","meeting-google-links","meeting-responsibles","meeting-participants","notifications"].forEach(key => void qc.invalidateQueries({ queryKey: [key] })); };
-  const startCreate = () => { setEditing(null); setForm({ ...initial, start: toLocal(new Date().toISOString()), provider: "google_meet" }); setSelected([]); setResponsibles([]); setOpen(true); };
+  const startCreate = () => { setEditing(null); setForm({ ...initial, start: toLocal(new Date().toISOString()) }); setSelected([]); setResponsibles([]); setOpen(true); };
   const isManagerOf = (m: Meeting) => admin || allResponsibles.some(r => r.meeting_id === m.id && r.user_id === user?.id);
-  async function createMeetFor(m: Meeting) {
-    try {
-      const { data, error } = await supabase.functions.invoke("meeting-create-meet", { body: { meetingId: m.id } });
-      if (error || data?.error) throw new Error(/401|autorizado/i.test(String(error?.message ?? data?.error)) ? "Sua sessão expirou ou a conta Google não está conectada. Entre novamente e tente outra vez." : (data?.error ?? "Falha ao criar a sala."));
-      toast.success("Sala do Google Meet criada.");
-      refresh();
-    } catch (err) { toast.error((err as Error).message || "Não foi possível criar a sala do Google Meet. Conecte a conta Google e tente novamente."); }
-  }
   async function enterGoogleMeeting(m: Meeting) {
     const url = meetUrlOf(m);
     if (url) return window.open(url, "_blank", "noopener,noreferrer");
