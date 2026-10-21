@@ -33,7 +33,7 @@ function parseAgenda(text: string) {
   const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1) throw new Error("A IA não retornou um resultado válido.");
   const parsed = agendaSchema.safeParse(JSON.parse(cleaned.slice(start, end + 1)));
-  if (!parsed.success) throw new Error(`A IA retornou um resultado incompleto. Trecho: ${cleaned.slice(0, 300)}`);
+  if (!parsed.success) throw new Error(`A IA retornou um resultado incompleto. Problemas: ${JSON.stringify(parsed.error.issues).slice(0, 300)}. Trecho: ${cleaned.slice(0, 300)}`);
   return parsed.data;
 }
 
