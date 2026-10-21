@@ -16,14 +16,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CalendarDays, Copy, ExternalLink, Plus, Search, Video, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import GoogleConnectCard, { useGoogleStatus } from "@/components/live/GoogleConnectCard";
 import { callMeeting, loadMeetingRoles, loadPeople, meetingUrl, statusText, when, type Meeting } from "@/components/meetings/data";
 
-const initial = { title: "", description: "", start: "", end: "", access_type: "restrito", scope: "convite", course_id: "", provider: "google_meet", allow_responsible_add_students: false, allow_recording: true, allow_screen_share: true, h24: true, h1: true, startReminder: true };
+const initial = { title: "", description: "", start: "", end: "", access_type: "restrito", scope: "convite", course_id: "", provider: "nativo", allow_responsible_add_students: false, allow_recording: true, allow_screen_share: true, h24: true, h1: true, startReminder: true };
 export default function Meetings() {
   const { user, role } = useAuth();
   const admin = role === "admin";
-  const { status: googleStatus, loading: googleLoading, refresh: refreshGoogle } = useGoogleStatus();
   const qc = useQueryClient();
   const [params, setParams] = useSearchParams();
   const [form, setForm] = useState(initial);
@@ -77,16 +75,8 @@ export default function Meetings() {
   const visible = meetings.filter(m => (filter === "todas" || m.status === filter) && (!dateFilter || m.start_at.slice(0,10) === dateFilter) && (!responsibleFilter || allResponsibles.some(r => r.meeting_id === m.id && r.user_id === responsibleFilter)) && (!participantFilter || allParticipants.some(p => p.meeting_id === m.id && p.user_id === participantFilter)));
   const meetUrlOf = (m: Meeting) => (m.provider === "google_meet" ? googleLinks[m.id] ?? null : null);
   const refresh = () => { ["meetings","meeting-google-links","meeting-responsibles","meeting-participants","notifications"].forEach(key => void qc.invalidateQueries({ queryKey: [key] })); };
-  const startCreate = () => { setEditing(null); setForm({ ...initial, start: toLocal(new Date().toISOString()), provider: "google_meet" }); setSelected([]); setResponsibles([]); setOpen(true); };
+  const startCreate = () => { setEditing(null); setForm({ ...initial, start: toLocal(new Date().toISOString()) }); setSelected([]); setResponsibles([]); setOpen(true); };
   const isManagerOf = (m: Meeting) => admin || allResponsibles.some(r => r.meeting_id === m.id && r.user_id === user?.id);
-  async function createMeetFor(m: Meeting) {
-    try {
-      const { data, error } = await supabase.functions.invoke("meeting-create-meet", { body: { meetingId: m.id } });
-      if (error || data?.error) throw new Error(/401|autorizado/i.test(String(error?.message ?? data?.error)) ? "Sua sessão expirou ou a conta Google não está conectada. Entre novamente e tente outra vez." : (data?.error ?? "Falha ao criar a sala."));
-      toast.success("Sala do Google Meet criada.");
-      refresh();
-    } catch (err) { toast.error((err as Error).message || "Não foi possível criar a sala do Google Meet. Conecte a conta Google e tente novamente."); }
-  }
   async function enterGoogleMeeting(m: Meeting) {
     const url = meetUrlOf(m);
     if (url) return window.open(url, "_blank", "noopener,noreferrer");
@@ -96,7 +86,7 @@ export default function Meetings() {
   }
   useEffect(() => { if (admin && params.get("nova") === "1") { startCreate(); setParams({}, { replace: true }); } }, [admin, params, setParams]);
   const startEdit = (m: Meeting) => {
-    setEditing(m); setForm({ title:m.title, description:m.description ?? "", start:toLocal(m.start_at), end:toLocal(m.end_at), access_type:m.access_type, scope:m.scope, course_id:m.course_id ?? "", provider: m.provider === "google_meet" ? "google_meet" : "nativo", allow_responsible_add_students:m.allow_responsible_add_students, allow_recording:m.allow_recording, allow_screen_share:m.allow_screen_share, h24: !!(m.reminders as Record<string,boolean>)?.h24, h1: !!(m.reminders as Record<string,boolean>)?.h1, startReminder: !!(m.reminders as Record<string,boolean>)?.start });
+    setEditing(m); setForm({ title:m.title, description:m.description ?? "", start:toLocal(m.start_at), end:toLocal(m.end_at), access_type:m.access_type, scope:m.scope, course_id:m.course_id ?? "", provider: "nativo", allow_responsible_add_students:m.allow_responsible_add_students, allow_recording:m.allow_recording, allow_screen_share:m.allow_screen_share, h24: !!(m.reminders as Record<string,boolean>)?.h24, h1: !!(m.reminders as Record<string,boolean>)?.h1, startReminder: !!(m.reminders as Record<string,boolean>)?.start });
     setSelected(allParticipants.filter(p => p.meeting_id === m.id && p.status !== "removido").map(p => p.user_id));
     setResponsibles(allResponsibles.filter(r => r.meeting_id === m.id).map(r => r.user_id)); setOpen(true);
   };
@@ -105,7 +95,7 @@ export default function Meetings() {
     if (!responsibles.length) return toast.error("Escolha ao menos um responsável.");
     setBusy(true);
     try {
-      const body = { title: form.title.trim(), description: form.description.trim(), start_at: new Date(form.start).toISOString(), end_at: form.end ? new Date(form.end).toISOString() : new Date(new Date(form.start).getTime() + 60*60000).toISOString(), access_type: form.access_type, scope: form.scope, course_id: form.scope === "curso" ? form.course_id || null : null, provider: form.provider === "google_meet" ? "google_meet" : "nativo", allow_responsible_add_students: form.allow_responsible_add_students, allow_recording: form.allow_recording, allow_screen_share: form.allow_screen_share, reminders: { h24:form.h24, h1:form.h1, start:form.startReminder }, updated_at: new Date().toISOString() };
+      const body = { title: form.title.trim(), description: form.description.trim(), start_at: new Date(form.start).toISOString(), end_at: form.end ? new Date(form.end).toISOString() : new Date(new Date(form.start).getTime() + 60*60000).toISOString(), access_type: form.access_type, scope: form.scope, course_id: form.scope === "curso" ? form.course_id || null : null, provider: "nativo", allow_responsible_add_students: form.allow_responsible_add_students, allow_recording: form.allow_recording, allow_screen_share: form.allow_screen_share, reminders: { h24:form.h24, h1:form.h1, start:form.startReminder }, updated_at: new Date().toISOString() };
       if (form.scope === "curso" && !form.course_id) throw new Error("Selecione o curso.");
       const res = editing ? await db.from("meetings").update(body).eq("id", editing.id).select("id").single() : await db.from("meetings").insert({ ...body, created_by: user.id }).select("id").single();
       if (res.error || !res.data) throw res.error ?? new Error("Não foi possível salvar.");
@@ -122,14 +112,6 @@ export default function Meetings() {
       if (add.length) { const { error } = await supabase.from("meeting_participants").insert(add.map(id => ({ meeting_id:mid,user_id:id,invited_by:user.id }))); if (error) throw error; }
       const restore = selected.filter(id => old.some(p => p.user_id === id && p.status === "removido"));
       if (restore.length) { const { error } = await supabase.from("meeting_participants").update({ status:"convidado" }).eq("meeting_id",mid).in("user_id",restore); if (error) throw error; }
-      if (form.provider === "google_meet" && !googleLinks[mid]) {
-        const { data: g, error: gerr } = await supabase.functions.invoke("meeting-create-meet", { body: { meetingId: mid } });
-        if (gerr || g?.error) toast.warning(g?.code === "google_calendar_api_disabled" || g?.code === "google_permission_denied" ? `A reunião foi salva, mas a sala do Google Meet não foi criada. ${g.error}` : "A reunião foi salva, mas não foi possível criar a sala do Google Meet. Conecte a conta Google e use o botão \"Criar sala no Google Meet\" no cartão da reunião para tentar novamente.", { duration: 12000 });
-        else toast.success("Sala do Google Meet criada.");
-      } else if (form.provider === "google_meet" && editing) {
-        const { data: g } = await supabase.functions.invoke("meeting-create-meet", { body: { meetingId: mid, action: "update" } });
-        if (g?.error) toast.warning("Reunião salva, mas não foi possível atualizar o evento no Google Agenda.");
-      }
       toast.success(editing ? "Reunião atualizada." : "Reunião criada e convites enviados."); setOpen(false); refresh();
     } catch (err) { toast.error((err as Error).message); } finally { setBusy(false); }
   }
@@ -159,7 +141,6 @@ export default function Meetings() {
   };
   return <div className="space-y-6">
     <div className="flex flex-wrap gap-3 items-center justify-between"><div><h1 className="text-2xl font-bold">{admin ? "Reuniões" : "Minhas reuniões"}</h1><p className="text-sm text-muted-foreground">{admin ? "Agenda e histórico de reuniões" : "Reuniões das quais você participa"}</p></div>{admin && <Button onClick={startCreate}><Plus className="h-4 w-4 mr-2"/>Nova reunião</Button>}</div>
-    {admin && <GoogleConnectCard status={googleStatus} loading={googleLoading} onChanged={() => { refreshGoogle(); }} />}
     <div className="flex flex-wrap gap-2 items-center"><Select value={filter} onValueChange={setFilter}><SelectTrigger className="w-44" aria-label="Filtrar status"><SelectValue/></SelectTrigger><SelectContent>{["todas","agendada","em_andamento","encerrada","cancelada"].map(s => <SelectItem key={s} value={s}>{statusText[s] ?? "Todas"}</SelectItem>)}</SelectContent></Select><Input className="w-44" type="date" aria-label="Filtrar data" value={dateFilter} onChange={e => setDateFilter(e.target.value)}/>{admin && <><Select value={responsibleFilter || "all"} onValueChange={v => setResponsibleFilter(v === "all" ? "" : v)}><SelectTrigger className="w-48"><SelectValue placeholder="Responsável"/></SelectTrigger><SelectContent><SelectItem value="all">Todos responsáveis</SelectItem>{possibleResponsibles.map(p => <SelectItem value={p.user_id} key={p.user_id}>{p.full_name}</SelectItem>)}</SelectContent></Select><Select value={participantFilter || "all"} onValueChange={v => setParticipantFilter(v === "all" ? "" : v)}><SelectTrigger className="w-48"><SelectValue placeholder="Participante"/></SelectTrigger><SelectContent><SelectItem value="all">Todos participantes</SelectItem>{people.filter(p => studentIds.has(p.user_id)).map(p => <SelectItem value={p.user_id} key={p.user_id}>{p.full_name}</SelectItem>)}</SelectContent></Select></>}</div>
     {isLoading ? <p>Carregando reuniões…</p> : visible.length === 0 ? <div className="py-16 border-t border-border text-center text-muted-foreground">Nenhuma reunião encontrada.</div> : <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{visible.map(m => <Card key={m.id} className="rounded-lg"><CardContent className="p-5 space-y-3"><div className="flex flex-wrap items-start justify-between gap-2"><h2 className="font-semibold min-w-0 flex-1 basis-40 break-words">{m.title}</h2><div className="flex flex-wrap gap-1 shrink-0"><Badge variant={m.status === "em_andamento" ? "default" : "secondary"} className="whitespace-nowrap">{statusText[m.status]}</Badge><Badge variant="outline" className="whitespace-nowrap">{m.provider === "google_meet" ? "Google Meet" : "Sem Google Meet"}</Badge></div></div><p className="text-sm text-muted-foreground line-clamp-2">{m.description || "Sem descrição"}</p><div className="text-sm flex items-center gap-2"><CalendarDays className="h-4 w-4 text-primary"/>{when(m.start_at)}</div><p className="text-xs text-muted-foreground">Responsável: {allResponsibles.filter(r => r.meeting_id === m.id).map(r => names[r.user_id] ?? "Responsável").join(", ") || "—"}</p><div className="flex flex-wrap gap-2 pt-1">{meetUrlOf(m) ? <Button size="sm" asChild><a href={meetUrlOf(m) as string} target="_blank" rel="noopener noreferrer"><Video className="h-4 w-4 mr-1"/>Entrar na reunião</a></Button> : m.provider === "google_meet" ? (isManagerOf(m) ? <Button size="sm" onClick={() => void createMeetFor(m)}><Video className="h-4 w-4 mr-1"/>Criar sala no Google Meet</Button> : <Button size="sm" variant="outline" onClick={() => void enterGoogleMeeting(m)}><Video className="h-4 w-4 mr-1"/>Entrar na reunião</Button>) : <Button size="sm" asChild><Link to={`/reuniao/${m.meeting_token}`}><Video className="h-4 w-4 mr-1"/>Entrar na reunião</Link></Button>}{(admin || allResponsibles.some(r => r.meeting_id === m.id && r.user_id === user?.id)) && <><Button size="icon" variant="outline" title="Copiar link" aria-label="Copiar link" onClick={() => void copy(m)}><Copy className="h-4 w-4"/></Button><Button size="sm" variant="outline" onClick={() => setDetail(m)}>Detalhes</Button></>}</div>{admin && <div className="flex flex-wrap gap-2 border-t border-border pt-3"><Button size="sm" variant="ghost" onClick={() => startEdit(m)}>Editar</Button>{m.status === "agendada" && <Button size="sm" variant="ghost" onClick={() => void act(m,"cancelar")}>Cancelar</Button>}{m.provider !== "google_meet" && <Button size="icon" variant="ghost" title="Regenerar link" aria-label="Regenerar link" onClick={() => void act(m,"regenerar link")}><RotateCcw className="h-4 w-4"/></Button>}<Button size="icon" variant="ghost" title="Excluir" aria-label="Excluir" onClick={() => void act(m,"excluir")}><Trash2 className="h-4 w-4 text-destructive"/></Button></div>}</CardContent></Card>)}</div>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? "Editar reunião" : "Nova reunião"}</DialogTitle></DialogHeader><form onSubmit={e => void save(e)} className="space-y-5"><div className="grid gap-4 sm:grid-cols-2"><div className="sm:col-span-2 space-y-1"><Label htmlFor="mtitle">Título</Label><Input id="mtitle" required value={form.title} onChange={e => setForm({...form,title:e.target.value})}/></div><div className="sm:col-span-2 space-y-1"><Label htmlFor="mdesc">Descrição</Label><Textarea id="mdesc" value={form.description} onChange={e => setForm({...form,description:e.target.value})}/></div><div className="space-y-1"><Label htmlFor="mstart">Início <span className="text-xs text-muted-foreground font-normal">(preenchido com a hora atual)</span></Label><Input id="mstart" type="datetime-local" required value={form.start} onChange={e => setForm({...form,start:e.target.value})}/></div><div className="space-y-1"><Label htmlFor="mend">Término previsto <span className="text-xs text-muted-foreground font-normal">(opcional — padrão 1h)</span></Label><Input id="mend" type="datetime-local" value={form.end} onChange={e => setForm({...form,end:e.target.value})}/></div></div>
