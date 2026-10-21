@@ -244,7 +244,7 @@ export default function MeetingRoom() {
     let display: MediaStream;
     try {
       // Captura a aba (Google Meet ou a própria sala) com o som da aba: grava todos os participantes.
-      display = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true, ...(isMeet ? { selfBrowserSurface: "exclude" } : { preferCurrentTab: true }), systemAudio: "include" } as DisplayMediaStreamOptions);
+      display = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true, ...(isMeet ? { selfBrowserSurface: "exclude" } : { preferCurrentTab: true }), systemAudio: "include" } as unknown as DisplayMediaStreamOptions);
     } catch { toast.error(isMeet ? "Gravação cancelada. Escolha a aba do Google Meet e marque “Compartilhar áudio da aba”." : "Gravação cancelada."); return; }
     let ownMic: MediaStream | null = null;
     if (isMeet) ownMic = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
