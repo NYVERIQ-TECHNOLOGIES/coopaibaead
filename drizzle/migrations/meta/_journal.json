@@ -43,6 +43,13 @@
       "when": 1792543500000,
       "tag": "0005_meetings_default_google_meet",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792542233229,
+      "tag": "0006_video_play_events",
+      "breakpoints": true
     }
   ]
 }
