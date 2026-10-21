@@ -5,3 +5,5 @@
 - Record meetings locally by capturing the meeting tab (getDisplayMedia with tab audio, mixed with the mic) into MediaRecorder, for both native and Google Meet rooms; Meet cannot be embedded or recorded via API without Workspace, and no recording bytes enter database rows.
 - Authorize media downloads through exact references to RLS-visible content and caller-specific course/cooperative permissions; keep catalog covers and introductions shared, but templates and unreferenced objects admin-only to prevent storage access bypasses.
 - Log every lesson-video play start to public.video_play_events (user, lesson, course, timestamp) via a fire-and-forget insert on the player's onPlay; it must never change player behavior or block playback, and reads are limited to the owner plus admin/moderador.
+
+- Meeting agenda/description AI generation goes through the meeting-agenda-ai edge function (Lovable AI Gateway, LOVABLE_API_KEY server-side, restricted to admin/moderador/professor); never call the gateway from the browser.
