@@ -30,10 +30,13 @@ Deno.serve(async (req) => {
     const { data: existing, error: lookupError } = await admin.from("profiles").select("user_id").eq("cnpj", input.cnpj).maybeSingle();
     if (lookupError) return json({ error: "Não foi possível verificar o cadastro" }, 500);
     if (existing) return json({ status: "exists", user_id: existing.user_id });
-    const password = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
+    const password = `${crypto.randomUUID()}Aa1!`;
     const email = `cnpj${input.cnpj}@cooperado.coopaiba.com.br`;
     const { data: created, error: createError } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { full_name: input.full_name, cooperativa: input.cooperativa } });
-    if (createError || !created.user) return json({ error: "Não foi possível criar a conta" }, 400);
+    if (createError || !created.user) {
+      console.error("Institution account creation failed", createError?.code, createError?.status);
+      return json({ error: "Não foi possível criar a conta" }, 400);
+    }
     const userId = created.user.id;
     const { error: profileError } = await admin.from("profiles").update({ ...input, cpf: null, data_nascimento: null }).eq("user_id", userId);
     if (profileError) { await admin.auth.admin.deleteUser(userId); return json({ error: "Não foi possível salvar a identificação institucional" }, 500); }
