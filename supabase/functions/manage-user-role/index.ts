@@ -6,9 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-type AppRole = "admin" | "aluno" | "cooperado" | "moderador";
+type AppRole = "admin" | "aluno" | "cooperado" | "moderador" | "professor";
 
-const ALL_ROLES: AppRole[] = ["admin", "aluno", "cooperado", "moderador"];
+const ALL_ROLES: AppRole[] = ["admin", "aluno", "cooperado", "moderador", "professor"];
 // Roles that require master admin privileges to assign or remove
 const PRIVILEGED_ROLES: AppRole[] = ["admin", "moderador"];
 

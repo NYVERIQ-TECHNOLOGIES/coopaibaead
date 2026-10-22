@@ -6,6 +6,7 @@ import AdminLogs from "@/pages/AdminLogs";
 import SettingsPage from "@/pages/SettingsPage";
 import AdminSubscriptions from "@/pages/AdminSubscriptions";
 import AdminProfessores from "@/pages/AdminProfessores";
+import AdminCooperativesAccess from "@/pages/AdminCooperativesAccess";
 
 export default function AdministracaoHub() {
   const [params, setParams] = useSearchParams();
@@ -13,6 +14,7 @@ export default function AdministracaoHub() {
   const isAdmin = role === "admin";
 
   const tabs = [
+    ...(isAdmin ? [{ value: "cooperativas", label: "Cooperativas e acessos", el: <AdminCooperativesAccess /> }] : []),
     ...(isAdmin ? [{ value: "admins", label: "Administradores", el: <AdminManagement /> }] : []),
     ...(isAdmin ? [{ value: "professores", label: "Professores", el: <AdminProfessores /> }] : []),
     ...(isAdmin ? [{ value: "logs", label: "Logs de Acesso", el: <AdminLogs /> }] : []),
