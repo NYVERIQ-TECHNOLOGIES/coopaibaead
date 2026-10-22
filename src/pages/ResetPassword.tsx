@@ -41,6 +41,16 @@ export default function ResetPassword() {
   // Supabase Auth coloca o token no hash (#access_token=...&type=recovery)
   // O client detecta automaticamente e dispara PASSWORD_RECOVERY.
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get("token_hash");
+    if (tokenHash && params.get("type") === "recovery") {
+      // Remove the credential from browser history before exchanging it.
+      window.history.replaceState(null, "", window.location.pathname);
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" }).then(({ error }) => {
+        if (error) setLinkExpired(true);
+        else setSessionReady(true);
+      });
+    }
     const hash = window.location.hash || "";
     const hashHasError = hash.includes("error") || hash.includes("otp_expired");
     if (hashHasError) {
@@ -64,7 +74,7 @@ export default function ResetPassword() {
       supabase.auth.getSession().then(({ data }) => {
         if (!data.session) setLinkExpired(true);
       });
-    }, 3000);
+    }, tokenHash ? 15000 : 3000);
 
     return () => {
       sub.subscription.unsubscribe();
