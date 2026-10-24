@@ -52,6 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, LOAD_TIMEOUT_MS);
 
     try {
+      // A conta precisa trocar a senha temporária? O banco bloqueia todo o resto até isso.
+      const { data: mustChange, error: mustErr } = await supabase.rpc("needs_password_change");
+      if (!mustErr && mustChange === true) {
+        clearWatchdog();
+        setMustChangePassword(true);
+        setDataReady(true);
+        return;
+      }
+      setMustChangePassword(false);
+
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles").select("full_name, avatar_url, cooperativa").eq("user_id", userId).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
@@ -59,6 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearWatchdog();
 
       if (profileRes.error || roleRes.error) {
+        const isRotation = [profileRes.error, roleRes.error].some(
+          (e) => e?.code === "42501" && /troque sua senha/i.test(e.message ?? ""),
+        );
+        if (isRotation) {
+          setMustChangePassword(true);
+          setDataReady(true);
+          return;
+        }
         console.error("Falha ao carregar dados do usuário:", profileRes.error?.message, roleRes.error?.message);
         setDataReady(true);
         setLoadError("Não foi possível carregar seus dados. Tente novamente.");
