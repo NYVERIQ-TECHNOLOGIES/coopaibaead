@@ -133,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(null);
         setDataReady(false);
         setLoadError(null);
+        setMustChangePassword(false);
       }
       setLoading(false);
     });
@@ -191,10 +192,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
     setDataReady(false);
     setLoadError(null);
+    setMustChangePassword(false);
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, loading, dataReady, loadError, retry, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, role, loading, dataReady, loadError, mustChangePassword, retry, signOut }}>
       {children}
     </AuthContext.Provider>
   );
