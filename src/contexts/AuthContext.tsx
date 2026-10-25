@@ -15,6 +15,8 @@ interface AuthContextType {
   dataReady: boolean;
   /** mensagem amigável quando o carregamento dos dados falhou */
   loadError: string | null;
+  /** true quando a conta ainda usa a senha temporária e precisa trocá-la */
+  mustChangePassword: boolean;
   retry: () => void;
   signOut: () => Promise<void>;
 }
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [dataReady, setDataReady] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearWatchdog = () => {
@@ -130,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(null);
         setDataReady(false);
         setLoadError(null);
+        setMustChangePassword(false);
       }
       setLoading(false);
     });
@@ -188,10 +192,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
     setDataReady(false);
     setLoadError(null);
+    setMustChangePassword(false);
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, loading, dataReady, loadError, retry, signOut }}>
+    <AuthContext.Provider value={{ session, user, profile, role, loading, dataReady, loadError, mustChangePassword, retry, signOut }}>
       {children}
     </AuthContext.Provider>
   );

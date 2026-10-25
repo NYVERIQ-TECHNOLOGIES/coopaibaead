@@ -1,5 +1,6 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import ForcePasswordChange from "@/components/ForcePasswordChange";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
@@ -48,11 +49,16 @@ function LoadErrorScreen({
 }
 
 export default function ProtectedRoute({ children, allowedRoles }: Props) {
-  const { session, role, loading, dataReady, loadError, retry, signOut } = useAuth();
+  const { session, role, loading, dataReady, loadError, mustChangePassword, retry, signOut } = useAuth();
 
   if (loading) return <LoadingScreen />;
 
   if (!session) return <Navigate to="/login" replace />;
+
+  // Senha temporária: o servidor bloqueia os dados até a troca, então pedir a nova senha aqui
+  if (mustChangePassword) {
+    return <ForcePasswordChange onDone={retry} onSignOut={signOut} />;
+  }
 
   // Falha recuperável no carregamento dos dados: mostrar erro com nova tentativa
   if (loadError) {
