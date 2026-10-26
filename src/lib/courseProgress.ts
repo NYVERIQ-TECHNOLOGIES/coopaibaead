@@ -12,3 +12,16 @@ export function courseProgress(totalUnits: number, completedUnits: number) {
 export function canSyncCourseProgress(states: boolean[]) {
   return states.every(Boolean);
 }
+
+// Personal progress must use the viewer's records, never shared lesson flags or management privileges.
+export function personalCourseUnits(
+  lessons: { id: string }[],
+  evaluations: { id: string }[],
+  completedLessonIds: Set<string>,
+  passedEvaluationIds: Set<string>,
+) {
+  return {
+    lessons: lessons.filter((lesson) => completedLessonIds.has(lesson.id)).length,
+    evaluations: evaluations.filter((evaluation) => passedEvaluationIds.has(evaluation.id)).length,
+  };
+}
