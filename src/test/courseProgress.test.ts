@@ -30,4 +30,11 @@ describe("course completion", () => {
     expect(personalCourseUnits([{ id: "lesson" }], [{ id: "exam" }], new Set(), new Set()))
       .toEqual({ lessons: 0, evaluations: 0 });
   });
+  it("keeps each account's watched lessons separate", () => {
+    const lessons = [{ id: "first" }, { id: "second" }, { id: "third" }, { id: "fourth" }];
+    const watchedAccount = personalCourseUnits(lessons, [], new Set(["first"]), new Set());
+    const otherAccount = personalCourseUnits(lessons, [], new Set(), new Set());
+    expect(courseProgress(4, watchedAccount.lessons)).toEqual({ percent: 25, complete: false });
+    expect(courseProgress(4, otherAccount.lessons)).toEqual({ percent: 0, complete: false });
+  });
 });
