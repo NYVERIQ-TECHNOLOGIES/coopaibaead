@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { courseIdFromParam } from "@/lib/courseSlug";
-import { lessonOpenAction, courseProgress, canSyncCourseProgress } from "@/lib/courseProgress";
+import { lessonOpenAction, courseProgress, canSyncCourseProgress, personalCourseUnits } from "@/lib/courseProgress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -239,6 +239,7 @@ export default function CourseDetail() {
   const [contentError, setContentError] = useState<string | null>(null);
   const [contentLessonId, setContentLessonId] = useState<string | null>(null);
   const [contentText, setContentText] = useState<string | null>(null);
+  const completingMediaLessons = useRef(new Set<string>());
 
   const [evalDialogOpen, setEvalDialogOpen] = useState(false);
   const [editEvalId, setEditEvalId] = useState<string | null>(null);
@@ -645,10 +646,9 @@ export default function CourseDetail() {
   };
 
   const totalUnits = totalLessons + publishedEvals.length;
-  const completedLessonsCount = isAdmin
-    ? modules.reduce((s: number, m: any) => s + (m.lessons?.filter((l: any) => l.completed).length || 0), 0)
-    : completedLessonIds.size;
-  const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => passedEvalIds.has(e.id)).length;
+  const personalUnits = personalCourseUnits(allLessons, publishedEvals, completedLessonIds, passedEvalIds);
+  const completedLessonsCount = personalUnits.lessons;
+  const completedEvalsCount = personalUnits.evaluations;
   const completedLessons = completedLessonsCount; // legacy var name kept for the lessons-only count display
   const completedUnits = completedLessonsCount + completedEvalsCount;
   const { percent: progressPct, complete: isCourseComplete } = courseProgress(totalUnits, completedUnits);
@@ -673,7 +673,7 @@ export default function CourseDetail() {
     onSuccess: async (_, vars) => {
       await qc.invalidateQueries({ queryKey: ["my_lesson_completions", courseId, user?.id] });
       // If student just marked the lesson as completed, auto-open the attached quiz (if any & published)
-      if (!vars.completed) {
+      if (!vars.completed && !isAdmin) {
         const quiz = lessonQuizMap.get(vars.lessonId);
         if (quiz && quiz.status === "publicada") {
           startExam(quiz);
@@ -682,6 +682,15 @@ export default function CourseDetail() {
     },
     onError: (e: any) => toast({ title: "Erro", description: e.message, variant: "destructive" }),
   });
+
+  const completeMediaLesson = () => {
+    if (!user || !contentLessonId || completedLessonIds.has(contentLessonId) || completingMediaLessons.current.has(contentLessonId)) return;
+    const lessonId = contentLessonId;
+    completingMediaLessons.current.add(lessonId);
+    toggleLessonCompletionMut.mutate({ lessonId, completed: false }, {
+      onSettled: () => completingMediaLessons.current.delete(lessonId),
+    });
+  };
 
   // ---- Mark last accessed lesson (continue where you left off) ----
   const markLessonAccess = async (lessonId: string) => {
@@ -723,7 +732,7 @@ export default function CourseDetail() {
 
   // Sync enrollment.progress in background when computed progress changes
   useEffect(() => {
-    if (!user || !courseId || isAdmin || totalUnits === 0 || !progressReady) return;
+    if (!user || !courseId || totalUnits === 0 || !progressReady) return;
     supabase.from("enrollments").update({ progress: progressPct }).eq("user_id", user.id).eq("course_id", courseId).then(({ error }) => {
       if (error) return;
       qc.invalidateQueries({ queryKey: ["my-enrollments", user.id] });
@@ -1028,7 +1037,7 @@ export default function CourseDetail() {
             </div>
             <div className="mt-2 flex items-center justify-between gap-2">
               <p className="text-[11px] text-muted-foreground">
-                {modules.filter((m: any) => (m.lessons || []).length > 0 && (m.lessons || []).every((l: any) => (isAdmin ? l.completed : completedLessonIds.has(l.id)))).length} de {modules.length} módulos concluídos
+                {modules.filter((m: any) => (m.lessons || []).length > 0 && (m.lessons || []).every((l: any) => completedLessonIds.has(l.id))).length} de {modules.length} módulos concluídos
               </p>
               <span className="text-[11px] font-bold text-primary tabular-nums">{progressPct}%</span>
             </div>
@@ -1049,7 +1058,7 @@ export default function CourseDetail() {
 
                 {modules.map((mod: any) => {
                   const modLessons = mod.lessons || [];
-                  const modDone = modLessons.filter((l: any) => (isAdmin ? l.completed : completedLessonIds.has(l.id))).length;
+                  const modDone = modLessons.filter((l: any) => completedLessonIds.has(l.id)).length;
                   const modPct = modLessons.length ? Math.round((modDone / modLessons.length) * 100) : 0;
                   const modComplete = modLessons.length > 0 && modDone === modLessons.length;
                   const isOpen = !collapsedModules[mod.id];
@@ -1120,7 +1129,7 @@ export default function CourseDetail() {
 
                       {(mod.lessons || []).map((lesson: any) => {
                         const Icon = typeIcons[lesson.type] || FileText;
-                        const userCompleted = isAdmin ? lesson.completed : completedLessonIds.has(lesson.id);
+                        const userCompleted = completedLessonIds.has(lesson.id);
                         const attachedQuiz = lessonQuizMap.get(lesson.id);
                         const quizPassed = attachedQuiz ? passedEvalIds.has(attachedQuiz.id) : false;
                         const locked = isLessonLocked(lesson.id);
@@ -1567,17 +1576,13 @@ export default function CourseDetail() {
                       }).then(({ error }) => { if (error) console.warn("video_play_events:", error.message); });
                     }}
                     onError={() => setContentError("Não foi possível reproduzir o vídeo. Verifique o formato ou tente novamente.")}
-                    onEnded={() => {
-                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
-                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
-                      }
-                    }}
+                    onEnded={completeMediaLesson}
                     onTimeUpdate={(e) => {
-                      if (isAdmin || !contentLessonId || !user) return;
+                      if (!contentLessonId || !user) return;
                       if (completedLessonIds.has(contentLessonId)) return;
                       const v = e.currentTarget;
                       if (v.duration > 0 && v.currentTime / v.duration >= 0.98) {
-                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
+                        completeMediaLesson();
                       }
                     }}
                   >
@@ -1590,11 +1595,7 @@ export default function CourseDetail() {
                     controls
                     preload="metadata"
                     className="w-full mt-8"
-                    onEnded={() => {
-                      if (!isAdmin && contentLessonId && user && !completedLessonIds.has(contentLessonId)) {
-                        toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: false });
-                      }
-                    }}
+                    onEnded={completeMediaLesson}
                   />
                 ) : (
                   <div className="text-center py-8">
