@@ -1,4 +1,5 @@
 # Architecture decisions
+- Lesson-list icons open content and never toggle completion; media completion is recorded by playback events, non-media completion is explicit inside the opened lesson, and enrollment progress sync waits for all user-scoped source queries to succeed to avoid premature or partial completion.
 - Manual access delivery uses admin-access-link to generate one-time recovery links with server-validated admin/master authorization and audit; never store credentials, depend on a sender, or replace institutional synthetic login emails.
 - Store institutional CNPJ/NIRE separately from CPF, with admin/service-only identity changes; login maps CNPJ to a synthetic account email, and institutional profiles never require birthdate, preserving individual validation.
 - Keep meetings in separate public tables from live classes because meetings have independent invitations and access rules.
