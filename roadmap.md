@@ -1,4 +1,5 @@
 # Reuniões Online
+- [x] Corrigir ícones que concluíam aulas em vez de abri-las, aguardar consultas completas antes de salvar progresso e remover conclusão presumida por certificado no perfil; 4 testes aprovados e abertura do vídeo verificada com administrador. Teste do ícone com conta cooperada impedido pelo cadastro incompleto; conclusões históricas preservadas para evitar apagar cursos válidos.
 - [x] Criar central administrativa de cooperativas, papéis e entrega manual de acessos, sem remetente; testes de permissões e fluxo real de geração/abertura do link, cadastro e alteração/restauração de papel verificados.
 - [x] Criar conta institucional COOPERAGRE com CNPJ e NIRE, sem data de nascimento; verificar dados, regras e tela de definição de senha.
 - [ ] Entregar acesso da COOPERAGRE ao responsável ge3067700@gmail.com: administrador pode gerar/copiar/baixar um novo link de uso único em Administração → Cooperativas e acessos; envio manual pelo responsável, sem remetente e sem alterar sua conta pessoal.

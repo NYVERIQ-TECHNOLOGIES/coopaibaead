@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { courseIdFromParam } from "@/lib/courseSlug";
+import { lessonOpenAction, courseProgress, canSyncCourseProgress } from "@/lib/courseProgress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -83,7 +84,7 @@ export default function CourseDetail() {
   const isAdmin = role === "admin" || isOwnerProfessor;
 
   // ---- Fetch modules with lessons ----
-  const { data: modules = [], isLoading: loadingModules } = useQuery({
+  const { data: modules = [], isLoading: loadingModules, isSuccess: modulesReady } = useQuery({
     queryKey: ["course_modules", courseId],
     queryFn: async () => {
       const { data: mods, error } = await supabase
@@ -107,7 +108,7 @@ export default function CourseDetail() {
   });
 
   // ---- Fetch evaluations ----
-  const { data: evaluations = [] } = useQuery({
+  const { data: evaluations = [], isSuccess: evaluationsReady } = useQuery({
     queryKey: ["course_evaluations", courseId],
     queryFn: async () => {
       const { data, error } = await supabase.from("course_evaluations").select("*").eq("course_id", courseId!).order("created_at");
@@ -130,8 +131,8 @@ export default function CourseDetail() {
 
   // ---- Fetch user lesson completions for this course ----
   const lessonIds = modules.flatMap((m: any) => (m.lessons || []).map((l: any) => l.id));
-  const { data: myCompletions = [] } = useQuery({
-    queryKey: ["my_lesson_completions", courseId, user?.id, lessonIds.length],
+  const { data: myCompletions = [], isSuccess: completionsReady } = useQuery({
+    queryKey: ["my_lesson_completions", courseId, user?.id, lessonIds],
     queryFn: async () => {
       if (!user || lessonIds.length === 0) return [];
       const { data, error } = await supabase
@@ -149,8 +150,8 @@ export default function CourseDetail() {
   // ---- Fetch user exam attempts for this course's evaluations ----
   const PASS_THRESHOLD = 70;
   const evalIds = evaluations.map((e: any) => e.id);
-  const { data: myAttempts = [] } = useQuery({
-    queryKey: ["my_exam_attempts", courseId, user?.id, evalIds.length],
+  const { data: myAttempts = [], isSuccess: attemptsReady } = useQuery({
+    queryKey: ["my_exam_attempts", courseId, user?.id, evalIds],
     queryFn: async () => {
       if (!user || evalIds.length === 0) return [];
       const { data, error } = await supabase
@@ -650,8 +651,12 @@ export default function CourseDetail() {
   const completedEvalsCount = isAdmin ? publishedEvals.length : publishedEvals.filter((e: any) => passedEvalIds.has(e.id)).length;
   const completedLessons = completedLessonsCount; // legacy var name kept for the lessons-only count display
   const completedUnits = completedLessonsCount + completedEvalsCount;
-  const progressPct = totalUnits > 0 ? Math.round((completedUnits / totalUnits) * 100) : 0;
-  const isCourseComplete = totalUnits > 0 && completedUnits >= totalUnits;
+  const { percent: progressPct, complete: isCourseComplete } = courseProgress(totalUnits, completedUnits);
+  const progressReady = canSyncCourseProgress([
+    modulesReady, evaluationsReady,
+    lessonIds.length === 0 || completionsReady,
+    evalIds.length === 0 || attemptsReady,
+  ]);
 
   // ---- Toggle lesson completion (student) ----
   const toggleLessonCompletionMut = useMutation({
@@ -661,7 +666,7 @@ export default function CourseDetail() {
         const { error } = await supabase.from("lesson_completions").delete().eq("user_id", user.id).eq("lesson_id", lessonId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("lesson_completions").insert({ user_id: user.id, lesson_id: lessonId });
+        const { error } = await supabase.from("lesson_completions").upsert({ user_id: user.id, lesson_id: lessonId }, { onConflict: "user_id,lesson_id", ignoreDuplicates: true });
         if (error) throw error;
       }
     },
@@ -718,12 +723,15 @@ export default function CourseDetail() {
 
   // Sync enrollment.progress in background when computed progress changes
   useEffect(() => {
-    if (!user || isAdmin || totalUnits === 0) return;
-    supabase.from("enrollments").update({ progress: progressPct }).eq("user_id", user.id).eq("course_id", courseId!).then(() => {
+    if (!user || !courseId || isAdmin || totalUnits === 0 || !progressReady) return;
+    supabase.from("enrollments").update({ progress: progressPct }).eq("user_id", user.id).eq("course_id", courseId).then(({ error }) => {
+      if (error) return;
       qc.invalidateQueries({ queryKey: ["my-enrollments", user.id] });
+      qc.invalidateQueries({ queryKey: ["my-enrollments-progress", user.id] });
+      qc.invalidateQueries({ queryKey: ["continue_watching", user.id] });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [progressPct, totalUnits, user?.id, courseId, isAdmin]);
+  }, [progressPct, totalUnits, user?.id, courseId, isAdmin, progressReady]);
 
   // Certificado NÃO é emitido automaticamente — o aluno precisa solicitar
   // manualmente pelo botão "Solicitar Certificado" abaixo.
@@ -1138,27 +1146,33 @@ export default function CourseDetail() {
                                 }
                               }}
                               onClick={() => {
-                                if (locked) {
+                                const action = lessonOpenAction(locked, !!(lesson.content_url || lesson.content_text));
+                                if (action === "blocked") {
                                   toast({ title: "Aula bloqueada", description: "Conclua a aula anterior para desbloquear.", variant: "destructive" });
                                   return;
                                 }
-                                if (lesson.content_url || lesson.content_text) {
+                                if (action === "open") {
                                   openContent(lesson.content_url, lesson.type, lesson.id, lesson.content_text);
                                   markLessonAccess(lesson.id);
                                 }
                               }}>
                               {!isAdmin ? (
-                                <button
+                                <Button
                                   type="button"
-                                  title={locked ? "Bloqueada" : userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}
-                                  aria-label={locked ? `Aula ${lesson.title} bloqueada` : `${userCompleted ? "Marcar como não concluída" : "Marcar como concluída"}: ${lesson.title}`}
-                                  aria-pressed={!locked ? userCompleted : undefined}
-                                  disabled={locked}
-                                  onClick={(e) => { e.stopPropagation(); if (!locked) toggleLessonCompletionMut.mutate({ lessonId: lesson.id, completed: userCompleted }); }}
+                                  variant="ghost"
+                                  title={locked ? "Bloqueada" : "Abrir aula"}
+                                  aria-label={locked ? `Aula ${lesson.title} bloqueada` : `Abrir aula: ${lesson.title}`}
+                                  disabled={locked || !(lesson.content_url || lesson.content_text)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (lessonOpenAction(locked, !!(lesson.content_url || lesson.content_text)) !== "open") return;
+                                    openContent(lesson.content_url, lesson.type, lesson.id, lesson.content_text);
+                                    markLessonAccess(lesson.id);
+                                  }}
                                   className="w-9 h-9 -m-2 rounded-full flex items-center justify-center flex-shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                                 >
                                   {locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" /> : userCompleted ? <CheckCircle className="w-4 h-4 text-success" aria-hidden="true" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />}
-                                </button>
+                                </Button>
                               ) : (
                                 <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5" aria-hidden="true">
                                   {userCompleted ? <CheckCircle className="w-4 h-4 text-success" /> : <Icon className="w-3.5 h-3.5 text-muted-foreground" />}
@@ -1597,6 +1611,20 @@ export default function CourseDetail() {
                 </div>
               )}
             </div>
+            {contentLessonId && !isAdmin && !contentLoading && !contentError &&
+              (contentText || ["pdf", "texto", "link", "quiz"].includes(contentType)) && (
+              <Button
+                variant="outline"
+                disabled={toggleLessonCompletionMut.isPending}
+                onClick={() => {
+                  if (!contentLessonId) return;
+                  toggleLessonCompletionMut.mutate({ lessonId: contentLessonId, completed: completedLessonIds.has(contentLessonId) });
+                }}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {completedLessonIds.has(contentLessonId) ? "Marcar como não concluída" : "Concluir aula"}
+              </Button>
+            )}
             {contentLessonId && !isAdmin && courseId && (
               <LessonNotes lessonId={contentLessonId} courseId={courseId} />
             )}

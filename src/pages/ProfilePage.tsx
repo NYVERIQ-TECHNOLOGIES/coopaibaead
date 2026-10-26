@@ -134,47 +134,9 @@ export default function ProfilePage() {
         .order("created_at", { ascending: false }),
     ]);
 
-    const rows = (enr as any[]) || [];
-    const courseIds = rows.map((r) => r.course_id).filter(Boolean);
-    let computed: Record<string, number> = {};
-
-    if (courseIds.length) {
-      const [{ data: modules }, { data: completions }] = await Promise.all([
-        supabase
-          .from("course_modules")
-          .select("id, course_id, course_lessons(id)")
-          .in("course_id", courseIds),
-        supabase.from("lesson_completions").select("lesson_id").eq("user_id", user.id),
-      ]);
-      const doneSet = new Set(((completions as any[]) || []).map((c) => c.lesson_id));
-      const perCourse: Record<string, { total: number; done: number }> = {};
-      ((modules as any[]) || []).forEach((m) => {
-        const acc = (perCourse[m.course_id] ||= { total: 0, done: 0 });
-        (m.course_lessons || []).forEach((l: any) => {
-          acc.total += 1;
-          if (doneSet.has(l.id)) acc.done += 1;
-        });
-      });
-      computed = Object.fromEntries(
-        Object.entries(perCourse).map(([cid, v]) => [
-          cid,
-          v.total > 0 ? Math.round((v.done / v.total) * 100) : 0,
-        ])
-      );
-    }
-
-    const certByCourse = new Set(((certs as any[]) || []).map((c) => c.course_id).filter(Boolean));
-
-    setEnrollments(
-      rows.map((r) => {
-        const auto = computed[r.course_id] ?? 0;
-        const concluded = r.status === "concluido" || certByCourse.has(r.course_id);
-        return {
-          ...r,
-          progress: concluded ? 100 : Math.max(r.progress ?? 0, auto),
-        } as EnrollmentRow;
-      })
-    );
+    // Use the same saved progress as the course list; certificate existence
+    // and lessons-only counts are not evidence that all course units are done.
+    setEnrollments(((enr as EnrollmentRow[]) || []).map((r) => ({ ...r, progress: r.progress ?? 0 })));
     setCertificates(((certs as any[]) || []) as CertificateRow[]);
     setLoadingProgress(false);
   }, [user]);
