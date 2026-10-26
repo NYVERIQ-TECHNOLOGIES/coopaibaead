@@ -728,6 +728,7 @@ export default function CourseDetail() {
       if (error) return;
       qc.invalidateQueries({ queryKey: ["my-enrollments", user.id] });
       qc.invalidateQueries({ queryKey: ["my-enrollments-progress", user.id] });
+      qc.invalidateQueries({ queryKey: ["continue_watching", user.id] });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [progressPct, totalUnits, user?.id, courseId, isAdmin, progressReady]);
