@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { KeyRound, Loader2 } from "lucide-react";
+import { Eye, EyeOff, KeyRound, Loader2 } from "lucide-react";
 
 export function validateNewPassword(current: string, next: string, confirm: string): string | null {
   if (!current) return "Informe a senha atual (a senha temporária que você usou para entrar).";
@@ -17,6 +17,48 @@ export function validateNewPassword(current: string, next: string, confirm: stri
 interface Props {
   onDone: () => void;
   onSignOut: () => void;
+}
+
+function PasswordField({
+  id,
+  label,
+  value,
+  onChange,
+  autoComplete,
+  hint,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  autoComplete: string;
+  hint?: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input
+          id={id}
+          type={show ? "text" : "password"}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="pr-10"
+        />
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          aria-label={show ? "Ocultar senha" : "Mostrar senha"}
+          className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+        >
+          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
 }
 
 export default function ForcePasswordChange({ onDone, onSignOut }: Props) {
@@ -53,25 +95,39 @@ export default function ForcePasswordChange({ onDone, onSignOut }: Props) {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <KeyRound className="h-6 w-6 text-primary" />
           </div>
-          <h1 className="text-lg font-semibold">Crie sua nova senha</h1>
+          <h1 className="text-lg font-semibold">🔐 Atualize sua senha</h1>
           <p className="text-sm text-muted-foreground">
-            Por segurança, troque a senha temporária no primeiro acesso para continuar usando a plataforma.
+            Para garantir mais segurança à sua conta, precisamos que você altere sua senha de acesso. Crie uma nova
+            senha pessoal para continuar utilizando a plataforma EAD da Coopaiba.
           </p>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="fp-current">Senha atual (temporária)</Label>
-          <Input id="fp-current" type="password" autoComplete="current-password" value={current} onChange={(e) => setCurrent(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="fp-new">Nova senha</Label>
-          <Input id="fp-new" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} />
-          <p className="text-xs text-muted-foreground">Mínimo de 8 caracteres, com letras e números.</p>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="fp-confirm">Confirmar nova senha</Label>
-          <Input id="fp-confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
-        </div>
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        <PasswordField
+          id="fp-current"
+          label="Senha atual (temporária)"
+          value={current}
+          onChange={setCurrent}
+          autoComplete="current-password"
+        />
+        <PasswordField
+          id="fp-new"
+          label="Nova senha"
+          value={next}
+          onChange={setNext}
+          autoComplete="new-password"
+          hint="Mínimo de 8 caracteres, com letras e números."
+        />
+        <PasswordField
+          id="fp-confirm"
+          label="Confirmar nova senha"
+          value={confirm}
+          onChange={setConfirm}
+          autoComplete="new-password"
+        />
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
         <Button type="submit" className="w-full" disabled={busy}>
           {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Salvar nova senha
