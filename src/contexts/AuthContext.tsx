@@ -23,7 +23,7 @@ interface AuthContextType {
 
 // Keep one context instance across hot reloads so the provider and consumers never diverge.
 const authContextStore = globalThis as typeof globalThis & {
-  __coopaibaAuthContext?: React.Context<AuthContextType | undefined>;
+  __coopaibaAuthContext?: import("react").Context<AuthContextType | undefined>;
 };
 const AuthContext =
   authContextStore.__coopaibaAuthContext ??
