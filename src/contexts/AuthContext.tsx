@@ -21,7 +21,13 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Keep one context instance across hot reloads so the provider and consumers never diverge.
+const authContextStore = globalThis as typeof globalThis & {
+  __coopaibaAuthContext?: import("react").Context<AuthContextType | undefined>;
+};
+const AuthContext =
+  authContextStore.__coopaibaAuthContext ??
+  (authContextStore.__coopaibaAuthContext = createContext<AuthContextType | undefined>(undefined));
 
 // Tempo máximo de espera antes de desistir e mostrar erro recuperável
 const LOAD_TIMEOUT_MS = 12000;
